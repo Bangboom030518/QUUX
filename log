@@ -1,0 +1,7 @@
+Punct { ch: '<', spacing: Joint, span: 1 }
+Ident { ident: "h1", span: 2 }
+Punct { ch: '>', spacing: Joint, span: 3 }
+Punct { ch: '<', spacing: Joint, span: 4 }
+Punct { ch: '/', spacing: Joint, span: 5 }
+Ident { ident: "h1", span: 6 }
+Punct { ch: '>', spacing: Alone, span: 7 }
