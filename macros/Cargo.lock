@@ -3,20 +3,9 @@
 version = 3
 
 [[package]]
-name = "element"
-version = "0.1.0"
-
-[[package]]
-name = "element"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "150082e9eae3755a174e72a0a4f169e5a91f1655a7a17120d1882dd8207dbac1"
-
-[[package]]
 name = "macros"
 version = "0.1.0"
 dependencies = [
- "element 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "quote",
  "syn",
 ]
@@ -37,14 +26,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bbe448f377a7d6961e30f5955f9b8d106c3f5e449d493ee1b125c1d43c2b5179"
 dependencies = [
  "proc-macro2",
-]
-
-[[package]]
-name = "quux"
-version = "0.1.0"
-dependencies = [
- "element 0.1.0",
- "macros",
 ]
 
 [[package]]

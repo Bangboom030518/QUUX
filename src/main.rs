@@ -1,9 +1,23 @@
 // use html::html;
 
-use quux::{HTMLElement, HTML};
+use element::Element;
+use quux::{Body, Head, Html, Paragraph, Text};
 
-fn build() -> Vec<HTMLElement> {
-    vec![HTMLElement::HTML(HTML { children: vec![] })]
+fn build() -> String {
+    vec![&Html {
+        children: vec![
+            &Head::default(),
+            &Body::new_with_children(&[&Paragraph::new_with_children(&[&Text(
+                "HELLO!".to_string(),
+            )])]),
+        ],
+        ..Default::default()
+    }]
+    .into_iter()
+    .map(Element::as_string)
+    .collect()
 }
 
-fn main() {}
+fn main() {
+    println!("{}", build())
+}

@@ -1,43 +1,60 @@
-trait Element {
-    const TAG_NAME: &'static str;
+use element::{escape, Element};
+use std::collections::HashMap;
 
-    fn as_string(&self) -> String;
+macro_rules! element {
+    ($name:ident, $tag_name:expr) => {
+        #[derive(Clone, Default)]
+        pub struct $name<'a> {
+            pub children: Vec<&'a dyn element::Element>,
+            pub attributes: std::collections::HashMap<String, String>,
+        }
+
+        impl<'a> element::Element for $name<'a> {
+            fn get_tag_name(&self) -> &'static str {
+                $tag_name
+            }
+
+            fn get_attributes(&self) -> std::collections::HashMap<String, String> {
+                self.attributes.clone()
+            }
+
+            fn get_children(&self) -> &[&dyn element::Element] {
+                &self.children
+            }
+        }
+
+        impl<'a> $name<'a> {
+            pub fn new_with_children(children: &'a [&dyn element::Element]) -> Self {
+                Self {
+                    children: children.to_vec(),
+                    ..Default::default()
+                }
+            }
+        }
+    };
 }
 
-#[derive(Clone)]
-pub enum HTMLElement {
-    Body(Body),
-    HTML(HTML),
-    Div(Div)
-}
+element!(Html, "html");
+element!(Body, "body");
+element!(Head, "head");
+element!(Paragraph, "p");
 
-#[derive(Clone)]
-pub struct HTML {
-    pub children: Vec<HTMLElement>,
-}
+pub struct Text(pub String);
 
-impl Element for HTML {
-    const TAG_NAME: &'static str = "html";
+impl Element for Text {
+    fn get_tag_name(&self) -> &'static str {
+        "#text"
+    }
+
+    fn get_children(&self) -> &[&dyn Element] {
+        &[]
+    }
+
+    fn get_attributes(&self) -> HashMap<String, String> {
+        HashMap::new()
+    }
 
     fn as_string(&self) -> String {
-        format!()
+        escape(&self.0)
     }
-}
-
-#[derive(Clone)]
-pub struct Body {
-    pub children: Vec<HTMLElement>,
-}
-
-impl Element for Body {
-    const TAG_NAME: &'static str = "body";
-}
-
-#[derive(Clone)]
-pub struct Div {
-    pub children: Vec<HTMLElement>,
-}
-
-impl Element for Div {
-    const TAG_NAME: &'static str = "div";
 }
