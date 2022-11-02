@@ -35,3 +35,10 @@ pub trait Element {
         )
     }
 }
+
+pub struct Node {
+    tag_name: &'static str,
+    children: Vec<Node>,
+    attributes: HashMap<String, String>
+}
+

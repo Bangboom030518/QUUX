@@ -16,7 +16,7 @@ pub fn element(input: TokenStream) -> TokenStream {
 
     let name = name.to_string();
 
-    let tag_name = name.to_string().to_lowercase();
+    let tag_name = name.to_lowercase();
 
     quote::quote! {
         #[derive(Clone, Default)]

@@ -18,6 +18,13 @@ fn build() -> String {
     .collect()
 }
 
+struct MyComponent;
+
+impl Component for MyComponent {
+    
+}
+
+
 fn main() {
     println!("{}", build())
 }
