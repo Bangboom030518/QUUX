@@ -9,6 +9,9 @@
   - Child -> Parent Communication
   - Parent -> Child Communication
 
+- Do we optimise the generated Rust before compiling to WASM?
+- How do we store state in the html?
+
 ## Template Syntax
 
 ```rust
@@ -91,6 +94,7 @@ btn.onclick(buttonClick)
 </script>
 ```rust
 let mut list = Store::<Vec<String>>::new(vec!["hello", "world"]);
+// https://sycamore-rs.netlify.app/
 
 enum Event {
     New(String)
@@ -169,5 +173,43 @@ html! {
             <li>{ name } { " : " } { description }</li>
         }
     </ul>
+}
+```
+
+// https://en.wikipedia.org/wiki/OSI_model#Layer_architecture
+
+```rust
+
+fn init() -> {
+    let store = Store::new(0);
+    
+}
+
+fn render() -> {
+    
+}
+```
+
+NOTE: N static children OR 1 store????????????
+
+```rust
+html! {
+    <meta 1>
+    <meta 2>
+    <button id="random" $store=store on:click={|| {}}><p>{ $store }</p><p></p></button>
+}
+
+// Expands to
+
+#[cfg!(target = wasm)]
+{
+    addEvent("click")
+}
+
+#[cfg!(not(target = wasm))]
+{
+    compileToHTML(Button {
+
+    })
 }
 ```
