@@ -1,0 +1,5 @@
+- Full Stack (like Next.js, Nuxt and SvelteKit)
+- Hello World has 0kb of script
+- ⚡⚡⚡ Blazingly fast ⚡⚡⚡
+- Teeny tiny scripts
+- Uses Rust for both server and _CLIENT_ logic

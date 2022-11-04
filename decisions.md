@@ -6,13 +6,116 @@
   - Server Side Static Rendering
   - Client Side Dynamic Rendering
 - HOW THEY INTERACT WITH THE DOM TREE
+
   - Child -> Parent Communication
   - Parent -> Child Communication
 
 - Do we optimise the generated Rust before compiling to WASM?
 - How do we store state in the html?
+- [Module splitting](https://emscripten.org/docs/optimizing/Module-Splitting.html#module-splitting)?
 
 ## Template Syntax
+
+```rust
+struct InitInfo {
+    stores: Vec<Store>,
+
+}
+
+Button, id
+
+--> client
+--> Button::new()
+--> "hydrate" the button with id
+
+struct Button {
+    fn render() -> Vec<Store> {
+        html! {
+            <button onclick={|_| alert("hi")}>a</button>
+        }
+    }
+}
+// On the server
+struct Button {
+    fn render() -> "<button id=random>a</button>"
+}
+
+struct Button {
+    fn render() ->
+        // On client
+        getElem("#random").addClickEvent(|_| alert("hi"))
+}
+```
+
+```rust
+
+struct Text {
+    fn render() -> {
+        html! {
+            <p>hello</p>
+        }
+    }
+}
+
+struct Button {
+    fn render() {
+        // generic rust
+        let store = Store::new(0);
+        let list = Store::new([]);
+        // maybe changes, maybe not
+        html! {
+            <button onclick={|_| {
+                store.set(store.get() + 1);
+                list.push(())
+            }}>{$store}</button>
+            <ul id="random2">
+                {@for _ in $list}
+                    <Text />
+                {@endfor}
+            </ul>
+        }
+    }
+}
+
+// Server
+
+
+
+struct Button {
+    fn render() -> {
+        // generic rust
+
+        // create a store - internal impl generates random id
+        let store = Store::new(0);
+        // maybe changes, maybe not
+        "<button id='random'>0 <!-- format!('{}', store) --></button>"
+    }
+}
+
+
+// Client
+
+static mut STORE: Mutex<HashMap<String, String>>
+
+static mut random_store = // construct store
+
+static mut random_list = // construct list
+
+getElem("#random").addClickEvent(|| {
+    random_store.set(random_store.get() + 1);
+    getElem("#random").innerText=random_store.get(); // code called by onchange.
+    random_list.push(());
+    // random_list.on_push(|_| {
+        // BEGIN TEXT INIT LOGIC
+        let elem = createElem("p")
+        elem.innerText = "lolz";
+        // END TEXT INIT LOGIC
+
+        getElem("#random2").append(elem);
+    // }
+})
+
+```
 
 ```rust
 html! {
@@ -92,6 +195,7 @@ function newButton() {
 
 btn.onclick(buttonClick)
 </script>
+
 ```rust
 let mut list = Store::<Vec<String>>::new(vec!["hello", "world"]);
 // https://sycamore-rs.netlify.app/
@@ -111,7 +215,7 @@ THE DOM IS:
     <p>world</p>
 
 #[wasm]
-{ 
+{
     let list = ["hello", "world"]
 
     list.onchange(|event: Event| {
@@ -182,11 +286,11 @@ html! {
 
 fn init() -> {
     let store = Store::new(0);
-    
+
 }
 
 fn render() -> {
-    
+
 }
 ```
 
