@@ -1,4 +1,4 @@
-use quux::{Component, Store, init_app};
+use quux::{Component, init_app, Context, Store};
 
 struct App {
     count: Store<u32>,
@@ -13,8 +13,8 @@ impl Component for App {
         }
     }
 
-    fn render(&self) -> _ {
-        format!("<button id='random'>{}</button>", self.count);
+    fn render(&self, context: Context) -> String {
+        format!("<button id='random'>{}</button>", self.count)
     }
 }
 
