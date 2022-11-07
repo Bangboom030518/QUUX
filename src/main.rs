@@ -1,30 +1,23 @@
-// use html::html;
+use quux::{Component, Store, init_app};
 
-use element::Element;
-use quux::{Body, Head, Html, Paragraph, Text};
-
-fn build() -> String {
-    vec![&Html {
-        children: vec![
-            &Head::default(),
-            &Body::new_with_children(&[&Paragraph::new_with_children(&[&Text(
-                "HELLO!".to_string(),
-            )])]),
-        ],
-        ..Default::default()
-    }]
-    .into_iter()
-    .map(Element::as_string)
-    .collect()
+struct App {
+    count: Store<u32>,
 }
 
-struct MyComponent;
+impl Component for App {
+    type Props = ();
 
-impl Component for MyComponent {
-    
+    fn init(props: Self::Props) -> Self {
+        Self {
+            count: Store::new(0)
+        }
+    }
+
+    fn render(&self) -> _ {
+        format!("<button id='random'>{}</button>", self.count);
+    }
 }
-
 
 fn main() {
-    println!("{}", build())
+    init_app(App::init(()));
 }

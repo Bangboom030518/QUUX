@@ -8,10 +8,9 @@ edition = "2021"
 
 [dependencies]
 macros = { path = "./macros" }
-element = { path = "./element" }
 
 
 [workspace]
 members = [
-    "element", "macros"
+    "macros"
 ]

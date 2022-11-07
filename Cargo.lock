@@ -5,10 +5,6 @@ version = 3
 [[package]]
 name = "element"
 version = "0.1.0"
-
-[[package]]
-name = "element"
-version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "150082e9eae3755a174e72a0a4f169e5a91f1655a7a17120d1882dd8207dbac1"
 
@@ -16,7 +12,7 @@ checksum = "150082e9eae3755a174e72a0a4f169e5a91f1655a7a17120d1882dd8207dbac1"
 name = "macros"
 version = "0.1.0"
 dependencies = [
- "element 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "element",
  "quote",
  "syn",
 ]
@@ -43,7 +39,6 @@ dependencies = [
 name = "quux"
 version = "0.1.0"
 dependencies = [
- "element 0.1.0",
  "macros",
 ]
 
