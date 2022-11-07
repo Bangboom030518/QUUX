@@ -1,3 +1,7 @@
+> 
+> APROACH 2 GO BRRRRR
+> 
+
 # TODO
 
 - HOW COMPONENTS MANAGE STATE
@@ -6,7 +10,6 @@
   - Server Side Static Rendering
   - Client Side Dynamic Rendering
 - HOW THEY INTERACT WITH THE DOM TREE
-
   - Child -> Parent Communication
   - Parent -> Child Communication
 
@@ -47,22 +50,15 @@ struct Button {
 }
 ```
 
-```rust
+https://www.arewewebyet.org/topics/frameworks/
 
-struct Text {
-    fn render() -> {
-        html! {
-            <p>hello</p>
-        }
-    }
-}
+```rust
 
 struct Button {
     fn render() {
         // generic rust
         let store = Store::new(0);
         let list = Store::new([]);
-        // maybe changes, maybe not
         html! {
             <button onclick={|_| {
                 store.set(store.get() + 1);
@@ -78,8 +74,6 @@ struct Button {
 }
 
 // Server
-
-
 
 struct Button {
     fn render() -> {
@@ -170,12 +164,6 @@ impl A {
 ```
 
 The value can be set on the client using the `set` method.
-
-<Rec>
-    <button on:click={
-        Self.push_component(Rec::new())
-    }>Click Me</button>
-</Rec>
 
 <button id="random">Click Me</button>
 
@@ -282,18 +270,6 @@ html! {
 
 // https://en.wikipedia.org/wiki/OSI_model#Layer_architecture
 
-```rust
-
-fn init() -> {
-    let store = Store::new(0);
-
-}
-
-fn render() -> {
-
-}
-```
-
 NOTE: N static children OR 1 store????????????
 
 ```rust
@@ -315,5 +291,100 @@ html! {
     compileToHTML(Button {
 
     })
+}
+```
+
+## Basic Example
+
+```rust
+struct App {
+    count: Store<u32>
+}
+
+impl Component for App {
+    fn init() -> Self {
+        Self {
+            count: Store::new(0)
+        }
+    }
+
+    fn render(&self) -> _ {
+        html! {
+            button(on:click={|| self.count.set(self.count.get() + 1)}) { $self.count }
+        }
+    }
+}
+
+fn main() {
+    quux::init_app(App::init())
+}
+```
+
+### Approach 1
+
+#### Server
+
+```rust
+struct App {
+    count: Store<u32>,
+}
+
+impl Component for App {
+    type Props = MyStruct;
+
+    fn init(props: Self::Props) -> Self {
+        Self {
+            count: Store::new(0)
+        }
+    }
+
+    fn render(&self) -> _ {
+        format!("<button id='random'>{}</button>", self.count);
+    }
+}
+
+fn main() {
+    quux::init_app(App::init())
+}
+```
+
+#### Client
+
+```rust
+lazy_static! {
+    static ref STORES: HashMap<String, Store> = HashMap::from([
+        ["random_count", Store::new(0)]
+    ])
+}
+
+fn main() {
+    getElem("#button").onClick(|_| STORES["random_count"].set(STORES["random_count"] + 1))
+    STORES.use_effect(|new_value| getElem("#button").innerHTML = format!("{}", new_value))
+}
+```
+
+### Approach 2
+
+```rust
+// server sends
+"<button id=\"button\">0</button>" + serialize(Button::new())
+
+// client runs
+deserialize(tree).expect("render failed").render(id)
+
+struct Context {
+    ids: HashMap<String, String>
+}
+
+struct App {
+    count: Store<u32>,
+}
+
+impl Component for App {
+    fn render(&self, context: Context) -> _ {
+        let button = getElement(context.selector);
+        button.addEvent("click", |_| self.store.count += 1);
+        self.store.on_update(|value| button.text = value);
+    }
 }
 ```
