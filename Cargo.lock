@@ -9,7 +9,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "150082e9eae3755a174e72a0a4f169e5a91f1655a7a17120d1882dd8207dbac1"
 
 [[package]]
-name = "macros"
+name = "html"
 version = "0.1.0"
 dependencies = [
  "element",
@@ -39,7 +39,7 @@ dependencies = [
 name = "quux"
 version = "0.1.0"
 dependencies = [
- "macros",
+ "html",
 ]
 
 [[package]]

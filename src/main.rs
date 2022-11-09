@@ -1,3 +1,4 @@
+use html::html;
 use quux::{init_app, Component, Context, RenderData, Store};
 
 // struct App {
@@ -19,6 +20,10 @@ use quux::{init_app, Component, Context, RenderData, Store};
 // }
 
 fn main() {
+    html!(        button(class="btn") {
+        { "Click Me" }
+    }
+    );
     let mut my_juicy_store = Store::new(0);
     my_juicy_store
         .on_change(|previous, current| println!("{} will change to {}, juicy!", previous, current));
