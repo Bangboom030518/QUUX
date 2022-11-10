@@ -1,3 +1,2 @@
-Ident { ident: "button", span: 1 }
-Group { delimiter: Parenthesis, stream: TokenStream [Ident { ident: "class", span: 3 }, Punct { ch: '=', spacing: Joint, span: 4 }, Literal { kind: Err, symbol: "\"btn\"", suffix: None, span: 5 }], span: 2 }
-Group { delimiter: Brace, stream: TokenStream [Group { delimiter: Brace, stream: TokenStream [Literal { kind: Err, symbol: "\"Click Me\"", suffix: None, span: 8 }], span: 7 }], span: 6 }
+
+"always watching"
