@@ -3,6 +3,17 @@
 version = 3
 
 [[package]]
+name = "derive-syn-parse"
+version = "0.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e79116f119dd1dba1abf1f3405f03b9b0e79a27a3883864bfebded8a3dc768cd"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "element"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -12,6 +23,7 @@ checksum = "150082e9eae3755a174e72a0a4f169e5a91f1655a7a17120d1882dd8207dbac1"
 name = "html"
 version = "0.1.0"
 dependencies = [
+ "derive-syn-parse",
  "element",
  "quote",
  "syn",
