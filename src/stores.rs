@@ -1,5 +1,3 @@
-use crate::Component;
-
 pub type StoreCallback<'a, T> = dyn FnMut(&T, &T) + 'a;
 
 pub struct Store<'a, T: std::fmt::Display>

@@ -1,5 +1,7 @@
-use html::html;
-use quux::{init_app, Component, Context, RenderData, Store};
+use html::view;
+use quux::Store;
+
+mod tests;
 
 // struct App {
 //     count: Store<u32>,
@@ -20,7 +22,16 @@ use quux::{init_app, Component, Context, RenderData, Store};
 // }
 
 fn main() {
-    html!({ "always watching" });
+    view! {
+        body {
+            h1(a="hello!") {
+                { hello }
+            }
+            makka {
+                { "abc" }
+            }
+        }
+    };
     let mut my_juicy_store = Store::new(0);
     my_juicy_store
         .on_change(|previous, current| println!("{} will change to {}, juicy!", previous, current));

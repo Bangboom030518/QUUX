@@ -12,10 +12,11 @@ pub fn escape(input: &str) -> String {
 
 pub type Context = HashMap<String, String>;
 
-pub fn init_app<T, P>(component: T)
+pub fn init_app<T, P>(_component: T)
 where
     T: Component<Props = P>,
 {
+    todo!("Implement `init_app`");
 }
 
 pub struct RenderData {
