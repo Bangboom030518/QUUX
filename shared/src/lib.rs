@@ -21,6 +21,7 @@ where
 
 pub struct RenderData {
     pub html: String,
+    pub ids: HashMap<String, String>,
 }
 
 pub trait Component {

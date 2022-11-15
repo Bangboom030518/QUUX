@@ -9,6 +9,7 @@ use syn_serde::json;
 #[derive(Clone)]
 pub enum Item {
     ReactiveStore(Ident),
+    Component(Component),
     Element(Element),
     Expression(Expr),
 }
@@ -19,6 +20,7 @@ impl std::fmt::Display for Item {
             Self::ReactiveStore(ident) => write!(f, "Ident \"{}\"", ident),
             Self::Element(elem) => write!(f, "{}", elem),
             Self::Expression(expr) => write!(f, "{}", json::to_string_pretty(expr)),
+            Self::Component(coponent) => write!(f, "not for now"),
         }
     }
 }
@@ -36,6 +38,11 @@ impl Parse for Item {
             return Ok(Self::ReactiveStore(input.parse()?));
         }
 
+        if input.peek(Token![@]) {
+            input.parse::<Token![@]>()?;
+            return Ok(Self::Component(input.parse()?));
+        }
+
         if input.peek(Ident) {
             return Ok(Self::Element(input.parse()?));
         }
@@ -45,10 +52,44 @@ impl Parse for Item {
 }
 
 #[derive(Clone)]
+pub struct Component {
+    pub name: Ident,
+    pub props: Vec<Attribute>,
+}
+
+impl Parse for Component {
+    // TODO: refactor
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let name = input.parse()?;
+
+        let mut props = Vec::new();
+        if input.peek(Paren) {
+            let attributes_buffer;
+            parenthesized!(attributes_buffer in input);
+            while !attributes_buffer.is_empty() {
+                props.push(attributes_buffer.parse()?);
+                if attributes_buffer.peek(Token![,]) {
+                    attributes_buffer.parse::<Token![,]>()?;
+                } else if !attributes_buffer.is_empty() {
+                    return Err(
+                        attributes_buffer.error("Attributes should be seperated by commas, duh!")
+                    );
+                }
+            }
+        }
+
+        Ok(Self {
+            name,
+            props,
+        })
+    }
+}
+
+#[derive(Clone)]
 pub struct Element {
-    tag_name: Ident,
-    attributes: Vec<Attribute>,
-    content: Vec<Item>,
+    pub tag_name: Ident,
+    pub attributes: Vec<Attribute>,
+    pub content: Vec<Item>,
 }
 
 impl Parse for Element {
@@ -108,9 +149,9 @@ impl std::fmt::Display for Element {
 }
 
 #[derive(Clone)]
-struct Attribute {
-    key: Ident,
-    value: AttributeValue,
+pub struct Attribute {
+    pub key: Ident,
+    pub value: AttributeValue,
 }
 
 impl Parse for Attribute {
@@ -133,7 +174,7 @@ impl std::fmt::Display for Attribute {
 }
 
 #[derive(Clone)]
-enum AttributeValue {
+pub enum AttributeValue {
     Reactive(Ident),
     Static(Box<Expr>),
 }

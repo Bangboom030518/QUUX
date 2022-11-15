@@ -18,7 +18,7 @@ impl<'a, T: std::fmt::Display> Store<'a, T> {
     }
 
     /// Pushes a closure to run whenever the state is changed. The closure will recieve the previous, and new interior value.
-    /// 
+    ///
     /// > *NOTE*: You will need to wrap any values borrowed by the closure in a [`RefCell`](https://doc.rust-lang.org/std/cell/struct.RefCell.html) or similar if you plan to use it again afterwards.
     pub fn on_change<F>(&mut self, listener: F)
     where
@@ -31,7 +31,7 @@ impl<'a, T: std::fmt::Display> Store<'a, T> {
     pub fn get(&self) -> &T {
         &self.value
     }
-    
+
     /// Sets interior value to `value`.
     pub fn set(&mut self, value: T) {
         for listener in self.listeners.iter_mut() {

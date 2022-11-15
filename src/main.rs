@@ -1,5 +1,5 @@
 use html::view;
-use quux::Store;
+use shared::Store;
 
 mod tests;
 
