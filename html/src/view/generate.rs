@@ -3,7 +3,8 @@ use std::collections::HashMap;
 use super::parse::{Attribute, AttributeValue, Element, Item};
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{punctuated::Punctuated, Expr, ExprPath, Ident, Path, PathArguments, PathSegment};
+use std::convert::Into;
+use syn::Expr;
 
 #[cfg(target = "wasm")]
 pub fn generate(tree: Item) -> TokenStream {
@@ -13,39 +14,31 @@ pub fn generate(tree: Item) -> TokenStream {
     .into()
 }
 
-fn ident_to_expr(ident: Ident) -> Expr {
-    Expr::Path(ExprPath {
-        attrs: Vec::new(),
-        qself: None,
-        path: Path {
-            leading_colon: None,
-            segments: {
-                let mut punctuated = Punctuated::new();
-                punctuated.push(PathSegment {
-                    arguments: PathArguments::None,
-                    ident,
-                });
-                punctuated
-            },
-        },
-    })
-}
-
 fn format_attributes(
     attributes: Vec<Attribute>,
 ) -> (HashMap<String, Expr>, HashMap<String, String>) {
     let mut dyn_attributes: HashMap<String, String> = HashMap::new();
-    let attributes: HashMap<String, Expr> =
-        HashMap::from_iter(attributes.into_iter().map(|Attribute { key, value }| {
+    let attributes: HashMap<String, Expr> = HashMap::from_iter(attributes.into_iter().map(
+        |Attribute { key, value }| -> (_, _) {
             let key = key.to_string();
             match value {
                 AttributeValue::Static(expr) => (key, *expr),
                 AttributeValue::Reactive(ident) => {
                     dyn_attributes.insert(key.clone(), ident.to_string());
-                    (key, ident_to_expr(ident))
+                    (
+                        key,
+                        syn::parse::<Expr>(
+                            quote! {
+                                quux::Store::get(#ident)
+                            }
+                            .into(),
+                        )
+                        .expect("failed to parse `quux::Store::get(#ident)` (internal)"),
+                    )
                 }
             }
-        }));
+        },
+    ));
     (attributes, dyn_attributes)
 }
 
@@ -57,9 +50,19 @@ pub fn generate(tree: Item) -> TokenStream {
             attributes,
             content,
         }) => {
-            let html_string = format!("<{0} {{}}>{{}}</{0}>", tag_name.to_string());
+            // TODO: deal with reactive stores as attribute values
+            // TODO; make WORK
+            let (attributes, dyn_attributes) = format_attributes(attributes);
+            let (keys, values): (Vec<_>, Vec<_>) = attributes.into_iter().unzip();
+            let html_string = format!(
+                "<{0} {1}>{{}}</{0}>",
+                tag_name.to_string(),
+                keys.into_iter()
+                    .map(|key| format!("{key}=\"{{}}\""))
+                    .collect::<String>()
+            );
             quote! {
-                format!(#html_string)
+                format!(#html_string, )
             }
         }
         Item::Component(_) => todo!("Implement Component"),
