@@ -22,16 +22,14 @@ mod tests;
 // }
 
 fn main() {
-    view! {
+    dbg!(view! {
         body {
             h1(a="hello!") {
-                { hello }
+                { format!("{} made a juicy macro", "Makka Pakka") }
             }
-            makka {
-                { "abc" }
-            }
+            // @makka
         }
-    };
+    });
     let mut my_juicy_store = Store::new(0);
     my_juicy_store
         .on_change(|previous, current| println!("{} will change to {}, juicy!", previous, current));

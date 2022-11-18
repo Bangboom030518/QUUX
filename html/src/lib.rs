@@ -17,5 +17,5 @@ pub fn view(input: TokenStream) -> TokenStream {
     log::clear();
     let tree = parse_macro_input!(input as view::Item);
     log::log(&tree);
-    view::generate(tree)
+    view::generate(tree).into()
 }

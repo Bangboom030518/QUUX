@@ -19,6 +19,7 @@ where
     todo!("Implement `init_app`");
 }
 
+#[derive(Debug)]
 pub struct RenderData {
     pub html: String,
     pub ids: HashMap<String, String>,
