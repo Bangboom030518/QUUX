@@ -4,7 +4,7 @@ use super::parse::{Attribute, AttributeValue, Element, Item};
 // use proc_macro::TokenStream;
 use quote::{quote, ToTokens, __private::TokenStream};
 use std::convert::Into;
-use syn::{Expr, Lit, LitStr};
+use syn::Expr;
 
 #[cfg(target = "wasm")]
 pub fn generate(tree: Item) -> TokenStream {
@@ -43,7 +43,8 @@ fn format_attributes(
 
 struct RenderData {
     html: TokenStream,
-    ids: TokenStream,
+    /// A Vec of entries to a HashMap
+    ids: Vec<TokenStream>,
 }
 
 fn generate_render_data(item: Item) -> RenderData {
@@ -90,7 +91,7 @@ fn generate_render_data(item: Item) -> RenderData {
         }
         Item::Component(component) => {
             RenderData {
-                html: ,
+                html: quote!{ String::new() },
                 ids: format_hashmap(HashMap::new()),
             }
         },
