@@ -10,8 +10,6 @@ pub fn escape(input: &str) -> String {
         .replace('"', "&quot;")
 }
 
-pub type Context = HashMap<String, String>;
-
 pub fn init_app<T, P>(_component: T)
 where
     T: Component<Props = P>,
@@ -19,20 +17,34 @@ where
     todo!("Implement `init_app`");
 }
 
-#[derive(Debug)]
-pub struct RenderData {
+pub struct RenderData<'a> {
     pub html: String,
-    pub ids: HashMap<String, String>,
+    pub render_context: RenderContext<'a>,
 }
 
-pub trait Component {
-    type Props;
-
-    fn init(props: Self::Props) -> Self;
-
+pub trait Render {
     #[cfg(target = "wasm")]
-    fn render(&self, context: Context);
+    fn render(&self, context: RenderContext);
 
     #[cfg(not(target = "wasm"))]
     fn render(&self) -> RenderData;
+}
+
+pub trait Component: Render {
+    type Props;
+
+    fn init(props: Self::Props) -> Self;
+}
+
+struct ClientNode<'a> {
+    component: &'a dyn Render,
+    render_context: RenderContext<'a>,
+}
+
+/// The id is passed to render method on client
+/// Children are recusively hydrated
+/// This created whenever a `view!()` macro is used
+pub struct RenderContext<'a> {
+    children: Vec<ClientNode<'a>>,
+    id: String,
 }

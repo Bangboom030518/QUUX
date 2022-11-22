@@ -42,9 +42,10 @@ fn format_attributes(
 }
 
 struct RenderData {
+    /// tokens generating static SSR'd html
     html: TokenStream,
-    /// A Vec of entries to a HashMap
-    ids: Vec<TokenStream>,
+    /// tokens generating a `RenderContext` struct
+    render_context: TokenStream,
 }
 
 fn generate_render_data(item: Item) -> RenderData {
@@ -56,8 +57,8 @@ fn generate_render_data(item: Item) -> RenderData {
         }) => {
             // TODO: deal with reactive stores as attribute values
             // TODO: make WORK
-            let mut ids = HashMap::new();
             let (attributes, dyn_attributes) = format_attributes(attributes);
+            let render_context = quote! {};
             let (keys, values): (Vec<_>, Vec<_>) = attributes.into_iter().unzip();
             let html_string = format!(
                 "<{0} {1}>{{}}</{0}>",
@@ -70,12 +71,13 @@ fn generate_render_data(item: Item) -> RenderData {
                 .into_iter()
                 .map(|item| {
                     let RenderData {
-                        ids: item_ids,
+                        render_context,
                         html,
                     } = generate_render_data(item);
-                    ids.extend(item_ids.into_iter());
-                    quote! { &#html }
-                })
+                    RenderData {
+                        html: quote! { &#html },
+                        render_context: quote! { #render_context }
+                }})
                 .collect::<Vec<_>>();
             content.insert(0, quote! { String::new() });
             let html = if values.is_empty() {
@@ -87,47 +89,35 @@ fn generate_render_data(item: Item) -> RenderData {
                     format!(#html_string, #(#values),*, #(#content)+*)
                 }
             };
-            RenderData { html, ids: format_hashmap(ids) }
-        }
-        Item::Component(component) => {
             RenderData {
-                html: quote!{ String::new() },
-                ids: format_hashmap(HashMap::new()),
+                html,
+                render_context,
             }
+        },
+        Item::Component(component) => RenderData {
+            html: quote! { String::new() },
+            render_context: quote! {  },
         },
         Item::Expression(expression) => RenderData {
             html: quote! {
                 #expression.to_string()
             },
-            ids: format_hashmap(HashMap::new()),
+            render_context: quote! {  },
         },
         Item::ReactiveStore(_) => todo!("Implement Reactive Stores"),
     }
 }
 
-fn format_hashmap<K, V>(hashmap: HashMap<K, V>) -> TokenStream
-where
-    K: ToTokens,
-    V: ToTokens,
-{
-    let entries = hashmap.into_iter().map(|(key, value)| {
-        quote! {
-            (#key, #value)
-        }
-    });
-
-    quote! {
-        std::collections::HashMap::from([#(#entries),*])
-    }
-}
-
 #[cfg(not(target = "wasm"))]
 pub fn generate(tree: Item) -> TokenStream {
-    let RenderData { html, ids } = generate_render_data(tree);
+    let RenderData {
+        html,
+        render_context,
+    } = generate_render_data(tree);
     quote! {
         shared::RenderData {
             html: #html,
-            ids: #ids
+            render_data: #ids
         }
     }
 }
