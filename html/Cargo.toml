@@ -10,6 +10,7 @@ proc-macro = true
 
 [dependencies]
 quote = "1.0"
+proc-macro2 = "1.0.47"
 syn = { version = "1.0", features = ["full"] }
 syn-serde = { version = "0.2", features = ["json"] }
 shared = { path = "../shared" }

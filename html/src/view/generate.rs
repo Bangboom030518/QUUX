@@ -1,8 +1,7 @@
 use std::collections::HashMap;
-
 use super::parse::{Attribute, AttributeValue, Element, Item};
-// use proc_macro::TokenStream;
-use quote::{quote, ToTokens, __private::TokenStream};
+use proc_macro2::TokenStream;
+use quote::quote;
 use std::convert::Into;
 use syn::Expr;
 
@@ -76,8 +75,9 @@ fn generate_render_data(item: Item) -> RenderData {
                     } = generate_render_data(item);
                     RenderData {
                         html: quote! { &#html },
-                        render_context: quote! { #render_context }
-                }})
+                        render_context: quote! { #render_context },
+                    }
+                })
                 .collect::<Vec<_>>();
             content.insert(0, quote! { String::new() });
             let html = if values.is_empty() {
@@ -93,16 +93,16 @@ fn generate_render_data(item: Item) -> RenderData {
                 html,
                 render_context,
             }
-        },
+        }
         Item::Component(component) => RenderData {
             html: quote! { String::new() },
-            render_context: quote! {  },
+            render_context: quote! {},
         },
         Item::Expression(expression) => RenderData {
             html: quote! {
                 #expression.to_string()
             },
-            render_context: quote! {  },
+            render_context: quote! {},
         },
         Item::ReactiveStore(_) => todo!("Implement Reactive Stores"),
     }
@@ -117,7 +117,7 @@ pub fn generate(tree: Item) -> TokenStream {
     quote! {
         shared::RenderData {
             html: #html,
-            render_data: #ids
+            render_context: #render_context
         }
     }
 }
