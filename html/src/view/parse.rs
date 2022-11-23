@@ -54,7 +54,7 @@ impl Parse for Item {
 #[derive(Clone)]
 pub struct Component {
     pub name: Ident,
-    pub props: Vec<Attribute>,
+    pub props: Vec<Prop>,
 }
 
 impl Parse for Component {
@@ -172,6 +172,22 @@ impl std::fmt::Display for Attribute {
         )
     }
 }
+
+#[derive(Clone)]
+pub struct Prop {
+    pub key: Ident,
+    pub value: Expr,
+}
+
+impl Parse for Prop {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let key = input.parse()?;
+        input.parse::<Token![=]>()?;
+        let value = input.parse()?;
+        Ok(Self { key, value })
+    }
+}
+
 
 #[derive(Clone)]
 pub enum AttributeValue {

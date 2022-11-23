@@ -1,7 +1,8 @@
-use std::collections::HashMap;
-use super::parse::{Attribute, AttributeValue, Element, Item};
+use super::parse::{Attribute, AttributeValue, Element, Item, Component, Prop};
 use proc_macro2::TokenStream;
 use quote::quote;
+use shared::{RenderData};
+use std::collections::HashMap;
 use std::convert::Into;
 use syn::Expr;
 
@@ -40,14 +41,16 @@ fn format_attributes(
     (attributes, dyn_attributes)
 }
 
-struct RenderData {
+#[derive(Default)]
+struct Data {
     /// tokens generating static SSR'd html
     html: TokenStream,
     /// tokens generating a `RenderContext` struct
-    render_context: TokenStream,
+    component_nodes: Vec<TokenStream>,
 }
 
-fn generate_render_data(item: Item) -> RenderData {
+/// Generates data for a single item in a view
+fn read_item(item: Item, data: Data) -> Data {
     match item {
         Item::Element(Element {
             tag_name,
@@ -66,54 +69,79 @@ fn generate_render_data(item: Item) -> RenderData {
                     .map(|key| format!("{key}=\"{{}}\""))
                     .collect::<String>(),
             );
-            let mut content = content
+            let (mut html, mut component_nodes): (Vec<_>, Vec<_>) = content
                 .into_iter()
                 .map(|item| {
-                    let RenderData {
-                        render_context,
+                    let Data {
+                        component_nodes,
                         html,
-                    } = generate_render_data(item);
-                    RenderData {
-                        html: quote! { &#html },
-                        render_context: quote! { #render_context },
-                    }
+                    } = read_item(item, data);
+                    (quote! { &#html }, quote! { #component_nodes })
                 })
-                .collect::<Vec<_>>();
-            content.insert(0, quote! { String::new() });
+                .unzip();
+
+            html.insert(0, quote! { String::new() });
+
             let html = if values.is_empty() {
                 quote! {
-                    format!(#html_string, #(#content)+*)
+                    format!(#html_string, #(#html)+*)
                 }
             } else {
                 quote! {
-                    format!(#html_string, #(#values),*, #(#content)+*)
+                    format!(#html_string, #(#values),*, #(#html)+*)
                 }
             };
-            RenderData {
+
+            Data {
                 html,
-                render_context,
+                component_nodes,
             }
         }
-        Item::Component(component) => RenderData {
-            html: quote! { String::new() },
-            render_context: quote! {},
-        },
-        Item::Expression(expression) => RenderData {
+        Item::Component(Component { name, props }) => {
+            let props = props.into_iter().map(|Prop { key, value }| {
+                quote!{ #key : #value }
+            });
+            let mut component_nodes = data.component_nodes;
+            component_nodes.push(quote! {
+                shared::ClientComponentNode {
+                    #name {
+                        #(#props),*
+                    }
+                }
+            });
+            Data {
+                html: quote! { String::new() },
+                component_nodes,
+            }
+        }
+        // TODO: push to html, rather than replacing
+        Item::Expression(expression) => Data {
             html: quote! {
                 #expression.to_string()
             },
-            render_context: quote! {},
+            component_nodes: data.component_nodes,
         },
         Item::ReactiveStore(_) => todo!("Implement Reactive Stores"),
     }
 }
 
 #[cfg(not(target = "wasm"))]
-pub fn generate(tree: Item) -> TokenStream {
-    let RenderData {
-        html,
-        render_context,
-    } = generate_render_data(tree);
+pub fn generate(tree: Element) -> TokenStream {
+    let mut data = Data::default();
+    let html = TokenStream::new();
+    let render_context = quote! {
+        shared::RenderContext {
+            id: shared::generate_id(),
+            children: vec![
+
+            ],
+        }
+    };
+
+    // let RenderData {
+    //     html,
+    //     render_context,
+    // } = generate_render_data(Item::Element(tree));
     quote! {
         shared::RenderData {
             html: #html,

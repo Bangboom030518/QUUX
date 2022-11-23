@@ -15,7 +15,7 @@ mod view;
 #[proc_macro]
 pub fn view(input: TokenStream) -> TokenStream {
     log::clear();
-    let tree = parse_macro_input!(input as view::Item);
+    let tree = parse_macro_input!(input as view::Element);
     log::log(&tree);
     view::generate(tree).into()
 }
