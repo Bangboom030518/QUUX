@@ -4,7 +4,6 @@ use syn::{
     token::{Brace, Paren},
     Expr, Ident, Token,
 };
-use syn_serde::json;
 
 #[derive(Clone)]
 pub enum Item {
@@ -12,17 +11,6 @@ pub enum Item {
     Component(Component),
     Element(Element),
     Expression(Expr),
-}
-
-impl std::fmt::Display for Item {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::ReactiveStore(ident) => write!(f, "Ident \"{}\"", ident),
-            Self::Element(elem) => write!(f, "{}", elem),
-            Self::Expression(expr) => write!(f, "{}", json::to_string_pretty(expr)),
-            Self::Component(coponent) => write!(f, "not for now"),
-        }
-    }
 }
 
 impl Parse for Item {
@@ -78,10 +66,7 @@ impl Parse for Component {
             }
         }
 
-        Ok(Self {
-            name,
-            props,
-        })
+        Ok(Self { name, props })
     }
 }
 
@@ -127,27 +112,6 @@ impl Parse for Element {
     }
 }
 
-impl std::fmt::Display for Element {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "Element {{\n tag_name: {},\n attributes: {:?},\n content: {:?} \n}}",
-            &json::to_string_pretty(&self.tag_name),
-            &self
-                .attributes
-                .iter()
-                .map(|attribute| attribute.to_string())
-                .collect::<Vec<_>>(),
-            &self
-                .content
-                .iter()
-                .map(|item| item.to_string())
-                .collect::<Vec<_>>()
-        )?;
-        Ok(())
-    }
-}
-
 #[derive(Clone)]
 pub struct Attribute {
     pub key: Ident,
@@ -160,16 +124,6 @@ impl Parse for Attribute {
         input.parse::<Token![=]>()?;
         let value = input.parse()?;
         Ok(Self { key, value })
-    }
-}
-
-impl std::fmt::Display for Attribute {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{{\n key: \"{}\",\n value: \"{}\" \n}}",
-            self.key, self.value
-        )
     }
 }
 
@@ -188,7 +142,6 @@ impl Parse for Prop {
     }
 }
 
-
 #[derive(Clone)]
 pub enum AttributeValue {
     Reactive(Ident),
@@ -202,15 +155,6 @@ impl Parse for AttributeValue {
             Ok(Self::Reactive(input.parse()?))
         } else {
             Ok(Self::Static(input.parse()?))
-        }
-    }
-}
-
-impl std::fmt::Display for AttributeValue {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Reactive(ident) => write!(f, "Ident \"{}\"", ident),
-            Self::Static(expr) => write!(f, "{}", json::to_string_pretty::<Expr>(expr)),
         }
     }
 }

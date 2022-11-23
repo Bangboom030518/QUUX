@@ -1,6 +1,0 @@
-
-Element {
- tag_name: "body",
- attributes: [],
- content: ["Element {\n tag_name: \"h1\",\n attributes: [\"{\\n key: \\\"a\\\",\\n value: \\\"{\\n  \\\"lit\\\": {\\n    \\\"str\\\": \\\"\\\\\\\"hello!\\\\\\\"\\\"\\n  }\\n}\\\" \\n}\"],\n content: [\"{\\n  \\\"macro\\\": {\\n    \\\"path\\\": {\\n      \\\"segments\\\": [\\n        {\\n          \\\"ident\\\": \\\"format\\\"\\n        }\\n      ]\\n    },\\n    \\\"delimiter\\\": \\\"paren\\\",\\n    \\\"tokens\\\": [\\n      {\\n        \\\"lit\\\": \\\"\\\\\\\"{} made a juicy macro\\\\\\\"\\\"\\n      },\\n      {\\n        \\\"punct\\\": {\\n          \\\"op\\\": \\\",\\\",\\n          \\\"spacing\\\": \\\"alone\\\"\\n        }\\n      },\\n      {\\n        \\\"lit\\\": \\\"\\\\\\\"Makka Pakka\\\\\\\"\\\"\\n      }\\n    ]\\n  }\\n}\"] \n}"] 
-}
