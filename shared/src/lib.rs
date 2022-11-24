@@ -43,11 +43,11 @@ pub trait Component: Render {
 }
 
 /// Represents a reactive node on the client. Only for `Component`s. 
-struct ClientComponentNode<'a> {
-    component: &'a dyn Render,
-    render_context: RenderContext<'a>,
+pub struct ClientComponentNode<'a> {
+    pub component: &'a dyn Render,
+    pub render_context: RenderContext<'a>,
     /// This is **only** for the parent to know where this child is. This child will never know its static, as it's not included in the `RenderContext`.
-    static_id: &'static str,
+    pub static_id: &'static str,
 }
 
 /// The id is passed to render method on client
@@ -57,6 +57,6 @@ struct ClientComponentNode<'a> {
 /// For an `view!()`, this will contain an id used on the client for reactivity, as well as any children that are components.
 /// This will allow for a `view!()` to manage its children by encapsulating them under one unique id.
 pub struct RenderContext<'a> {
-    children: Vec<ClientComponentNode<'a>>,
-    id: String,
+    pub children: Vec<ClientComponentNode<'a>>,
+    pub id: String,
 }
