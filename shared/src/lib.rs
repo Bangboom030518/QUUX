@@ -1,6 +1,8 @@
-pub use stores::Store;
 use std::sync::atomic::{AtomicU64, Ordering};
+pub use stores::Store;
+pub use init::init_app;
 
+mod init;
 pub mod stores;
 
 static GLOBAL_ID: AtomicU64 = AtomicU64::new(0);
@@ -14,13 +16,6 @@ pub fn escape(input: &str) -> String {
 
 pub fn generate_id() -> String {
     GLOBAL_ID.fetch_add(1, Ordering::Relaxed).to_string()
-}
-
-pub fn init_app<T, P>(_component: T)
-where
-    T: Component<Props = P>,
-{
-    todo!("Implement `init_app`");
 }
 
 pub struct RenderData<'a> {
@@ -42,7 +37,7 @@ pub trait Component: Render {
     fn init(props: Self::Props) -> Self;
 }
 
-/// Represents a reactive node on the client. Only for `Component`s. 
+/// Represents a reactive node on the client. Only for `Component`s.
 pub struct ClientComponentNode<'a> {
     pub component: &'a dyn Render,
     pub render_context: RenderContext<'a>,
@@ -53,7 +48,7 @@ pub struct ClientComponentNode<'a> {
 /// The id is passed to render method on client
 /// Children are recusively hydrated
 /// This created whenever a `view!()` macro is used
-/// 
+///
 /// For an `view!()`, this will contain an id used on the client for reactivity, as well as any children that are components.
 /// This will allow for a `view!()` to manage its children by encapsulating them under one unique id.
 pub struct RenderContext<'a> {

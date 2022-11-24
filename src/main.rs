@@ -1,52 +1,33 @@
 use html::view;
-use shared::Store;
+use shared::{Store, Component, Render, RenderData, init_app};
 
 mod tests;
 
-// struct App {
-//     count: Store<u32>,
-// }
+struct App<'a> {
+    count: Store<'a, u32>,
+}
 
-// impl Component for App {
-//     type Props = ();
+impl<'a> Component for App<'a> {
+    type Props = ();
 
-//     fn init(props: Self::Props) -> Self {
-//         Self {
-//             count: Store::new(0)
-//         }
-//     }
+    fn init(_props: Self::Props) -> Self {
+        Self {
+            count: Store::new(0)
+        }
+    }
 
-//     fn render(&self) -> RenderData {
-//         format!("<button id='random'>{}</button>", self.count)
-//     }
-// }
+}
+
+impl<'a> Render for App<'a> {
+    fn render(&self) -> RenderData {
+        view! {
+            button {
+                { self.count }
+            }
+        }
+    }
+}
 
 fn main() {
-    let render_data = view! {
-        body {
-            h1(a="hello!") {
-                { format!("{} made a juicy macro", "Makka Pakka") }
-            }
-            // @makka
-        }
-    };
-
-    println!("{}", render_data.html);
-
-    let mut my_juicy_store = Store::new(0);
-    my_juicy_store
-        .on_change(|previous, current| println!("{} will change to {}, juicy!", previous, current));
-
-    my_juicy_store.on_change(|_, current| {
-        println!("I found a {}", current);
-    });
-
-    my_juicy_store.on_change(|previous, _| {
-        println!("It was {}", previous);
-    });
-
-    for _ in 0..3 {
-        my_juicy_store.set(my_juicy_store.get() + 1);
-    }
-    // init_app(App::init(()));
+    init_app(App::init(()));
 }

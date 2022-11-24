@@ -70,7 +70,7 @@ fn read_item(item: Item, data: &Data) -> Data {
                 })
                 .unzip();
             
-            let component_nodes = component_nodes.into_iter().flatten().collect::<Vec<_>>();
+            let component_nodes = component_nodes.concat();
 
             html.insert(0, quote! { String::new() });
 
@@ -106,7 +106,6 @@ fn read_item(item: Item, data: &Data) -> Data {
                 component_nodes,
             }
         }
-        // TODO: push to html, rather than replacing
         Item::Expression(expression) => Data {
             html: quote! {
                 #expression.to_string()
