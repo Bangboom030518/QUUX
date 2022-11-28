@@ -1,7 +1,13 @@
 use html::view;
 use shared::QUUXInitialise;
 use shared::{init_app, Component, Render, RenderData, Store};
-use warp::Filter;
+use axum::{
+    routing::{get, post},
+    http::StatusCode,
+    response::{IntoResponse, Html},
+    Json, Router,
+};
+use std::net::SocketAddr;
 
 mod tests;
 
@@ -35,19 +41,19 @@ impl<'a> Render for App<'a> {
     }
 }
 
+async fn root() -> Html<String> {
+    init_app(App::init(())).into()
+}
+
 #[tokio::main]
 async fn main() {
-    let html = init_app(App::init(()));
-    // let html: &str = html.as_str();
-    let index = warp::path::end().map(|| html);
-
-    // https://github.com/seanmonstar/warp/blob/master/examples/routing.rs
-
-    warp::serve(warp::get().and(
-        index
-            .or(warp::fs::file("./dist/wasm/quux_bg.wasm")
-    )))
-        .run(([127, 0, 0, 1], 3030))
-        .await;
+    let app = Router::new()
+        .route("/", get(root));
+    let address = SocketAddr::from(([127, 0, 0, 1], 3000));
+    println!("listening on {}", address);
+    axum::Server::bind(&address)
+        .serve(app.into_make_service())
+        .await
+        .unwrap();
 
 }

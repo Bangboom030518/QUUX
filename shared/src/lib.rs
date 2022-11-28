@@ -77,10 +77,13 @@ pub struct RenderContext<'a> {
 ///     }
 /// }
 /// ```
+
+pub struct EmptyProps {}
+
 pub struct QUUXInitialise;
 
 impl Component for QUUXInitialise {
-    type Props = ();
+    type Props = EmptyProps;
 
     fn init(props: Self::Props) -> Self {
         Self {}
@@ -90,7 +93,10 @@ impl Component for QUUXInitialise {
 impl Render for QUUXInitialise {
     fn render(&self) -> RenderData {
         RenderData {
-            html: format!("<script type=\"module\">{}</script>", include_str!("../../dist/wasm/quux.js")),
+            html: format!(
+                "<script type=\"module\">{}</script>",
+                include_str!("../../dist/wasm/quux.js")
+            ),
             render_context: RenderContext {
                 children: Vec::new(),
                 id: String::new(),
