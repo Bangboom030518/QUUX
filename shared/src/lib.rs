@@ -1,6 +1,6 @@
+pub use init::init_app;
 use std::sync::atomic::{AtomicU64, Ordering};
 pub use stores::Store;
-pub use init::init_app;
 
 mod init;
 pub mod stores;
@@ -54,4 +54,47 @@ pub struct ClientComponentNode<'a> {
 pub struct RenderContext<'a> {
     pub children: Vec<ClientComponentNode<'a>>,
     pub id: String,
+}
+
+/// Put this in the root component, at the end of the body
+///
+/// # Example
+///
+/// ```
+/// view! {
+///     html(lang="en") {
+///         head {
+///             title {
+///                 { "My App" }
+///             }
+///         }
+///         body {
+///             button {
+///                 { self.count }
+///             }
+///             @QUUXInitialise
+///         }
+///     }
+/// }
+/// ```
+pub struct QUUXInitialise;
+
+impl Component for QUUXInitialise {
+    type Props = ();
+
+    fn init(props: Self::Props) -> Self {
+        Self {}
+    }
+}
+
+impl Render for QUUXInitialise {
+    fn render(&self) -> RenderData {
+        RenderData {
+            html: format!("<script type=\"module\">{}</script>", include_str!("../../dist/wasm/quux.js")),
+            render_context: RenderContext {
+                children: Vec::new(),
+                id: String::new(),
+            },
+        }
+    }
 }

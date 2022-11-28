@@ -7,7 +7,7 @@ use syn::{
 
 #[derive(Clone)]
 pub enum Item {
-    ReactiveStore(Ident),
+    ReactiveStore(Expr),
     Component(Component),
     Element(Element),
     Expression(Expr),

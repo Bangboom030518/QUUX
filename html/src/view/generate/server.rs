@@ -1,6 +1,7 @@
 use super::super::parse::{Attribute, AttributeValue, Element, Item, Component, Prop};
 use proc_macro2::TokenStream;
 use quote::quote;
+use shared::generate_id;
 use std::collections::HashMap;
 use syn::Expr;
 
@@ -94,11 +95,17 @@ fn read_item(item: Item, data: &Data) -> Data {
                 quote!{ #key : #value }
             });
             let mut component_nodes = data.component_nodes.clone();
+            let id = generate_id();
             component_nodes.push(quote! {
                 shared::ClientComponentNode {
-                    #name {
+                    component: &#name {
                         #(#props),*
-                    }
+                    },
+                    render_context: shared::RenderContext {
+                        id: shared::generate_id(),
+                        children: Vec::new(),
+                    },
+                    static_id: #id,
                 }
             });
             Data {

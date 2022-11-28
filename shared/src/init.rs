@@ -1,12 +1,8 @@
-use crate::Component;
+mod client;
+mod server;
 
 #[cfg(not(target = "wasm"))]
-pub fn init_app<T, P>(component: T)
-where
-    T: Component<Props = P>,
-{
-    let render_data = component.render();
+pub use server::init_app;
 
-    println!("{}", render_data.html);
-    // todo!("Implement `init_app`");
-}
+#[cfg(target = "wasm")]
+pub use client::init_app;
