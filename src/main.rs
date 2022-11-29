@@ -1,3 +1,4 @@
+#![feature(more_qualified_paths)]
 use html::view;
 use shared::QUUXInitialise;
 use shared::{init_app, Component, Render, RenderData, Store};

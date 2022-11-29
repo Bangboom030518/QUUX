@@ -98,9 +98,9 @@ fn read_item(item: Item, data: &Data) -> Data {
             let id = generate_id();
             component_nodes.push(quote! {
                 shared::ClientComponentNode {
-                    component: &#name ::init( <#name as shared::Component>::Props {
+                    component: Box::new(#name ::init( <#name as shared::Component>::Props {
                         #(#props),*
-                    }),
+                    })),
                     render_context: shared::RenderContext {
                         id: shared::generate_id(),
                         children: Vec::new(),
