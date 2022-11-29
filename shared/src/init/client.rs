@@ -1,3 +1,5 @@
+#![cfg(target = "wasm")]
+
 use crate::Component;
 use wasm_bindgen::prelude::*;
 

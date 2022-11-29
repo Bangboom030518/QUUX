@@ -18,9 +18,9 @@ pub fn generate_id() -> String {
     GLOBAL_ID.fetch_add(1, Ordering::Relaxed).to_string()
 }
 
-pub struct RenderData<'a> {
+pub struct RenderData {
     pub html: String,
-    pub render_context: RenderContext<'a>,
+    pub render_context: RenderContext,
 }
 
 pub trait Render {
@@ -38,9 +38,9 @@ pub trait Component: Render {
 }
 
 /// Represents a reactive node on the client. Only for `Component`s.
-pub struct ClientComponentNode<'a> {
-    pub component: &'a dyn Render,
-    pub render_context: RenderContext<'a>,
+pub struct ClientComponentNode {
+    pub component: Box<dyn Render>,
+    pub render_context: RenderContext,
     /// This is **only** for the parent to know where this child is. This child will never know its static, as it's not included in the `RenderContext`.
     pub static_id: &'static str,
 }
@@ -51,8 +51,8 @@ pub struct ClientComponentNode<'a> {
 ///
 /// For an `view!()`, this will contain an id used on the client for reactivity, as well as any children that are components.
 /// This will allow for a `view!()` to manage its children by encapsulating them under one unique id.
-pub struct RenderContext<'a> {
-    pub children: Vec<ClientComponentNode<'a>>,
+pub struct RenderContext {
+    pub children: Vec<ClientComponentNode>,
     pub id: String,
 }
 
@@ -77,12 +77,15 @@ pub struct RenderContext<'a> {
 ///     }
 /// }
 /// ```
+
+pub struct EmptyProps {}
+
 pub struct QUUXInitialise;
 
 impl Component for QUUXInitialise {
-    type Props = ();
+    type Props = EmptyProps;
 
-    fn init(props: Self::Props) -> Self {
+    fn init(_: Self::Props) -> Self {
         Self {}
     }
 }
@@ -90,7 +93,10 @@ impl Component for QUUXInitialise {
 impl Render for QUUXInitialise {
     fn render(&self) -> RenderData {
         RenderData {
-            html: format!("<script type=\"module\">{}</script>", include_str!("../../dist/wasm/quux.js")),
+            html: format!(
+                "<script type=\"module\">{}</script>",
+                include_str!("../../dist/wasm/quux.js")
+            ),
             render_context: RenderContext {
                 children: Vec::new(),
                 id: String::new(),
