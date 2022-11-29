@@ -144,8 +144,8 @@ impl Parse for Prop {
 
 #[derive(Clone)]
 pub enum AttributeValue {
-    Reactive(Ident),
-    Static(Box<Expr>),
+    Reactive(Expr),
+    Static(Expr),
 }
 
 impl Parse for AttributeValue {

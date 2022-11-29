@@ -1,36 +1,47 @@
-use super::super::parse::{Attribute, AttributeValue, Element, Item, Component, Prop};
+use super::super::parse::{Attribute, AttributeValue, Component, Element, Item, Prop};
 use proc_macro2::TokenStream;
 use quote::quote;
 use shared::generate_id;
 use std::collections::HashMap;
 use syn::Expr;
 
+struct Attributes {
+    keys: Vec<String>,
+    values: Vec<Expr>,
+    dyn_attributes: HashMap<String, Expr>,
+}
 
-fn format_attributes(
-    attributes: Vec<Attribute>,
-) -> (HashMap<String, Expr>, HashMap<String, String>) {
-    let mut dyn_attributes: HashMap<String, String> = HashMap::new();
-    let attributes: HashMap<String, Expr> =
-        HashMap::from_iter(attributes.into_iter().map(|Attribute { key, value }| {
-            let key = key.to_string();
-            match value {
-                AttributeValue::Static(expr) => (key, *expr),
-                AttributeValue::Reactive(ident) => {
-                    dyn_attributes.insert(key.clone(), ident.to_string());
-                    (
-                        key,
-                        syn::parse::<Expr>(
-                            quote! {
-                                quux::Store::get(#ident)
-                            }
-                            .into(),
+impl From<Vec<Attribute>> for Attributes {
+    fn from(attributes: Vec<Attribute>) -> Self {
+        let mut dyn_attributes = HashMap::new();
+        let (keys, values): (Vec<_>, Vec<_>) = attributes
+            .into_iter()
+            .map(|Attribute { key, value }| {
+                let key = key.to_string();
+                match value {
+                    AttributeValue::Static(expr) => (key, expr),
+                    AttributeValue::Reactive(expr) => {
+                        dyn_attributes.insert(key.clone(), expr.clone());
+                        (
+                            key,
+                            syn::parse::<Expr>(
+                                quote! {
+                                    quux::Store::get(#expr)
+                                }
+                                .into(),
+                            )
+                            .expect("failed to parse `quux::Store::get(#ident)` (internal)"),
                         )
-                        .expect("failed to parse `quux::Store::get(#ident)` (internal)"),
-                    )
+                    }
                 }
-            }
-        }));
-    (attributes, dyn_attributes)
+            })
+            .unzip();
+        Self {
+            keys,
+            values,
+            dyn_attributes,
+        }
+    }
 }
 
 #[derive(Default)]
@@ -51,8 +62,11 @@ fn read_item(item: Item, data: &Data) -> Data {
         }) => {
             // TODO: deal with reactive stores as attribute values
             // TODO: make WORK
-            let (attributes, dyn_attributes) = format_attributes(attributes);
-            let (keys, values): (Vec<_>, Vec<_>) = attributes.into_iter().unzip();
+            let Attributes {
+                keys,
+                values,
+                dyn_attributes,
+            } = attributes.into();
             let html_string = format!(
                 "<{0} {1}>{{}}</{0}>",
                 tag_name.to_string(),
@@ -70,7 +84,7 @@ fn read_item(item: Item, data: &Data) -> Data {
                     (quote! { &#html }, component_nodes)
                 })
                 .unzip();
-            
+
             let component_nodes = component_nodes.concat();
 
             html.insert(0, quote! { String::new() });
@@ -92,7 +106,7 @@ fn read_item(item: Item, data: &Data) -> Data {
         }
         Item::Component(Component { name, props }) => {
             let props = props.into_iter().map(|Prop { key, value }| {
-                quote!{ #key : #value }
+                quote! { #key : #value }
             });
             let mut component_nodes = data.component_nodes.clone();
             let id = generate_id();
@@ -125,7 +139,10 @@ fn read_item(item: Item, data: &Data) -> Data {
 
 #[cfg(not(target = "wasm"))]
 pub fn generate(tree: Element) -> TokenStream {
-    let Data { html, component_nodes } = read_item(Item::Element(tree), &Data::default());
+    let Data {
+        html,
+        component_nodes,
+    } = read_item(Item::Element(tree), &Data::default());
     quote! {
         shared::RenderData {
             html: #html,
