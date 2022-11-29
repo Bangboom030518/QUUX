@@ -1,13 +1,8 @@
 #![feature(more_qualified_paths)]
+use axum::{response::Html, routing::get, Router};
 use html::view;
 use shared::QUUXInitialise;
 use shared::{init_app, Component, Render, RenderData, Store};
-use axum::{
-    routing::{get, post},
-    http::StatusCode,
-    response::{IntoResponse, Html},
-    Json, Router,
-};
 use std::net::SocketAddr;
 
 mod tests;
@@ -48,13 +43,11 @@ async fn root() -> Html<String> {
 
 #[tokio::main]
 async fn main() {
-    let app = Router::new()
-        .route("/", get(root));
+    let app = Router::new().route("/", get(root));
     let address = SocketAddr::from(([127, 0, 0, 1], 3000));
     println!("listening on {}", address);
     axum::Server::bind(&address)
         .serve(app.into_make_service())
         .await
         .unwrap();
-
 }

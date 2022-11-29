@@ -1,3 +1,4 @@
+#![cfg(not(target="wasm"))]
 use crate::Component;
 
 pub fn init_app<T, P>(component: T) -> String

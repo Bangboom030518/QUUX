@@ -1,3 +1,5 @@
+#![cfg(target="wasm")]
+
 use super::super::parse::Item;
 use quote::quote;
 use proc_macro2::TokenStream;

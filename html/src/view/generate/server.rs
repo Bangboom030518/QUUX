@@ -1,3 +1,5 @@
+#![cfg(not(target="wasm"))]
+
 use super::super::parse::{Attribute, AttributeValue, Component, Element, Item, Prop};
 use proc_macro2::TokenStream;
 use quote::quote;

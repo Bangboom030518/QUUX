@@ -85,7 +85,7 @@ pub struct QUUXInitialise;
 impl Component for QUUXInitialise {
     type Props = EmptyProps;
 
-    fn init(props: Self::Props) -> Self {
+    fn init(_: Self::Props) -> Self {
         Self {}
     }
 }
