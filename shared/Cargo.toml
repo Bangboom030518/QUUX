@@ -5,3 +5,6 @@ edition = "2021"
 
 [dependencies]
 wasm-bindgen = { workspace = true }
+uuid = { version = "1.2", features = ["v4"] }
+lazy_static = "1.4"
+deku = "0.15"

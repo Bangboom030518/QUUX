@@ -5,7 +5,7 @@ use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use shared::generate_id;
 use std::collections::HashMap;
-use syn::{Expr, Ident};
+use syn::Expr;
 
 struct Attributes {
     keys: Vec<String>,

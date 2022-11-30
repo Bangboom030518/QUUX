@@ -16,9 +16,6 @@ wasm-bindgen = { workspace = true }
 [target.'cfg(not(target_arch="wasm32"))'.dependencies]
 axum = { version = "0.6", features = ["headers"]}
 tokio = { workspace = true }
-tower-http = { version = "0.3", features = ["full"] }
-tower = { version = "0.4", features = ["full"] }
-
 
 [workspace.dependencies]
 wasm-bindgen = "0.2"
