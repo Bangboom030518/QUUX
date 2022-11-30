@@ -1,1 +1,1 @@
-wasm-pack build --target web --out-dir dist/wasm
+wasm-pack build --target web --out-dir assets

@@ -94,8 +94,8 @@ impl Render for QUUXInitialise {
     fn render(&self) -> RenderData {
         RenderData {
             html: format!(
-                "<script type=\"module\">{}</script>",
-                include_str!("../../dist/wasm/quux.js")
+                "<script type=\"module\">{}; await init('./assets/quux_bg.wasm')</script>",
+                include_str!("../../assets/quux.js")
             ),
             render_context: RenderContext {
                 children: Vec::new(),

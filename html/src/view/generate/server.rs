@@ -1,11 +1,11 @@
-#![cfg(not(target="wasm"))]
+#![cfg(not(target = "wasm"))]
 
 use super::super::parse::{Attribute, AttributeValue, Component, Element, Item, Prop};
 use proc_macro2::TokenStream;
-use quote::quote;
+use quote::{format_ident, quote};
 use shared::generate_id;
 use std::collections::HashMap;
-use syn::Expr;
+use syn::{Expr, Ident};
 
 struct Attributes {
     keys: Vec<String>,
@@ -52,6 +52,8 @@ struct Data {
     html: TokenStream,
     /// tokens generating a `RenderContext` struct
     component_nodes: Vec<TokenStream>,
+    /// the component which must be inserted into the view
+    component_constructors: Vec<TokenStream>,
 }
 
 /// Generates data for a single item in a view
@@ -76,18 +78,21 @@ fn read_item(item: Item, data: &Data) -> Data {
                     .map(|key| format!("{key}=\"{{}}\""))
                     .collect::<String>(),
             );
-            let (mut html, component_nodes): (Vec<_>, Vec<_>) = content
-                .into_iter()
-                .map(|item| {
-                    let Data {
-                        component_nodes,
-                        html,
-                    } = read_item(item, data);
-                    (quote! { &#html }, component_nodes)
-                })
-                .unzip();
+            let (mut html, (component_nodes, component_constructors)): (Vec<_>, (Vec<_>, Vec<_>)) =
+                content
+                    .into_iter()
+                    .map(|item| {
+                        let Data {
+                            component_nodes,
+                            html,
+                            component_constructors,
+                        } = read_item(item, data);
+                        (quote! { &#html }, (component_nodes, component_constructors))
+                    })
+                    .unzip();
 
             let component_nodes = component_nodes.concat();
+            let component_constructors = component_constructors.concat();
 
             html.insert(0, quote! { String::new() });
 
@@ -104,36 +109,45 @@ fn read_item(item: Item, data: &Data) -> Data {
             Data {
                 html,
                 component_nodes,
+                component_constructors,
             }
         }
         Item::Component(Component { name, props }) => {
+            let component_id = generate_id();
+            let component_ident = format_ident!("component_{}", component_id);
+            let rendered_component_ident = format_ident!("rendered_component_{}", component_id);
             let props = props.into_iter().map(|Prop { key, value }| {
                 quote! { #key : #value }
             });
-            let mut component_nodes = data.component_nodes.clone();
-            let id = generate_id();
-            component_nodes.push(quote! {
+            let component_nodes = vec![quote! {
                 shared::ClientComponentNode {
-                    component: Box::new(#name ::init( <#name as shared::Component>::Props {
-                        #(#props),*
-                    })),
+                    component: Box::new(#component_ident),
                     render_context: shared::RenderContext {
                         id: shared::generate_id(),
                         children: Vec::new(),
                     },
-                    static_id: #id,
+                    static_id: #component_id,
                 }
-            });
+            }];
+            let component_constructors = vec![quote! {
+                let #component_ident = #name ::init(<#name as shared::Component>::Props {
+                    #(#props),*
+                });
+                let #rendered_component_ident = #component_ident.render();
+            }];
+
             Data {
-                html: quote! { String::new() },
+                html: quote! { #rendered_component_ident.html },
                 component_nodes,
+                component_constructors,
             }
         }
         Item::Expression(expression) => Data {
             html: quote! {
                 #expression.to_string()
             },
-            component_nodes: data.component_nodes.clone(),
+            component_nodes: Vec::new(),
+            component_constructors: Vec::new(),
         },
         Item::ReactiveStore(_) => todo!("Implement Reactive Stores"),
     }
@@ -144,16 +158,22 @@ pub fn generate(tree: Element) -> TokenStream {
     let Data {
         html,
         component_nodes,
+        component_constructors,
     } = read_item(Item::Element(tree), &Data::default());
-    quote! {
-        shared::RenderData {
-            html: #html,
-            render_context: shared::RenderContext {
-                id: shared::generate_id(),
-                children: vec![
-                    #(#component_nodes),*
-                ],
+    let tokens = quote! {
+        {
+            #(#component_constructors)*
+            shared::RenderData {
+                html: #html,
+                render_context: shared::RenderContext {
+                    id: shared::generate_id(),
+                    children: vec![
+                        #(#component_nodes),*
+                    ],
+                }
             }
         }
-    }
+    };
+    std::fs::write("expansion.rs", quote! {fn main() {#tokens}}.to_string()).unwrap();
+    tokens
 }
