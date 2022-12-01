@@ -1,4 +1,4 @@
-#![cfg(not(target = "wasm"))]
+#![cfg(not(target_arch = "wasm32"))]
 
 use super::super::parse::{Attribute, AttributeValue, Component, Element, Item, Prop};
 use proc_macro2::TokenStream;
@@ -153,7 +153,6 @@ fn read_item(item: Item, data: &Data) -> Data {
     }
 }
 
-#[cfg(not(target = "wasm"))]
 pub fn generate(tree: Element) -> TokenStream {
     let Data {
         html,

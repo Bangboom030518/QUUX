@@ -1,4 +1,4 @@
-#![cfg(target="wasm")]
+#![cfg(target_arch="wasm32")]
 
 use super::super::parse::Item;
 use quote::quote;
