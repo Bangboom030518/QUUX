@@ -1,6 +1,7 @@
 #![feature(more_qualified_paths)]
 use html::view;
-use shared::{Component, QUUXInitialise, Render, RenderData, Store};
+use serde::{Deserialize, Serialize};
+use shared::{Component, QUUXInitialise, RenderData, Store};
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -14,11 +15,12 @@ pub fn init_app() {
     log("Hello!")
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct App<'a> {
     count: Store<'a, u32>,
 }
 
-impl<'a> Component for App<'a> {
+impl<'a> Component<'a> for App<'a> {
     type Props = ();
 
     fn init(_props: Self::Props) -> Self {
@@ -26,9 +28,6 @@ impl<'a> Component for App<'a> {
             count: Store::new(0),
         }
     }
-}
-
-impl<'a> Render for App<'a> {
     fn render(&self) -> RenderData {
         view! {
             html(lang="en") {

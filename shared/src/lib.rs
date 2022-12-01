@@ -1,12 +1,13 @@
 use std::sync::atomic::{AtomicU64, Ordering};
 pub use stores::Store;
 pub mod stores;
-use deku::prelude::*;
-use lazy_static::lazy_static;
-use uuid::Uuid;
+use base64::encode;
+pub use postcard;
+use serde::{Deserialize, Serialize};
 
-lazy_static! {
-    pub static ref TREE_INTERPOLATION_ID: Uuid = Uuid::new_v4();
+#[cfg(not(target_arch = "wasm32"))]
+lazy_static::lazy_static! {
+    pub static ref TREE_INTERPOLATION_ID: uuid::Uuid = uuid::Uuid::new_v4();
 }
 
 static GLOBAL_ID: AtomicU64 = AtomicU64::new(0);
@@ -18,18 +19,20 @@ pub fn escape(input: &str) -> String {
         .replace('"', "&quot;")
 }
 
-pub fn render_to_string<T, P>(component: T) -> String
+#[cfg(not(target_arch = "wasm32"))]
+pub fn render_to_string<'a, T, P>(component: T) -> String
 where
-    T: Component<Props = P>,
+    T: Component<'a, Props = P>,
 {
     let RenderData {
         html,
         render_context,
     } = component.render();
-    let render_context = render_context;
+    let bytes = postcard::to_stdvec(&render_context).expect("Failed to serialize `RenderContext` (internal)");
+    let render_context = encode(bytes);
     format!(
         "<!DOCTYPE html>{}",
-        html.replace(&TREE_INTERPOLATION_ID.to_string(), render_context)
+        html.replace(&TREE_INTERPOLATION_ID.to_string(), &render_context)
     )
 }
 
@@ -42,7 +45,11 @@ pub struct RenderData {
     pub render_context: RenderContext,
 }
 
-pub trait Render: DekuRead<'static> + DekuWrite {
+pub trait Component<'a>: Serialize + Deserialize<'a> {
+    type Props;
+
+    fn init(props: Self::Props) -> Self;
+
     #[cfg(target_arch = "wasm32")]
     fn render(&self, context: RenderContext);
 
@@ -50,19 +57,14 @@ pub trait Render: DekuRead<'static> + DekuWrite {
     fn render(&self) -> RenderData;
 }
 
-pub trait Component: Render {
-    type Props;
-
-    fn init(props: Self::Props) -> Self;
-}
-
-#[derive(DekuRead, DekuWrite)]
+#[derive(Serialize, Deserialize)]
 /// Represents a reactive node on the client. Only for `Component`s.
 pub struct ClientComponentNode {
-    pub component: Box<dyn Render>,
+    // The serialised component
+    pub component: Vec<u8>,
     pub render_context: RenderContext,
     /// This is **only** for the parent to know where this child is. This child will never know its static, as it's not included in the `RenderContext`.
-    pub static_id: &'static str,
+    pub static_id: String,
 }
 
 /// The id is passed to render method on client
@@ -71,11 +73,13 @@ pub struct ClientComponentNode {
 ///
 /// For an `view!()`, this will contain an id used on the client for reactivity, as well as any children that are components.
 /// This will allow for a `view!()` to manage its children by encapsulating them under one unique id.
-#[derive(DekuRead, DekuWrite)]
+#[derive(Serialize, Deserialize)]
 pub struct RenderContext {
     pub children: Vec<ClientComponentNode>,
     pub id: String,
 }
+
+pub struct EmptyProps {}
 
 /// Put this in the root component, at the end of the body
 ///
@@ -83,35 +87,26 @@ pub struct RenderContext {
 ///
 /// ```
 /// view! {
-///     html(lang="en") {
-///         head {
-///             title {
-///                 { "My App" }
-///             }
-///         }
+///     html {
+///         ...
 ///         body {
-///             button {
-///                 { self.count }
-///             }
+///             ...
 ///             @QUUXInitialise
 ///         }
 ///     }
 /// }
 /// ```
-
-pub struct EmptyProps {}
-
+#[derive(Serialize, Deserialize)]
 pub struct QUUXInitialise;
 
-impl Component for QUUXInitialise {
+impl<'a> Component<'a> for QUUXInitialise {
     type Props = EmptyProps;
 
     fn init(_: Self::Props) -> Self {
         Self {}
     }
-}
 
-impl Render for QUUXInitialise {
+    #[cfg(not(target_arch = "wasm32"))]
     fn render(&self) -> RenderData {
         RenderData {
             html: format!(
@@ -125,4 +120,7 @@ impl Render for QUUXInitialise {
             },
         }
     }
+
+    #[cfg(target_arch = "wasm32")]
+    fn render(&self, _: RenderContext) {}
 }

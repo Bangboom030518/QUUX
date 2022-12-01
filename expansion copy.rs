@@ -21,12 +21,13 @@ fn main() {
             render_context: shared::RenderContext {
                 id: shared::generate_id(),
                 children: vec![shared::ClientComponentNode {
-                    component: Box::new(component_0),
+                    component: shared::postcard::to_stdvec(&component_0)
+                        .expect("Couldn't serialize component tree (internal)"),
                     render_context: shared::RenderContext {
                         id: shared::generate_id(),
                         children: Vec::new(),
                     },
-                    static_id: "0",
+                    static_id: "0".to_string(),
                 }],
             },
         }

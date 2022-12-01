@@ -1,14 +1,20 @@
+use std::fmt;
+
+use serde::{Deserialize, Serialize};
+
 pub type StoreCallback<'a, T> = dyn FnMut(&T, &T) + 'a;
 
-pub struct Store<'a, T: std::fmt::Display>
+#[derive(Serialize, Deserialize)]
+pub struct Store<'a, T: fmt::Display>
 where
     Self: 'a,
 {
     value: T,
+    #[serde(skip)]
     listeners: Vec<Box<StoreCallback<'a, T>>>,
 }
 
-impl<'a, T: std::fmt::Display> Store<'a, T> {
+impl<'a, T: fmt::Display + Serialize> Store<'a, T> {
     /// Creates a new store.
     pub fn new(value: T) -> Self {
         Self {
@@ -41,8 +47,8 @@ impl<'a, T: std::fmt::Display> Store<'a, T> {
     }
 }
 
-impl<'a, T: std::fmt::Display> std::fmt::Display for Store<'a, T> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl<'a, T: fmt::Display + Serialize> fmt::Display for Store<'a, T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.value)
     }
 }

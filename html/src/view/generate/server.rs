@@ -32,7 +32,7 @@ impl From<Vec<Attribute>> for Attributes {
                                 }
                                 .into(),
                             )
-                            .expect("failed to parse `quux::Store::get(#ident)` (internal)"),
+                            .expect("failed to parse `quux::Store::get(#ident)` (QUUX internal)"),
                         )
                     }
                 }
@@ -121,12 +121,12 @@ fn read_item(item: Item, data: &Data) -> Data {
             });
             let component_nodes = vec![quote! {
                 shared::ClientComponentNode {
-                    component: Box::new(#component_ident),
+                    component: shared::postcard::to_stdvec(&#component_ident).expect("Couldn't serialize component tree (QUUX internal)"),
                     render_context: shared::RenderContext {
                         id: shared::generate_id(),
                         children: Vec::new(),
                     },
-                    static_id: #component_id,
+                    static_id: #component_id.to_string(),
                 }
             }];
             let component_constructors = vec![quote! {
