@@ -29,7 +29,7 @@ fn read_item(item: Item) -> Data {
                 .collect();
             Data { components }
         }
-        Item::Expression(expr) => Data::new(),
+        Item::Expression(_) => Data::new(),
         Item::ReactiveStore(store) => Data::new(),
     }
 }

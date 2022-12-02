@@ -67,6 +67,7 @@ impl<'a> Component<'a> for App<'a> {
 
     #[cfg(target_arch = "wasm32")]
     fn render(&self, context: shared::RenderContext) {
+        log("The `render` method of `App` has been called.");
         view! {
             html(lang="en") {
                 head {}
