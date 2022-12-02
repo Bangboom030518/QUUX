@@ -1,3 +1,5 @@
+// #![warn(clippy::pedantic, clippy::nursery)]
+#![cfg(not(target_arch = "wasm32"))]
 use axum::{
     headers::{ContentType, Header, HeaderValue},
     response::Html,

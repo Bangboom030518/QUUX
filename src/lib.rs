@@ -1,10 +1,9 @@
-#![feature(more_qualified_paths)]
+#![feature(more_qualified_paths, stmt_expr_attributes)]
+// #![warn(clippy::pedantic, clippy::nursery)]
 use html::view;
 use serde::{Deserialize, Serialize};
 use shared::{Component, QUUXInitialise, RenderData, Store};
 use wasm_bindgen::prelude::*;
-#[cfg(target_arch = "wasm32")]
-use web_sys::window;
 
 #[wasm_bindgen]
 extern "C" {
@@ -13,21 +12,28 @@ extern "C" {
 }
 
 #[cfg(target_arch = "wasm32")]
+fn document() -> web_sys::Document {
+    web_sys::window().unwrap().document().unwrap()
+}
+
+#[cfg(target_arch = "wasm32")]
 #[wasm_bindgen(start)]
 pub fn init_app() {
-    let init_script = window()
-        .unwrap()
-        .document()
-        .unwrap()
+    std::panic::set_hook(Box::new(console_error_panic_hook::hook));
+
+    let init_script = document()
         .get_element_by_id("__quux_init_script__")
         .expect("`__quux_init_script__` not found");
+
     let tree = init_script
         .get_attribute("data-quux-tree")
         .expect("`__quux_init_script__` doesn't have a tree attached");
-    let tree: shared::RenderContext =
+    let tree: shared::ClientComponentNode =
         postcard::from_bytes(&base64::decode(tree).expect("Failed to decode tree as base64"))
             .expect("Render context tree malformatted");
-    log(&tree.id);
+    let root_component: App =
+        shared::postcard::from_bytes(&tree.component).expect("failed to deserialize Component");
+    root_component.render(tree.render_context);
 }
 
 #[derive(Serialize, Deserialize)]

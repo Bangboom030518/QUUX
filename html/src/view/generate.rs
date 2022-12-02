@@ -1,8 +1,20 @@
-mod server;
+use super::parse::Element;
+use proc_macro2::TokenStream;
+use quote::quote;
+
 mod client;
+mod server;
 
-#[cfg(not(target_arch="wasm32"))]
-pub use server::generate;
-
-#[cfg(target_arch="wasm32")]
-pub use client::generate;
+pub fn generate(tree: Element) -> TokenStream {
+    let server = server::generate(&tree);
+    let client = client::generate(&tree);
+    quote! {
+        shared::cfg_if::cfg_if! {
+            if #[cfg(target_arch = "wasm32")] {
+                {#client}
+            } else {
+                {#server}
+            }
+        }
+    }
+}

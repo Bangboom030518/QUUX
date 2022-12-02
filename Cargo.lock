@@ -131,6 +131,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "67ba02a97a2bd10f4b59b25c7973101c79642302776489e030cd13cdab09ed15"
 
 [[package]]
+name = "console_error_panic_hook"
+version = "0.1.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a06aeb73f470f66dcdbf7223caeebb85984942f22f1adb2a088cf9668146bbbc"
+dependencies = [
+ "cfg-if",
+ "wasm-bindgen",
+]
+
+[[package]]
 name = "cpufeatures"
 version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -552,6 +562,7 @@ version = "0.1.0"
 dependencies = [
  "axum",
  "base64",
+ "console_error_panic_hook",
  "html",
  "lazy_static",
  "postcard",
@@ -672,6 +683,7 @@ name = "shared"
 version = "0.1.0"
 dependencies = [
  "base64",
+ "cfg-if",
  "lazy_static",
  "postcard",
  "serde",

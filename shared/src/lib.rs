@@ -1,8 +1,10 @@
+// #![warn(clippy::pedantic, clippy::nursery)]
 use std::sync::atomic::{AtomicU64, Ordering};
 pub use stores::Store;
 pub mod stores;
 use base64::encode;
 pub use postcard;
+pub use cfg_if;
 use serde::{Deserialize, Serialize};
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -10,6 +12,7 @@ lazy_static::lazy_static! {
     pub static ref TREE_INTERPOLATION_ID: uuid::Uuid = uuid::Uuid::new_v4();
 }
 
+// TODO: Mallory could be naughty. ID should not be global, but should be unique to each request.
 static GLOBAL_ID: AtomicU64 = AtomicU64::new(0);
 
 pub fn escape(input: &str) -> String {
@@ -26,13 +29,14 @@ where
 {
     let RenderData {
         html,
-        render_context,
+        component_node,
     } = component.render();
-    let bytes = postcard::to_stdvec(&render_context).expect("Failed to serialize `RenderContext` (internal)");
-    let render_context = encode(bytes);
+    let bytes = postcard::to_stdvec(&component_node)
+        .expect("Failed to serialize `RenderContext` (internal)");
+    let component_node = encode(bytes);
     format!(
         "<!DOCTYPE html>{}",
-        html.replace(&TREE_INTERPOLATION_ID.to_string(), &render_context)
+        html.replace(&TREE_INTERPOLATION_ID.to_string(), &component_node)
     )
 }
 
@@ -42,7 +46,7 @@ pub fn generate_id() -> String {
 
 pub struct RenderData {
     pub html: String,
-    pub render_context: RenderContext,
+    pub component_node: ClientComponentNode,
 }
 
 pub trait Component<'a>: Serialize + Deserialize<'a> {
@@ -60,11 +64,9 @@ pub trait Component<'a>: Serialize + Deserialize<'a> {
 #[derive(Serialize, Deserialize)]
 /// Represents a reactive node on the client. Only for `Component`s.
 pub struct ClientComponentNode {
-    // The serialised component
+    /// The serialised component
     pub component: Vec<u8>,
     pub render_context: RenderContext,
-    /// This is **only** for the parent to know where this child is. This child will never know its static, as it's not included in the `RenderContext`.
-    pub static_id: String,
 }
 
 /// The id is passed to render method on client
@@ -114,12 +116,16 @@ impl<'a> Component<'a> for QUUXInitialise {
                 *TREE_INTERPOLATION_ID,
                 include_str!("../../assets/quux.js"),
             ),
-            render_context: RenderContext {
-                children: Vec::new(),
-                id: String::new(),
+            component_node: ClientComponentNode {
+                component: postcard::to_stdvec(&self).expect("Failed to serialize component (quux_"),
+                render_context: RenderContext {
+                    children: Vec::new(),
+                    id: String::new(),
+                }
             },
         }
     }
+    // #parent's-dynamic [data-quux-static="static-id"]
 
     #[cfg(target_arch = "wasm32")]
     fn render(&self, _: RenderContext) {}

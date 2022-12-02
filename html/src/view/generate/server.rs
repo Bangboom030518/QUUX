@@ -46,7 +46,6 @@ impl From<Vec<Attribute>> for Attributes {
     }
 }
 
-#[derive(Default)]
 struct Data {
     /// tokens generating static SSR'd html
     html: TokenStream,
@@ -57,7 +56,7 @@ struct Data {
 }
 
 /// Generates data for a single item in a view
-fn read_item(item: Item, data: &Data) -> Data {
+fn read_item(item: Item) -> Data {
     match item {
         Item::Element(Element {
             tag_name,
@@ -86,7 +85,7 @@ fn read_item(item: Item, data: &Data) -> Data {
                             component_nodes,
                             html,
                             component_constructors,
-                        } = read_item(item, data);
+                        } = read_item(item);
                         (quote! { &#html }, (component_nodes, component_constructors))
                     })
                     .unzip();
@@ -126,7 +125,6 @@ fn read_item(item: Item, data: &Data) -> Data {
                         id: shared::generate_id(),
                         children: Vec::new(),
                     },
-                    static_id: #component_id.to_string(),
                 }
             }];
             let component_constructors = vec![quote! {
@@ -139,7 +137,7 @@ fn read_item(item: Item, data: &Data) -> Data {
             Data {
                 html: quote! { #rendered_component_ident.html },
                 component_nodes,
-                component_constructors,
+                component_constructors
             }
         }
         Item::Expression(expression) => Data {
@@ -153,17 +151,20 @@ fn read_item(item: Item, data: &Data) -> Data {
     }
 }
 
-pub fn generate(tree: Element) -> TokenStream {
+pub fn generate(tree: &Element) -> TokenStream {
+    let tree = tree.clone();
     let Data {
         html,
         component_nodes,
         component_constructors,
-    } = read_item(Item::Element(tree), &Data::default());
+    } = read_item(Item::Element(tree));
+    
     let tokens = quote! {
-        {
-            #(#component_constructors)*
-            shared::RenderData {
-                html: #html,
+        #(#component_constructors)*
+        shared::RenderData {
+            html: #html,
+            component_node: shared::ClientComponentNode {
+                component: shared::postcard::to_stdvec(self).expect("Couldn't serialize component (quux internal error)"),
                 render_context: shared::RenderContext {
                     id: shared::generate_id(),
                     children: vec![
