@@ -7,7 +7,6 @@ use syn::{
 
 #[derive(Clone)]
 pub enum Item {
-    ReactiveStore(Expr),
     Component(Component),
     Element(Element),
     Expression(Expr),
@@ -21,10 +20,6 @@ impl Parse for Item {
             return Ok(Self::Expression(content.parse()?));
         }
 
-        if input.peek(Token![$]) && input.peek2(Ident) {
-            input.parse::<Token![$]>()?;
-            return Ok(Self::ReactiveStore(input.parse()?));
-        }
 
         if input.peek(Token![@]) {
             input.parse::<Token![@]>()?;
@@ -74,7 +69,7 @@ impl Parse for Component {
 pub struct Element {
     pub tag_name: Ident,
     pub attributes: Vec<Attribute>,
-    pub content: Vec<Item>,
+    pub content: Children,
 }
 
 impl Parse for Element {
@@ -109,6 +104,24 @@ impl Parse for Element {
             attributes,
             content,
         })
+    }
+}
+
+#[derive(Clone)]
+pub enum Children {
+    Content(Vec<Item>),
+    ReactiveStore(Expr)
+}
+
+impl Parse for Children {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        if input.peek(Token![$]) && input.peek2(Ident) {
+            input.parse::<Token![$]>()?;
+            return Ok(Self::ReactiveStore(input.parse()?));
+        } else {
+            return Ok()
+        }
+
     }
 }
 
