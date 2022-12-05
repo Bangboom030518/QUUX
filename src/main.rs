@@ -33,7 +33,7 @@ async fn main() {
         .route("/assets/quux_bg.wasm", get(wasm));
 
     let address = SocketAddr::from(([127, 0, 0, 1], 3000));
-    println!("listening on {}", address);
+    println!("listening on http://{}", address);
     axum::Server::bind(&address)
         .serve(app.into_make_service())
         .await

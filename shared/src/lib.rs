@@ -3,8 +3,8 @@ use std::sync::atomic::{AtomicU64, Ordering};
 pub use stores::Store;
 pub mod stores;
 use base64::encode;
-pub use postcard;
 pub use cfg_if;
+pub use postcard;
 use serde::{Deserialize, Serialize};
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -54,11 +54,11 @@ pub trait Component<'a>: Serialize + Deserialize<'a> {
 
     fn init(props: Self::Props) -> Self;
 
-    #[cfg(target_arch = "wasm32")]
-    fn render(&self, context: RenderContext);
-
     #[cfg(not(target_arch = "wasm32"))]
     fn render(&self) -> RenderData;
+
+    #[cfg(target_arch = "wasm32")]
+    fn render(&mut self, context: RenderContext);
 }
 
 #[derive(Serialize, Deserialize)]
@@ -128,5 +128,5 @@ impl<'a> Component<'a> for QUUXInitialise {
     // #parent's-dynamic [data-quux-static="static-id"]
 
     #[cfg(target_arch = "wasm32")]
-    fn render(&self, _: RenderContext) {}
+    fn render(&mut self, _: RenderContext) {}
 }

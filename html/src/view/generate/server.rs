@@ -1,8 +1,10 @@
-use super::super::parse::{Attribute, AttributeValue, Children, Component, Element, Item, Prop};
+use super::GLOBAL_ID;
+use crate::view::parse::{Attribute, AttributeValue, Children, Component, Element, Item, Prop};
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use shared::generate_id;
 use std::collections::HashMap;
+use std::sync::atomic::Ordering::Relaxed;
 use syn::Expr;
 
 struct Attributes {
@@ -73,7 +75,23 @@ impl From<Element> for Data {
         }: Element,
     ) -> Self {
         // TODO: deal with reactive stores as attribute values
-        // TODO: make WORK
+        let mut attributes = attributes;
+
+        let (html, component_nodes, component_constructors) =
+            match children {
+                Children::Children(children) => Self::from_element_children(children),
+                Children::ReactiveStore(store) => {
+                    let id = GLOBAL_ID.fetch_add(1, Relaxed);
+                    attributes.push(Attribute {
+                        key: format_ident!("data-quux-scoped-id"),
+                        value: AttributeValue::Static(syn::parse(quote! { #id }.into()).expect(
+                            "Couldn't parse `id` tokens as expression (quux internal error)",
+                        )),
+                    });
+                    (Self::from_reactive_store(store), Vec::new(), Vec::new())
+                }
+            };
+
         let Attributes {
             keys,
             values: attribute_values,
@@ -87,13 +105,6 @@ impl From<Element> for Data {
                 .map(|key| format!("{key}=\"{{}}\""))
                 .collect::<String>(),
         );
-
-        let (html, component_nodes, component_constructors) = match children {
-            Children::Children(children) => Self::from_element_children(children),
-            Children::ReactiveStore(store) => {
-                (Self::from_reactive_store(store), Vec::new(), Vec::new())
-            }
-        };
 
         let html = if attribute_values.is_empty() {
             quote! {

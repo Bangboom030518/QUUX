@@ -31,7 +31,7 @@ pub fn init_app() {
     let tree: shared::ClientComponentNode =
         postcard::from_bytes(&base64::decode(tree).expect("Failed to decode tree as base64"))
             .expect("Render context tree malformatted");
-    let root_component: App =
+    let mut root_component: App =
         shared::postcard::from_bytes(&tree.component).expect("failed to deserialize Component");
     root_component.render(tree.render_context);
 }
@@ -66,8 +66,9 @@ impl<'a> Component<'a> for App<'a> {
     }
 
     #[cfg(target_arch = "wasm32")]
-    fn render(&self, context: shared::RenderContext) {
+    fn render(&mut self, context: shared::RenderContext) {
         log("The `render` method of `App` has been called.");
+        self.count.set(300);
         view! {
             html(lang="en") {
                 head {}
