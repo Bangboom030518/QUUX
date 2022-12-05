@@ -1,9 +1,9 @@
 {
   "files.exclude": {
-    "..gitignore": false,
-    ".vscode": false,
-    "**/*.lock": false,
-    "target": false
+    "..gitignore": true,
+    ".vscode": true,
+    "**/*.lock": true,
+    "target": true
   },
   "rust-analyzer.cargo.target": "wasm32-unknown-unknown"
 }

@@ -1,4 +1,4 @@
-use super::super::parse::{Element, Item};
+use super::super::parse::{Element, Item, Children};
 use proc_macro2::{Ident, TokenStream};
 use quote::quote;
 
@@ -13,30 +13,44 @@ impl Data {
     }
 }
 
-fn read_item(item: Item) -> Data {
-    match item {
-        Item::Component(component) => Data {
-            components: vec![component.name],
-        },
-        Item::Element(Element {
-            tag_name,
-            attributes,
-            content,
-        }) => {
-            let components = content
-                .into_iter()
-                .flat_map(|node| read_item(node).components)
-                .collect();
-            Data { components }
+impl From<Item> for Data {
+    fn from(item: Item) -> Data {
+        match item {
+            Item::Component(component) => Data {
+                components: vec![component.name],
+            },
+            Item::Element(element) => element.into(),
+            Item::Expression(_) => Data::new()
         }
-        Item::Expression(_) => Data::new(),
-        Item::ReactiveStore(store) => Data::new(),
+    }
+}
+
+impl From<Element> for Data {
+    fn from(
+        Element {
+            attributes,
+            children,
+            ..
+        }: Element,
+    ) -> Self {
+        match children {
+            Children::Children(children) => {
+                let components = children
+                    .into_iter()
+                    .flat_map(|node| Self::from(node).components)
+                    .collect();
+                Self { components }
+            },
+            Children::ReactiveStore(store) => {
+                Self::new()
+            }
+        }
     }
 }
 
 pub fn generate(tree: &Element) -> TokenStream {
     let tree = tree.clone();
-    let Data { components } = read_item(Item::Element(tree));
+    let Data { components } = Item::Element(tree).into();
     let components = components.into_iter().map(|ident|  quote! {
         {
             let child = children.next().expect("Client and server child lists don't match");

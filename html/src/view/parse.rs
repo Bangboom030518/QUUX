@@ -69,7 +69,7 @@ impl Parse for Component {
 pub struct Element {
     pub tag_name: Ident,
     pub attributes: Vec<Attribute>,
-    pub content: Children,
+    pub children: Children,
 }
 
 impl Parse for Element {
@@ -92,24 +92,19 @@ impl Parse for Element {
             }
         }
 
-        let content_buffer;
-        braced!(content_buffer in input);
-        let mut content = Vec::new();
-        while !content_buffer.is_empty() {
-            content.push(content_buffer.parse()?);
-        }
-
+        let children;
+        braced!(children in input);
         Ok(Self {
             tag_name,
             attributes,
-            content,
+            children: children.parse()?,
         })
     }
 }
 
 #[derive(Clone)]
 pub enum Children {
-    Content(Vec<Item>),
+    Children(Vec<Item>),
     ReactiveStore(Expr)
 }
 
@@ -117,9 +112,13 @@ impl Parse for Children {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         if input.peek(Token![$]) && input.peek2(Ident) {
             input.parse::<Token![$]>()?;
-            return Ok(Self::ReactiveStore(input.parse()?));
+            Ok(Self::ReactiveStore(input.parse()?))
         } else {
-            return Ok()
+            let mut items = Vec::new();
+            while !input.is_empty() {
+                items.push(input.parse()?);
+            }
+            Ok(Self::Children(items))
         }
 
     }
