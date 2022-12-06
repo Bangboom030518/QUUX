@@ -60,6 +60,7 @@ impl From<Element> for Data {
             }
             Children::ReactiveStore(store) => {
                 // TODO: Consider initializing store only once
+                // TODO: Consider initializing the document only once
                 let id = GLOBAL_ID.fetch_add(1, Relaxed);
                 let scope_id = format_ident!("scope_id_{}", id);
                 Self {

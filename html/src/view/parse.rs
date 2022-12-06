@@ -5,6 +5,8 @@ use syn::{
     Expr, Ident, LitInt, Token,
 };
 
+mod test;
+
 #[derive(Clone)]
 pub enum Item {
     Component(Component),
