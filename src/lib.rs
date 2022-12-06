@@ -71,9 +71,17 @@ impl<'a> Component<'a> for App<'a> {
         self.count.set(300);
         view! {
             html(lang="en") {
-                head {}
+                head {
+                    style {
+                        {"
+                            .my-button {
+                                background: red;
+                            }
+                        "}
+                    }                    
+                }
                 body {
-                    button {
+                    button(class="my-button") {
                         { self.count }
                     }
                     @QUUXInitialise
