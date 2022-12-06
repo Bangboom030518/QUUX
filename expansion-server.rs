@@ -7,20 +7,13 @@ fn main()
         html : format!
         ("<html lang=\"{}\"data-quux-scope-id=\"{}\">{}</html>", "en",
         scope_id, String :: new() + & format!
-        ("<head >{}</head>", String :: new() + & format!
-        ("<style >{}</style>", String :: new() + &
-        "
-                            button {
-                                background: red;
-                                width: 100%;
-                            }
-                        ".to_string()))
-        + & format!
+        ("<head >{}</head>", String :: new()) + & format!
         ("<body >{}</body>", String :: new() + & format!
-        ("<button style=\"{}\"data-quux-scoped-id=\"{}\">{}</button>",
-        "background: red;", 0u64, shared :: Store :: get(& self.count)) + &
-        rendered_component_0.html)), component_node : shared ::
-        ClientComponentNode
+        ("<button data-quux-scoped-id=\"{}\">{}</button>", 0u64, shared ::
+        Store :: get(& self.count)) + & format!
+        ("<button data-quux-scoped-id=\"{}\">{}</button>", 1u64, shared ::
+        Store :: get(& self.count)) + & rendered_component_0.html)),
+        component_node : shared :: ClientComponentNode
         {
             component : shared :: postcard ::
             to_stdvec(self).expect("Couldn't serialize component (quux internal error)"),

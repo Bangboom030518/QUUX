@@ -1,7 +1,7 @@
 use super::GLOBAL_ID;
 use crate::view::parse::{Children, Element, Item};
 use proc_macro2::{Ident, TokenStream};
-use quote::quote;
+use quote::{quote, format_ident};
 use std::sync::atomic::Ordering::Relaxed;
 
 
@@ -61,16 +61,18 @@ impl From<Element> for Data {
             Children::ReactiveStore(store) => {
                 // TODO: Consider initializing store only once
                 let id = GLOBAL_ID.fetch_add(1, Relaxed);
+                let scope_id = format_ident!("scope_id_{}", id);
                 Self {
                     components: Vec::new(),
                     reactivity: vec![quote! {
+                        let #scope_id = Rc::clone(&scope_id);
                         shared::Store::on_change(&mut #store, move |_, new| {
                             wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlElement>(
                                 web_sys::window()
                                     .expect("Failed to get window (quux internal error)")
                                     .document()
                                     .expect("Failed to get document (quux internal error)")
-                                    .query_selector(&format!("[data-quux-scope-id='{}'] [data-quux-scoped-id='{}']", context.id, #id))
+                                    .query_selector(&format!("[data-quux-scope-id='{}'] [data-quux-scoped-id='{}']", #scope_id, #id))
                                     .expect("Failed to get element with scoped id (quux internal error)")
                                     .expect("Failed to get element with scoped id (quux internal error)")
                             )
@@ -98,7 +100,9 @@ pub fn generate(tree: &Element) -> TokenStream {
         }
     });
     let tokens = quote! {
+        use std::rc::Rc;
         let mut children = context.children.into_iter();
+        let scope_id = Rc::new(context.id);
         #( #components )*
         #( #reactivity );*
     };

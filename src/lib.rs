@@ -55,17 +55,12 @@ impl<'a> Component<'a> for App<'a> {
         view! {
             html(lang="en") {
                 head {
-                    style {
-                        {"
-                            button {
-                                background: red;
-                                width: 100%;
-                            }
-                        "}
-                    }
                 }
                 body {
-                    button(style="background: red;") {
+                    button {
+                        $self.count
+                    }
+                    button {
                         $self.count
                     }
                     @QUUXInitialise
@@ -80,17 +75,12 @@ impl<'a> Component<'a> for App<'a> {
         view! {
             html(lang="en") {
                 head {
-                    style {
-                        {"
-                            button {
-                                background: red;
-                                width: 100%;
-                            }
-                        "}
-                    }
                 }
                 body {
-                    button(style="background: red;") {
+                    button {
+                        $self.count
+                    }
+                    button {
                         $self.count
                     }
                     @QUUXInitialise
