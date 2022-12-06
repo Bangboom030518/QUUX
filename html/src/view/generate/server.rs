@@ -18,23 +18,20 @@ impl From<Vec<Attribute>> for Attributes {
         let mut dyn_attributes = HashMap::new();
         let (keys, values): (Vec<_>, Vec<_>) = attributes
             .into_iter()
-            .map(|Attribute { key, value }| {
-                let key = key.to_string();
-                match value {
-                    AttributeValue::Static(expr) => (key, expr),
-                    AttributeValue::Reactive(expr) => {
-                        dyn_attributes.insert(key.clone(), expr.clone());
-                        (
-                            key,
-                            syn::parse::<Expr>(
-                                quote! {
-                                    quux::Store::get(#expr)
-                                }
-                                .into(),
-                            )
-                            .expect("failed to parse `quux::Store::get(#ident)` (QUUX internal)"),
+            .map(|Attribute { key, value }| match value {
+                AttributeValue::Static(expr) => (key, expr),
+                AttributeValue::Reactive(expr) => {
+                    dyn_attributes.insert(key.clone(), expr.clone());
+                    (
+                        key,
+                        syn::parse::<Expr>(
+                            quote! {
+                                quux::Store::get(#expr)
+                            }
+                            .into(),
                         )
-                    }
+                        .expect("failed to parse `quux::Store::get(#ident)` (QUUX internal)"),
+                    )
                 }
             })
             .unzip();
@@ -83,7 +80,7 @@ impl From<Element> for Data {
                 Children::ReactiveStore(store) => {
                     let id = GLOBAL_ID.fetch_add(1, Relaxed);
                     attributes.push(Attribute {
-                        key: format_ident!("data-quux-scoped-id"),
+                        key: String::from("data-quux-scoped-id"),
                         value: AttributeValue::Static(syn::parse(quote! { #id }.into()).expect(
                             "Couldn't parse `id` tokens as expression (quux internal error)",
                         )),
@@ -150,7 +147,7 @@ impl Data {
     }
 
     fn from_reactive_store(store: Expr) -> TokenStream {
-        quote!(shared::Store::get(#store))
+        quote!(shared::Store::get(&#store))
     }
 }
 
@@ -162,26 +159,24 @@ impl From<Component> for Data {
         let props = props.into_iter().map(|Prop { key, value }| {
             quote! { #key : #value }
         });
-        let component_nodes = vec![quote! {
-            shared::ClientComponentNode {
-                component: shared::postcard::to_stdvec(&#component_ident).expect("Couldn't serialize component tree (QUUX internal)"),
-                render_context: shared::RenderContext {
-                    id: shared::generate_id(),
-                    children: Vec::new(),
-                },
-            }
-        }];
-        let component_constructors = vec![quote! {
-            let #component_ident = #name ::init(<#name as shared::Component>::Props {
-                #(#props),*
-            });
-            let #rendered_component_ident = #component_ident.render();
-        }];
 
         Self {
             html: quote! { #rendered_component_ident.html },
-            component_nodes,
-            component_constructors,
+            component_nodes: vec![quote! {
+                shared::ClientComponentNode {
+                    component: shared::postcard::to_stdvec(&#component_ident).expect("Couldn't serialize component tree (QUUX internal)"),
+                    render_context: shared::RenderContext {
+                        id: shared::generate_id(),
+                        children: Vec::new(),
+                    },
+                }
+            }],
+            component_constructors: vec![quote! {
+                let #component_ident = #name ::init(<#name as shared::Component>::Props {
+                    #(#props),*
+                });
+                let #rendered_component_ident = #component_ident.render();
+            }],
         }
     }
 }
@@ -199,7 +194,14 @@ impl From<Expr> for Data {
 }
 
 pub fn generate(tree: &Element) -> TokenStream {
-    let tree = tree.clone();
+    let mut tree = tree.clone();
+    tree.attributes.push(Attribute {
+        key: "data-quux-scope-id".to_string(),
+        value: AttributeValue::Static(
+            syn::parse(quote! { scope_id }.into())
+                .expect("Couldn't parse `scope_id` as Expr (quux internal error)"),
+        ),
+    });
     let Data {
         html,
         component_nodes,
@@ -207,13 +209,14 @@ pub fn generate(tree: &Element) -> TokenStream {
     } = Item::Element(tree).into();
 
     let tokens = quote! {
+        let scope_id = shared::generate_id();
         #(#component_constructors)*
         shared::RenderData {
             html: #html,
             component_node: shared::ClientComponentNode {
                 component: shared::postcard::to_stdvec(self).expect("Couldn't serialize component (quux internal error)"),
                 render_context: shared::RenderContext {
-                    id: shared::generate_id(),
+                    id: scope_id,
                     children: vec![
                         #(#component_nodes),*
                     ],
@@ -221,6 +224,10 @@ pub fn generate(tree: &Element) -> TokenStream {
             }
         }
     };
-    std::fs::write("expansion.rs", quote! {fn main() {#tokens}}.to_string()).unwrap();
+    std::fs::write(
+        "expansion-server.rs",
+        quote! {fn main() {#tokens}}.to_string(),
+    )
+    .unwrap();
     tokens
 }

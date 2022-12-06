@@ -20,7 +20,6 @@ impl Parse for Item {
             return Ok(Self::Expression(content.parse()?));
         }
 
-
         if input.peek(Token![@]) {
             input.parse::<Token![@]>()?;
             return Ok(Self::Component(input.parse()?));
@@ -105,12 +104,12 @@ impl Parse for Element {
 #[derive(Clone)]
 pub enum Children {
     Children(Vec<Item>),
-    ReactiveStore(Expr)
+    ReactiveStore(Expr),
 }
 
 impl Parse for Children {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        if input.peek(Token![$]) && input.peek2(Ident) {
+        if input.peek(Token![$]) {
             input.parse::<Token![$]>()?;
             Ok(Self::ReactiveStore(input.parse()?))
         } else {
@@ -120,19 +119,19 @@ impl Parse for Children {
             }
             Ok(Self::Children(items))
         }
-
     }
 }
 
 #[derive(Clone)]
 pub struct Attribute {
-    pub key: Ident,
+    pub key: String,
     pub value: AttributeValue,
 }
 
 impl Parse for Attribute {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        let key = input.parse()?;
+        // TODO: Allow `-` in idents
+        let key = input.parse::<Ident>()?.to_string();
         input.parse::<Token![=]>()?;
         let value = input.parse()?;
         Ok(Self { key, value })

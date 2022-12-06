@@ -54,10 +54,19 @@ impl<'a> Component<'a> for App<'a> {
     fn render(&self) -> RenderData {
         view! {
             html(lang="en") {
-                head {}
+                head {
+                    style {
+                        {"
+                            button {
+                                background: red;
+                                width: 100%;
+                            }
+                        "}
+                    }
+                }
                 body {
-                    button {
-                        { self.count }
+                    button(style="background: red;") {
+                        $self.count
                     }
                     @QUUXInitialise
                 }
@@ -68,7 +77,6 @@ impl<'a> Component<'a> for App<'a> {
     #[cfg(target_arch = "wasm32")]
     fn render(&mut self, context: shared::RenderContext) {
         log("The `render` method of `App` has been called.");
-        self.count.set(300);
         view! {
             html(lang="en") {
                 head {
@@ -79,15 +87,16 @@ impl<'a> Component<'a> for App<'a> {
                                 width: 100%;
                             }
                         "}
-                    }                    
+                    }
                 }
                 body {
                     button(style="background: red;") {
-                        { self.count }
+                        $self.count
                     }
                     @QUUXInitialise
                 }
             }
         };
+        self.count.set(300);
     }
 }

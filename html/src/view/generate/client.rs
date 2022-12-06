@@ -4,6 +4,7 @@ use proc_macro2::{Ident, TokenStream};
 use quote::quote;
 use std::sync::atomic::Ordering::Relaxed;
 
+
 #[derive(Default)]
 struct Data {
     components: Vec<Ident>,
@@ -22,7 +23,7 @@ impl From<Item> for Data {
         match item {
             Item::Component(component) => Data {
                 components: vec![component.name],
-                reactivity: Vec::new()
+                reactivity: Vec::new(),
             },
             Item::Element(element) => element.into(),
             Item::Expression(_) => Data::new(),
@@ -43,24 +44,40 @@ impl From<Element> for Data {
                 let (components, reactivity): (Vec<_>, Vec<_>) = children
                     .into_iter()
                     .map(|node| {
-                        let Self { components, reactivity } = node.into();
+                        let Self {
+                            components,
+                            reactivity,
+                        } = node.into();
                         (components, reactivity)
                     })
                     .unzip();
                 let components = components.concat();
                 let reactivity = reactivity.concat();
-                Self { components, reactivity }
+                Self {
+                    components,
+                    reactivity,
+                }
             }
             Children::ReactiveStore(store) => {
+                // TODO: Consider initializing store only once
                 let id = GLOBAL_ID.fetch_add(1, Relaxed);
                 Self {
                     components: Vec::new(),
-                    reactivity: vec![
-                        // web_sys::window().unwrap().document().unwrap()
-                        quote! {
-                            store.on_change(|_| log("something changed!"))
-                        }
-                    ]
+                    reactivity: vec![quote! {
+                        shared::Store::on_change(&mut #store, move |_, new| {
+                            wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlElement>(
+                                web_sys::window()
+                                    .expect("Failed to get window (quux internal error)")
+                                    .document()
+                                    .expect("Failed to get document (quux internal error)")
+                                    .query_selector(&format!("[data-quux-scope-id='{}'] [data-quux-scoped-id='{}']", context.id, #id))
+                                    .expect("Failed to get element with scoped id (quux internal error)")
+                                    .expect("Failed to get element with scoped id (quux internal error)")
+                            )
+                                .expect("`JSCast` from `Element` to `HTMLElement` (quux internal error)")
+                                .set_inner_text(&std::string::ToString::to_string(new))
+                        });
+                    }],
                 }
             }
         }
@@ -69,7 +86,10 @@ impl From<Element> for Data {
 
 pub fn generate(tree: &Element) -> TokenStream {
     let tree = tree.clone();
-    let Data { components, reactivity } = Item::Element(tree).into();
+    let Data {
+        components,
+        reactivity,
+    } = Item::Element(tree).into();
     let components = components.into_iter().map(|ident|  quote! {
         {
             let child = children.next().expect("Client and server child lists don't match");
@@ -82,6 +102,10 @@ pub fn generate(tree: &Element) -> TokenStream {
         #( #components )*
         #( #reactivity );*
     };
-    std::fs::write("expansion.rs", quote! {fn main() {#tokens}}.to_string()).unwrap();
+    std::fs::write(
+        "expansion-client.rs",
+        quote! {fn main() {#tokens}}.to_string(),
+    )
+    .unwrap();
     tokens
 }
