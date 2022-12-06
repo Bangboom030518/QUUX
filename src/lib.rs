@@ -74,14 +74,15 @@ impl<'a> Component<'a> for App<'a> {
                 head {
                     style {
                         {"
-                            .my-button {
+                            button {
                                 background: red;
+                                width: 100%;
                             }
                         "}
                     }                    
                 }
                 body {
-                    button(class="my-button") {
+                    button(style="background: red;") {
                         { self.count }
                     }
                     @QUUXInitialise
