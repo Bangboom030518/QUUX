@@ -2,7 +2,7 @@ use syn::{
     braced, parenthesized,
     parse::{Parse, ParseStream},
     token::{Brace, Paren},
-    Expr, Ident, Token,
+    Expr, Ident, LitInt, Token,
 };
 
 #[derive(Clone)]
@@ -130,8 +130,42 @@ pub struct Attribute {
 
 impl Parse for Attribute {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        // TODO: Allow `-` in idents
-        let key = input.parse::<Ident>()?.to_string();
+        let mut key = input.parse::<Ident>()?.to_string();
+
+        if input.peek(Ident) {
+            return Err(input.error("unexpected whitespace in attribute key"));
+        }
+
+        while !input.is_empty() {
+            if input.peek(Token![-]) {
+                input.parse::<Token![-]>()?;
+                key += "-";
+                continue;
+            }
+
+            if input.peek(Token![:]) {
+                input.parse::<Token![:]>()?;
+                key += ":";
+                continue;
+            }
+
+            if input.peek(Token![.]) {
+                input.parse::<Token![.]>()?;
+                key += ".";
+                continue;
+            }
+            
+            if input.peek(LitInt) {
+                key += &input.parse::<LitInt>()?.to_string();
+                continue;
+            }
+
+            if input.peek(Ident) && !input.peek2(Ident) {
+                key += &input.parse::<Ident>()?.to_string();
+                continue;
+            }
+            break;
+        }
         input.parse::<Token![=]>()?;
         let value = input.parse()?;
         Ok(Self { key, value })
