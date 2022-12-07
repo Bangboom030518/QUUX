@@ -9,7 +9,7 @@ fn main()
         scope_id, String :: new() + & format!
         ("<head >{}</head>", String :: new()) + & format!
         ("<body >{}</body>", String :: new() + & format!
-        ("<button data-quux-scoped-id=\"{}\">{}</button>", 3u64, shared ::
+        ("<button data-quux-scoped-id=\"{}\">{}</button>", "3", shared ::
         Store :: get(& self.count)) + & rendered_component_0.html)),
         component_node : shared :: ClientComponentNode
         {

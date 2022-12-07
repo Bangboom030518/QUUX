@@ -28,7 +28,7 @@ impl From<Vec<Attribute>> for Attributes {
                     } else {
                         Some((key, expr))
                     }
-                },
+                }
                 AttributeValue::Reactive(expr) => {
                     dyn_attributes.insert(key.clone(), expr.clone());
                     Some((
@@ -53,6 +53,7 @@ impl From<Vec<Attribute>> for Attributes {
     }
 }
 
+#[derive(Default)]
 struct Data {
     /// tokens generating static SSR'd html
     html: TokenStream,
@@ -81,32 +82,64 @@ impl From<Element> for Data {
             children,
         }: Element,
     ) -> Self {
-        let id = GLOBAL_ID.fetch_add(1, Relaxed);
+        let id = GLOBAL_ID.fetch_add(1, Relaxed).to_string();
+
+        let mut data = Self::default();
 
         // TODO: deal with reactive stores as attribute values
-        let mut attributes = attributes;
-        let Attributes {
+        let mut attributes: Attributes = attributes.into();
+
+        match children {
+            Children::Children(children) => data.add_child_data(children),
+            Children::ReactiveStore(store) => {
+                attributes.reactive = true;
+                data.add_store_data(store);
+            }
+        };
+
+        data.add_attribute_data(attributes, &tag_name.to_string(), &id);
+
+        data
+    }
+}
+
+impl Data {
+    fn add_child_data(&mut self, children: Vec<Item>) {
+        let mut html: Vec<_> = children
+            .into_iter()
+            .map(|child| {
+                let Self {
+                    mut component_nodes,
+                    html,
+                    mut component_constructors,
+                } = child.into();
+                self.component_nodes.append(&mut component_nodes);
+                self.component_constructors
+                    .append(&mut component_constructors);
+                quote! { &#html }
+            })
+            .collect();
+        html.insert(0, quote! { String::new() });
+        self.html = quote!(#(#html)+*);
+    }
+
+    fn add_attribute_data(
+        &mut self,
+        Attributes {
             mut keys,
             mut values,
             dyn_attributes,
-            mut reactive
-        } = attributes.into();
-
-        let (html, component_nodes, component_constructors) =
-            match children {
-                Children::Children(children) => Self::from_element_children(children),
-                Children::ReactiveStore(store) => {
-                    reactive = true;
-                    (Self::from_reactive_store(store), Vec::new(), Vec::new())
-                }
-            };
-            
-
+            reactive,
+        }: Attributes,
+        tag_name: &str,
+        id: &str,
+    ) {
         if reactive {
             keys.push(String::from("data-quux-scoped-id"));
-            values.push(syn::parse(quote! { #id }.into()).expect(
-                "Couldn't parse `id` tokens as expression (quux internal error)",
-            ))
+            values.push(
+                syn::parse(quote! { #id }.into())
+                    .expect("Couldn't parse `id` tokens as expression (quux internal error)"),
+            )
         }
 
         let html_string = &format!(
@@ -116,8 +149,9 @@ impl From<Element> for Data {
                 .map(|key| format!("{key}=\"{{}}\""))
                 .collect::<String>(),
         );
+        let html = &self.html;
 
-        let html = if values.is_empty() {
+        self.html = if values.is_empty() {
             quote! {
                 format!(#html_string, #html)
             }
@@ -126,42 +160,10 @@ impl From<Element> for Data {
                 format!(#html_string, #(#values),*, #html)
             }
         };
-
-        Self {
-            html,
-            component_constructors,
-            component_nodes,
-        }
-    }
-}
-
-impl Data {    
-    fn from_element_children(
-        children: Vec<Item>,
-    ) -> (TokenStream, Vec<TokenStream>, Vec<TokenStream>) {
-        let (mut html, (component_nodes, component_constructors)): (Vec<_>, (Vec<_>, Vec<_>)) =
-            children
-                .into_iter()
-                .map(|item| {
-                    let Self {
-                        component_nodes,
-                        html,
-                        component_constructors,
-                    } = Self::from(item);
-                    (quote! { &#html }, (component_nodes, component_constructors))
-                })
-                .unzip();
-
-        html.insert(0, quote! { String::new() });
-        (
-            quote!(#(#html)+*),
-            component_nodes.concat(),
-            component_constructors.concat(),
-        )
     }
 
-    fn from_reactive_store(store: Expr) -> TokenStream {
-        quote!(shared::Store::get(&#store))
+    fn add_store_data(&mut self, store: Expr) {
+        self.html = quote!(shared::Store::get(&#store))
     }
 }
 

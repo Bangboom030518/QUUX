@@ -5,8 +5,6 @@ use quote::quote;
 use std::sync::atomic::Ordering::Relaxed;
 use syn::Expr;
 
-type StoreReference = Expr;
-
 #[derive(Default)]
 struct Data {
     components: Vec<Ident>,
@@ -47,40 +45,42 @@ impl From<Element> for Data {
             scoped_id: GLOBAL_ID.fetch_add(1, Relaxed).to_string(),
             ..Default::default()
         };
-        let scoped_id = &data.scoped_id;
-        for Attribute { key, value } in attributes {
-            match value {
-                AttributeValue::Static(value) => {
-                    if let Some(event_name) = key.strip_prefix("on:") {
-                        data.reactivity.push(quote! {
-                            let scope_id = Rc::clone(&scope_id);
-                            let closure = wasm_bindgen::prelude::Closure::<dyn FnMut()>::new(#value);
-                            log("EVENT LISTENER BLOCK WOZ COORLD");
-                            web_sys::window()
-                                .expect("Failed to get window (quux internal error)")
-                                .document()
-                                .expect("Failed to get document (quux internal error)")
-                                .query_selector(&format!("[data-quux-scope-id='{}'] [data-quux-scoped-id='{}']", scope_id, #scoped_id))
-                                .expect("Failed to get element with scoped id (quux internal error)")
-                                .expect("Failed to get element with scoped id (quux internal error)")
-                                .add_event_listener_with_callback(#event_name, closure.as_ref().unchecked_ref())
-                                .expect("Failed to add event (quux internal error)");
-                            closure.forget();
-                        })
-                    }
-                }
-                AttributeValue::Reactive(store) => {}
-            }
-        }
+        data.add_event_data(attributes);
         match children {
             Children::Children(children) => data.add_child_data(children),
             Children::ReactiveStore(store) => data.add_store_data(store),
-        }
+        };
+        data
     }
 }
 
 impl Data {
-    fn add_child_data(mut self, children: Vec<Item>) -> Self {
+    fn add_event_data(&mut self, attributes: Vec<Attribute>) {
+        for Attribute { key, value } in attributes {
+            if let AttributeValue::Static(value) = value {
+                let scoped_id = self.scoped_id.as_str();
+                if let Some(event_name) = key.strip_prefix("on:") {
+                    self.reactivity.push(quote! {
+                        let scope_id = Rc::clone(&scope_id);
+                        let closure = wasm_bindgen::prelude::Closure::<dyn FnMut()>::new(#value);
+                        log("EVENT LISTENER BLOCK WOZ COORLD");
+                        web_sys::window()
+                            .expect("Failed to get window (quux internal error)")
+                            .document()
+                            .expect("Failed to get document (quux internal error)")
+                            .query_selector(&format!("[data-quux-scope-id='{}'] [data-quux-scoped-id='{}']", scope_id, #scoped_id))
+                            .expect("Failed to get element with scoped id (quux internal error)")
+                            .expect("Failed to get element with scoped id (quux internal error)")
+                            .add_event_listener_with_callback(#event_name, closure.as_ref().unchecked_ref())
+                            .expect("Failed to add event (quux internal error)");
+                        closure.forget();
+                    })
+                }
+            }
+        }
+    }
+
+    fn add_child_data(&mut self, children: Vec<Item>) {
         for child in children {
             let Self {
                 mut components,
@@ -90,10 +90,9 @@ impl Data {
             self.components.append(&mut components);
             self.reactivity.append(&mut reactivity);
         }
-        self
     }
 
-    fn add_store_data(mut self, store: StoreReference) -> Self {
+    fn add_store_data(&mut self, store: Expr) {
         // TODO: Consider initializing store only once
         // TODO: Consider initializing the document only once
         let scoped_id = self.scoped_id.as_str();
@@ -113,7 +112,7 @@ impl Data {
                     .set_inner_text(&std::string::ToString::to_string(new))
             });
         });
-        self
+        
     }
 }
 
