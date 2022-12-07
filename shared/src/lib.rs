@@ -1,4 +1,4 @@
-// #![warn(clippy::pedantic, clippy::nursery)]
+#![warn(clippy::pedantic, clippy::nursery)]
 use std::sync::atomic::{AtomicU64, Ordering};
 pub use stores::Store;
 pub mod stores;
@@ -15,6 +15,7 @@ lazy_static::lazy_static! {
 // TODO: Mallory could be naughty. ID should not be global, but should be unique to each request.
 static GLOBAL_ID: AtomicU64 = AtomicU64::new(0);
 
+#[must_use]
 pub fn escape(input: &str) -> String {
     input
         .replace('<', "&lt;")
@@ -23,7 +24,7 @@ pub fn escape(input: &str) -> String {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-pub fn render_to_string<'a, T, P>(component: T) -> String
+pub fn render_to_string<'a, T, P>(component: &T) -> String
 where
     T: Component<'a, Props = P>,
 {
@@ -40,6 +41,7 @@ where
     )
 }
 
+#[must_use]
 pub fn generate_id() -> String {
     GLOBAL_ID.fetch_add(1, Ordering::Relaxed).to_string()
 }

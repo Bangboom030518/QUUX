@@ -20,15 +20,15 @@ impl Data {
 }
 
 impl From<Item> for Data {
-    fn from(item: Item) -> Data {
+    fn from(item: Item) -> Self {
         match item {
-            Item::Component(component) => Data {
+            Item::Component(component) => Self {
                 components: vec![component.name],
                 reactivity: Vec::new(),
                 ..Default::default()
             },
             Item::Element(element) => element.into(),
-            Item::Expression(_) => Data::new(),
+            Item::Expression(_) => Self::new(),
         }
     }
 }
@@ -48,7 +48,7 @@ impl From<Element> for Data {
         data.add_event_data(attributes);
         match children {
             Children::Children(children) => data.add_child_data(children),
-            Children::ReactiveStore(store) => data.add_store_data(store),
+            Children::ReactiveStore(store) => data.add_store_data(&store),
         };
         data
     }
@@ -74,7 +74,7 @@ impl Data {
                             .add_event_listener_with_callback(#event_name, closure.as_ref().unchecked_ref())
                             .expect("Failed to add event (quux internal error)");
                         closure.forget();
-                    })
+                    });
                 }
             }
         }
@@ -92,7 +92,7 @@ impl Data {
         }
     }
 
-    fn add_store_data(&mut self, store: Expr) {
+    fn add_store_data(&mut self, store: &Expr) {
         // TODO: Consider initializing store only once
         // TODO: Consider initializing the document only once
         let scoped_id = self.scoped_id.as_str();

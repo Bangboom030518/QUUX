@@ -13,7 +13,7 @@ use std::net::SocketAddr;
 mod tests;
 
 async fn root() -> Html<String> {
-    render_to_string(App::init(())).into()
+    render_to_string(&App::init(())).into()
 }
 
 async fn wasm() -> (TypedHeader<ContentType>, &'static [u8]) {

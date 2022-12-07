@@ -12,7 +12,7 @@ struct Attributes {
     keys: Vec<String>,
     values: Vec<Expr>,
     reactive: bool,
-    dyn_attributes: HashMap<String, Expr>,
+    reactive_attributes: HashMap<String, Expr>,
 }
 
 impl Attributes {
@@ -25,12 +25,12 @@ impl Attributes {
         if key.starts_with("on:") {
             self.reactive = true;
         } else {
-            self.add_entry(key, value)
+            self.add_entry(key, value);
         }
     }
 
-    fn reactive_value(&mut self, key: String, value: Expr) {
-        self.dyn_attributes.insert(key.clone(), value.clone());
+    fn reactive_value(&mut self, key: String, value: &Expr) {
+        self.reactive_attributes.insert(key.clone(), value.clone());
         self.add_entry(
             key,
             syn::parse::<Expr>(
@@ -50,7 +50,7 @@ impl From<Vec<Attribute>> for Attributes {
         for Attribute { key, value } in attributes {
             match value {
                 AttributeValue::Static(value) => result.static_value(key, value),
-                AttributeValue::Reactive(value) => result.reactive_value(key, value)
+                AttributeValue::Reactive(value) => result.reactive_value(key, &value)
             }
         }
         result
@@ -97,7 +97,7 @@ impl From<Element> for Data {
             Children::Children(children) => data.add_child_data(children),
             Children::ReactiveStore(store) => {
                 attributes.reactive = true;
-                data.add_store_data(store);
+                data.add_store_data(&store);
             }
         };
 
@@ -132,7 +132,7 @@ impl Data {
         Attributes {
             mut keys,
             mut values,
-            dyn_attributes,
+            reactive_attributes: dyn_attributes,
             reactive,
         }: Attributes,
         tag_name: &str,
@@ -143,7 +143,7 @@ impl Data {
             values.push(
                 syn::parse(quote! { #id }.into())
                     .expect("Couldn't parse `id` tokens as expression (quux internal error)"),
-            )
+            );
         }
 
         let html_string = &format!(
@@ -166,8 +166,8 @@ impl Data {
         };
     }
 
-    fn add_store_data(&mut self, store: Expr) {
-        self.html = quote!(shared::Store::get(&#store))
+    fn add_store_data(&mut self, store: &Expr) {
+        self.html = quote!(shared::Store::get(&#store));
     }
 }
 

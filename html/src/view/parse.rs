@@ -106,7 +106,7 @@ impl Parse for Element {
 #[derive(Clone)]
 pub enum Children {
     Children(Vec<Item>),
-    ReactiveStore(Expr),
+    ReactiveStore(Box<Expr>),
 }
 
 impl Parse for Children {

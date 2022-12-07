@@ -1,5 +1,5 @@
 #![feature(more_qualified_paths, stmt_expr_attributes)]
-// #![warn(clippy::pedantic, clippy::nursery)]
+#![warn(clippy::pedantic, clippy::nursery)]
 use html::view;
 use serde::{Deserialize, Serialize};
 use shared::{Component, QUUXInitialise, RenderData, Store};
