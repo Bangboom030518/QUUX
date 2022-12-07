@@ -1,7 +1,7 @@
 fn main()
 {
-    use std :: rc :: Rc ; let mut children = context.children.into_iter() ;
-    let scope_id = Rc :: new(context.id) ;
+    use std :: rc :: Rc ; use wasm_bindgen :: JsCast ; let mut children =
+    context.children.into_iter() ; let scope_id = Rc :: new(context.id) ;
     {
         let child =
         children.next().expect("Client and server child lists don't match") ;

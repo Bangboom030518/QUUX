@@ -132,6 +132,7 @@ pub fn generate(tree: &Element) -> TokenStream {
     });
     let tokens = quote! {
         use std::rc::Rc;
+        use wasm_bindgen::JsCast;
         let mut children = context.children.into_iter();
         let scope_id = Rc::new(context.id);
         #( #components )*
