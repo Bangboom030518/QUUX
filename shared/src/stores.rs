@@ -34,13 +34,13 @@ impl<'a, T: fmt::Display + Serialize> Store<'a, T> {
     }
 
     /// Returns a reference to the current value
-    pub fn get(&self) -> &T {
+    pub const fn get(&self) -> &T {
         &self.value
     }
 
     /// Sets interior value to `value`.
     pub fn set(&mut self, value: T) {
-        for listener in self.listeners.iter_mut() {
+        for listener in &mut self.listeners {
             listener(&self.value, &value);
         }
         self.value = value;
