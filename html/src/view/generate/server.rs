@@ -7,6 +7,7 @@ use std::collections::HashMap;
 use std::sync::atomic::Ordering::Relaxed;
 use syn::Expr;
 
+#[derive(Default)]
 struct Attributes {
     keys: Vec<String>,
     values: Vec<Expr>,
@@ -14,42 +15,45 @@ struct Attributes {
     dyn_attributes: HashMap<String, Expr>,
 }
 
+impl Attributes {
+    fn add_entry(&mut self, key: String, value: Expr) {
+        self.keys.push(key);
+        self.values.push(value);
+    }
+
+    fn static_value(&mut self, key: String, value: Expr) {
+        if key.starts_with("on:") {
+            self.reactive = true;
+        } else {
+            self.add_entry(key, value)
+        }
+    }
+
+    fn reactive_value(&mut self, key: String, value: Expr) {
+        self.dyn_attributes.insert(key.clone(), value.clone());
+        self.add_entry(
+            key,
+            syn::parse::<Expr>(
+                quote! {
+                    quux::Store::get(#value)
+                }
+                .into(),
+            )
+            .expect("failed to parse `quux::Store::get(#value)` (QUUX internal)"),
+        );
+    }
+}
+
 impl From<Vec<Attribute>> for Attributes {
     fn from(attributes: Vec<Attribute>) -> Self {
-        let mut dyn_attributes = HashMap::new();
-        let mut reactive = false;
-        let (keys, values): (Vec<_>, Vec<_>) = attributes
-            .into_iter()
-            .filter_map(|Attribute { key, value }| match value {
-                AttributeValue::Static(expr) => {
-                    if key.starts_with("on:") {
-                        reactive = true;
-                        None
-                    } else {
-                        Some((key, expr))
-                    }
-                }
-                AttributeValue::Reactive(expr) => {
-                    dyn_attributes.insert(key.clone(), expr.clone());
-                    Some((
-                        key,
-                        syn::parse::<Expr>(
-                            quote! {
-                                quux::Store::get(#expr)
-                            }
-                            .into(),
-                        )
-                        .expect("failed to parse `quux::Store::get(#ident)` (QUUX internal)"),
-                    ))
-                }
-            })
-            .unzip();
-        Self {
-            keys,
-            values,
-            dyn_attributes,
-            reactive,
+        let mut result = Self::default();
+        for Attribute { key, value } in attributes {
+            match value {
+                AttributeValue::Static(value) => result.static_value(key, value),
+                AttributeValue::Reactive(value) => result.reactive_value(key, value)
+            }
         }
+        result
     }
 }
 
