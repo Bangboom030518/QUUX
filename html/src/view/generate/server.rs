@@ -10,19 +10,28 @@ use syn::Expr;
 struct Attributes {
     keys: Vec<String>,
     values: Vec<Expr>,
+    reactive: bool,
     dyn_attributes: HashMap<String, Expr>,
 }
 
 impl From<Vec<Attribute>> for Attributes {
     fn from(attributes: Vec<Attribute>) -> Self {
         let mut dyn_attributes = HashMap::new();
+        let mut reactive = false;
         let (keys, values): (Vec<_>, Vec<_>) = attributes
             .into_iter()
-            .map(|Attribute { key, value }| match value {
-                AttributeValue::Static(expr) => (key, expr),
+            .filter_map(|Attribute { key, value }| match value {
+                AttributeValue::Static(expr) => {
+                    if key.starts_with("on:") {
+                        reactive = true;
+                        None
+                    } else {
+                        Some((key, expr))
+                    }
+                },
                 AttributeValue::Reactive(expr) => {
                     dyn_attributes.insert(key.clone(), expr.clone());
-                    (
+                    Some((
                         key,
                         syn::parse::<Expr>(
                             quote! {
@@ -31,7 +40,7 @@ impl From<Vec<Attribute>> for Attributes {
                             .into(),
                         )
                         .expect("failed to parse `quux::Store::get(#ident)` (QUUX internal)"),
-                    )
+                    ))
                 }
             })
             .unzip();
@@ -39,6 +48,7 @@ impl From<Vec<Attribute>> for Attributes {
             keys,
             values,
             dyn_attributes,
+            reactive,
         }
     }
 }
@@ -71,29 +81,33 @@ impl From<Element> for Data {
             children,
         }: Element,
     ) -> Self {
+        let id = GLOBAL_ID.fetch_add(1, Relaxed);
+
         // TODO: deal with reactive stores as attribute values
         let mut attributes = attributes;
+        let Attributes {
+            mut keys,
+            mut values,
+            dyn_attributes,
+            mut reactive
+        } = attributes.into();
 
         let (html, component_nodes, component_constructors) =
             match children {
                 Children::Children(children) => Self::from_element_children(children),
                 Children::ReactiveStore(store) => {
-                    let id = GLOBAL_ID.fetch_add(1, Relaxed);
-                    attributes.push(Attribute {
-                        key: String::from("data-quux-scoped-id"),
-                        value: AttributeValue::Static(syn::parse(quote! { #id }.into()).expect(
-                            "Couldn't parse `id` tokens as expression (quux internal error)",
-                        )),
-                    });
+                    reactive = true;
                     (Self::from_reactive_store(store), Vec::new(), Vec::new())
                 }
             };
+            
 
-        let Attributes {
-            keys,
-            values: attribute_values,
-            dyn_attributes,
-        } = attributes.into();
+        if reactive {
+            keys.push(String::from("data-quux-scoped-id"));
+            values.push(syn::parse(quote! { #id }.into()).expect(
+                "Couldn't parse `id` tokens as expression (quux internal error)",
+            ))
+        }
 
         let html_string = &format!(
             "<{0} {1}>{{}}</{0}>",
@@ -103,13 +117,13 @@ impl From<Element> for Data {
                 .collect::<String>(),
         );
 
-        let html = if attribute_values.is_empty() {
+        let html = if values.is_empty() {
             quote! {
                 format!(#html_string, #html)
             }
         } else {
             quote! {
-                format!(#html_string, #(#attribute_values),*, #html)
+                format!(#html_string, #(#values),*, #html)
             }
         };
 
@@ -121,7 +135,7 @@ impl From<Element> for Data {
     }
 }
 
-impl Data {
+impl Data {    
     fn from_element_children(
         children: Vec<Item>,
     ) -> (TokenStream, Vec<TokenStream>, Vec<TokenStream>) {

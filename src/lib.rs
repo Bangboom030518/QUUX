@@ -57,10 +57,7 @@ impl<'a> Component<'a> for App<'a> {
                 head {
                 }
                 body {
-                    button {
-                        $self.count
-                    }
-                    button {
+                    button(on:click=|| log("HELLO!!!!!!")) {
                         $self.count
                     }
                     @QUUXInitialise
@@ -77,16 +74,26 @@ impl<'a> Component<'a> for App<'a> {
                 head {
                 }
                 body {
-                    button {
-                        $self.count
-                    }
-                    button {
+                    button(on:click=|| log("HELLO!!!!!!")) {
                         $self.count
                     }
                     @QUUXInitialise
                 }
             }
         };
+        // let closure = Closure::<dyn FnMut()>::new();
+
+        // web_sys::window()
+        //     .expect("Failed to get window (quux internal error)")
+        //     .document()
+        //     .expect("Failed to get document (quux internal error)")
+        //     .query_selector(&format!("[data-quux-scope-id='{}'] [data-quux-scoped-id='{}']", #scope_id, #scoped_id))
+        //     .expect("Failed to get element with scoped id (quux internal error)")
+        //     .expect("Failed to get element with scoped id (quux internal error)")
+        //     .add_event_listener_with_callback("click", closure.as_ref().unchecked_ref())
+        //     .expect("Adding event listener failed!");
+
+        // closure.forget();
         self.count.set(300);
     }
 }
