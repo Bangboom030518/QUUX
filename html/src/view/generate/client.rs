@@ -63,7 +63,7 @@ impl Data {
             let Some(event_name) = key.strip_prefix("on:") else {
                 continue
             };
-            
+
             let scoped_id = self.scoped_id.as_str();
 
             self.reactivity.push(quote! {

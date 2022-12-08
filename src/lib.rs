@@ -10,6 +10,7 @@ use std::rc::Rc;
 extern "C" {
     #[wasm_bindgen(js_namespace = console)]
     fn log(s: &str);
+    fn alert(s: &str);
 }
 
 #[cfg(target_arch = "wasm32")]

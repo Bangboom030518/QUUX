@@ -188,7 +188,7 @@ impl From<Component> for Data {
                     render_context: shared::RenderContext {
                         id: shared::generate_id(),
                         children: Vec::new(),
-                    },
+                    }
                 }
             }],
             component_constructors: vec![quote! {
