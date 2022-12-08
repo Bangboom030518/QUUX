@@ -63,7 +63,6 @@ impl Data {
                     self.reactivity.push(quote! {
                         let scope_id = Rc::clone(&scope_id);
                         let closure = wasm_bindgen::prelude::Closure::<dyn FnMut()>::new(#value);
-                        log("EVENT LISTENER BLOCK WOZ COORLD");
                         web_sys::window()
                             .expect("Failed to get window (quux internal error)")
                             .document()

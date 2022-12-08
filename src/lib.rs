@@ -4,6 +4,7 @@ use html::view;
 use serde::{Deserialize, Serialize};
 use shared::{Component, QUUXInitialise, RenderData, Store};
 use wasm_bindgen::prelude::*;
+use std::rc::Rc;
 
 #[wasm_bindgen]
 extern "C" {
@@ -68,13 +69,19 @@ impl<'a> Component<'a> for App<'a> {
 
     #[cfg(target_arch = "wasm32")]
     fn render(&mut self, context: shared::RenderContext) {
+        use std::cell::RefCell;
+
+        let count = RefCell::new(self.count);
         log("The `render` method of `App` has been called.");
         view! {
             html(lang="en") {
                 head {
                 }
                 body {
-                    button(on:click=|| log("HELLO!!!!!!")) {
+                    button(on:click=move || { 
+                        let count = count.borrow_mut();
+                        count.set(count.get() + 1);
+                    }) {
                         $self.count
                     }
                     @QUUXInitialise
