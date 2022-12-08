@@ -11,9 +11,7 @@ fn main()
     }
     {
         let scope_id = Rc :: clone(& scope_id) ; let closure = wasm_bindgen ::
-        prelude :: Closure :: < dyn FnMut() > ::
-        new(move | |
-        { let count = count.borrow_mut() ; count.set(count.get() + 1) ; }) ;
+        prelude :: Closure :: < dyn FnMut() > :: new(| | log("HELLO!!!!!!")) ;
         web_sys ::
         window().expect("Failed to get window (quux internal error)").document().expect("Failed to get document (quux internal error)").query_selector(&
         format!

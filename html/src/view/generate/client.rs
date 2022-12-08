@@ -57,25 +57,29 @@ impl From<Element> for Data {
 impl Data {
     fn add_event_data(&mut self, attributes: Vec<Attribute>) {
         for Attribute { key, value } in attributes {
-            if let AttributeValue::Static(value) = value {
-                let scoped_id = self.scoped_id.as_str();
-                if let Some(event_name) = key.strip_prefix("on:") {
-                    self.reactivity.push(quote! {
-                        let scope_id = Rc::clone(&scope_id);
-                        let closure = wasm_bindgen::prelude::Closure::<dyn FnMut()>::new(#value);
-                        web_sys::window()
-                            .expect("Failed to get window (quux internal error)")
-                            .document()
-                            .expect("Failed to get document (quux internal error)")
-                            .query_selector(&format!("[data-quux-scope-id='{}'] [data-quux-scoped-id='{}']", scope_id, #scoped_id))
-                            .expect("Failed to get element with scoped id (quux internal error)")
-                            .expect("Failed to get element with scoped id (quux internal error)")
-                            .add_event_listener_with_callback(#event_name, closure.as_ref().unchecked_ref())
-                            .expect("Failed to add event (quux internal error)");
-                        closure.forget();
-                    });
-                }
-            }
+            let AttributeValue::Static(value) = value else {
+                continue
+            };
+            let Some(event_name) = key.strip_prefix("on:") else {
+                continue
+            };
+            
+            let scoped_id = self.scoped_id.as_str();
+
+            self.reactivity.push(quote! {
+                let scope_id = Rc::clone(&scope_id);
+                let closure = wasm_bindgen::prelude::Closure::<dyn FnMut()>::new(#value);
+                web_sys::window()
+                    .expect("Failed to get window (quux internal error)")
+                    .document()
+                    .expect("Failed to get document (quux internal error)")
+                    .query_selector(&format!("[data-quux-scope-id='{}'] [data-quux-scoped-id='{}']", scope_id, #scoped_id))
+                    .expect("Failed to get element with scoped id (quux internal error)")
+                    .expect("Failed to get element with scoped id (quux internal error)")
+                    .add_event_listener_with_callback(#event_name, closure.as_ref().unchecked_ref())
+                    .expect("Failed to add event (quux internal error)");
+                closure.forget();
+            });
         }
     }
 
