@@ -3,8 +3,8 @@
 use html::view;
 use serde::{Deserialize, Serialize};
 use shared::{Component, QUUXInitialise, RenderData, Store};
-use wasm_bindgen::prelude::*;
 use std::rc::Rc;
+use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
 extern "C" {
@@ -42,9 +42,11 @@ pub fn init_app() {
 #[derive(Serialize, Deserialize)]
 pub struct App {
     count: Store<'static, u32>,
+pub struct App {
+    count: Store<'static, u32>,
 }
 
-impl Component<'static> for App {
+impl<'a> Component<'a> for App {
     type Props = ();
 
     fn init(_props: Self::Props) -> Self {
@@ -70,10 +72,11 @@ impl Component<'static> for App {
     }
 
     #[cfg(target_arch = "wasm32")]
-    fn render(&mut self, context: shared::RenderContext) {
+    fn render(self, context: shared::RenderContext) {
         use std::cell::RefCell;
 
-        let mut count = Rc::new(RefCell::new(&mut self.count));
+        let count = Rc::new(RefCell::new(self.count));
+        let mut button_count = Rc::clone(&count);
         log("The `render` method of `App` has been called.");
         let button_count = Rc::clone(&count);
         view! {
@@ -81,12 +84,11 @@ impl Component<'static> for App {
                 head {
                 }
                 body {
-                    button(on:click=|| { 
+                    button(on:click=move || {
+                        let button_count = Rc::get_mut(&mut button_count).expect("get_mut failed :)");
                         let before = button_count.borrow();
-                        let before = before.get();
                         let mut count = button_count.borrow_mut();
-                        
-                        count.set(before + 1);
+                        count.set(before.get() + 1);
                     }) {
                         $Rc::clone(&count).borrow()
                     }

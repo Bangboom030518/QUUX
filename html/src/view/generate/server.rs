@@ -176,9 +176,9 @@ impl From<Component> for Data {
         let component_id = generate_id();
         let component_ident = format_ident!("component_{}", component_id);
         let rendered_component_ident = format_ident!("rendered_component_{}", component_id);
-        let props = props.into_iter().map(|Prop { key, value }| {
-            quote! { #key : #value }
-        });
+        let props = props
+            .into_iter()
+            .map(|Prop { key, value }| quote! { #key : #value });
 
         Self {
             html: quote! { #rendered_component_ident.html },
