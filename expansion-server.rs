@@ -10,8 +10,12 @@ fn main()
         ("<head >{}</head>", String :: new()) + & format!
         ("<body >{}</body>", String :: new() + & format!
         ("<button data-quux-scoped-id=\"{}\">{}</button>", "3", shared ::
-        Store :: get(& self.count)) + & rendered_component_0.html)),
-        component_node : shared :: ClientComponentNode
+        Store ::
+        get(& Rc ::
+        clone(&
+        count).try_borrow_mut().expect("`borrow_mut` in reactive expr"))) + &
+        rendered_component_0.html)), component_node : shared ::
+        ClientComponentNode
         {
             component : shared :: postcard ::
             to_stdvec(self).expect("Couldn't serialize component (quux internal error)"),

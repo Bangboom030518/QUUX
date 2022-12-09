@@ -10,7 +10,7 @@ use wasm_bindgen::prelude::*;
 extern "C" {
     #[wasm_bindgen(js_namespace = console)]
     fn log(s: &str);
-    
+
     fn alert(s: &str);
 }
 
@@ -40,8 +40,6 @@ pub fn init_app() {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct App {
-    count: Store<'static, u32>,
 pub struct App {
     count: Store<'static, u32>,
 }
@@ -76,21 +74,22 @@ impl<'a> Component<'a> for App {
         use std::cell::RefCell;
 
         let count = Rc::new(RefCell::new(self.count));
-        let mut button_count = Rc::clone(&count);
-        log("The `render` method of `App` has been called.");
         let button_count = Rc::clone(&count);
+        log("The `render` method of `App` has been called.");
         view! {
             html(lang="en") {
                 head {
                 }
                 body {
                     button(on:click=move || {
-                        let button_count = Rc::get_mut(&mut button_count).expect("get_mut failed :)");
-                        let before = button_count.borrow();
-                        let mut count = button_count.borrow_mut();
-                        count.set(before.get() + 1);
+                        let before = {
+                            let before_store = button_count.try_borrow().expect("`borrow` in `on:click`");
+                            *before_store.get()
+                        };
+                        let mut count = button_count.try_borrow_mut().expect("`borrow_mut` in `on:click` ");
+                        count.set(before + 1);
                     }) {
-                        $Rc::clone(&count).borrow()
+                        $Rc::clone(&count).try_borrow_mut().expect("`borrow_mut` in reactive expr")
                     }
                     @QUUXInitialise
                 }
