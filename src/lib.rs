@@ -72,10 +72,9 @@ impl<'a> Component<'a> for App {
     #[cfg(target_arch = "wasm32")]
     fn render(self, context: shared::RenderContext) {
         use std::cell::RefCell;
-
         let count = Rc::new(RefCell::new(self.count));
         let button_count = Rc::clone(&count);
-        log("The `render` method of `App` has been called.");
+        let interpolated_count = Rc::clone(&count);
         view! {
             html(lang="en") {
                 head {
@@ -83,13 +82,13 @@ impl<'a> Component<'a> for App {
                 body {
                     button(on:click=move || {
                         let before = {
-                            let before_store = button_count.try_borrow().expect("`borrow` in `on:click`");
+                            let before_store = button_count.borrow();
                             *before_store.get()
                         };
-                        let mut count = button_count.try_borrow_mut().expect("`borrow_mut` in `on:click` ");
+                        let mut count = button_count.borrow_mut();
                         count.set(before + 1);
                     }) {
-                        $Rc::clone(&count).try_borrow_mut().expect("`borrow_mut` in reactive expr")
+                        $interpolated_count.borrow_mut()
                     }
                     @QUUXInitialise
                 }
