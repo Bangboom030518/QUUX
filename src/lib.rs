@@ -3,8 +3,8 @@
 use html::view;
 use serde::{Deserialize, Serialize};
 use shared::{Component, QUUXInitialise, RenderData, Store};
-use wasm_bindgen::prelude::*;
 use std::rc::Rc;
+use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
 extern "C" {
@@ -39,11 +39,11 @@ pub fn init_app() {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct App<'a> {
-    count: Store<'a, u32>,
+pub struct App {
+    count: Store<'static, u32>,
 }
 
-impl<'a> Component<'a> for App<'a> {
+impl<'a> Component<'a> for App {
     type Props = ();
 
     fn init(_props: Self::Props) -> Self {
@@ -69,39 +69,28 @@ impl<'a> Component<'a> for App<'a> {
     }
 
     #[cfg(target_arch = "wasm32")]
-    fn render(&mut self, context: shared::RenderContext) {
+    fn render(self, context: shared::RenderContext) {
         use std::cell::RefCell;
 
-        let count = RefCell::new(self.count);
+        let count = Rc::new(RefCell::new(self.count));
+        let mut button_count = Rc::clone(&count);
         log("The `render` method of `App` has been called.");
         view! {
             html(lang="en") {
                 head {
                 }
                 body {
-                    button(on:click=move || { 
-                        let count = count.borrow_mut();
-                        count.set(count.get() + 1);
+                    button(on:click=move || {
+                        let button_count = Rc::get_mut(&mut button_count).expect("get_mut failed :)");
+                        let before = button_count.borrow();
+                        let mut count = button_count.borrow_mut();
+                        count.set(before.get() + 1);
                     }) {
-                        $self.count
+                        $Rc::clone(&count).borrow()
                     }
                     @QUUXInitialise
                 }
             }
         };
-        // let closure = Closure::<dyn FnMut()>::new();
-
-        // web_sys::window()
-        //     .expect("Failed to get window (quux internal error)")
-        //     .document()
-        //     .expect("Failed to get document (quux internal error)")
-        //     .query_selector(&format!("[data-quux-scope-id='{}'] [data-quux-scoped-id='{}']", #scope_id, #scoped_id))
-        //     .expect("Failed to get element with scoped id (quux internal error)")
-        //     .expect("Failed to get element with scoped id (quux internal error)")
-        //     .add_event_listener_with_callback("click", closure.as_ref().unchecked_ref())
-        //     .expect("Adding event listener failed!");
-
-        // closure.forget();
-        self.count.set(300);
     }
 }

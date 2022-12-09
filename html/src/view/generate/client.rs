@@ -126,19 +126,18 @@ pub fn generate(tree: &Element) -> TokenStream {
         reactivity,
         ..
     } = Item::Element(tree).into();
-    let components = components.into_iter().map(|ident|  quote! {
-        {
-            let child = children.next().expect("Client and server child lists don't match");
-            let mut component: #ident = shared::postcard::from_bytes(&child.component).expect("Couldn't deserialize component");
-            component.render(child.render_context);
-        }
-    });
+    // let components = components.into_iter().map(|ident|  quote! {
+    // });
     let tokens = quote! {
         use std::rc::Rc;
         use wasm_bindgen::JsCast;
         let mut children = context.children.into_iter();
         let scope_id = Rc::new(context.id);
-        #( #components )*
+        #({
+            let child = children.next().expect("Client and server child lists don't match");
+            let mut component: #components = shared::postcard::from_bytes(&child.component).expect("Couldn't deserialize component");
+            component.render(child.render_context);
+        })*
         #({ #reactivity });*
     };
     std::fs::write(

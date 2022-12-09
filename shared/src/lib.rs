@@ -60,7 +60,7 @@ pub trait Component<'a>: Serialize + Deserialize<'a> {
     fn render(&self) -> RenderData;
 
     #[cfg(target_arch = "wasm32")]
-    fn render(&mut self, context: RenderContext);
+    fn render(self, context: RenderContext);
 }
 
 #[derive(Serialize, Deserialize)]
@@ -77,7 +77,7 @@ pub struct ClientComponentNode {
 ///
 /// For an `view!()`, this will contain an id used on the client for reactivity, as well as any children that are components.
 /// This will allow for a `view!()` to manage its children by encapsulating them under one unique id.
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 pub struct RenderContext {
     pub children: Vec<ClientComponentNode>,
     pub id: String,
@@ -119,16 +119,12 @@ impl<'a> Component<'a> for QUUXInitialise {
                 include_str!("../../assets/quux.js"),
             ),
             component_node: ClientComponentNode {
-                component: postcard::to_stdvec(&self).expect("Failed to serialize component (quux_"),
-                render_context: RenderContext {
-                    children: Vec::new(),
-                    id: String::new(),
-                }
+                component: postcard::to_stdvec(&self).expect("Failed to serialize component (quux internal error)"),
+                render_context: RenderContext::default()
             },
         }
     }
-    // #parent's-dynamic [data-quux-static="static-id"]
 
     #[cfg(target_arch = "wasm32")]
-    fn render(&mut self, _: RenderContext) {}
+    fn render(self, _: RenderContext) {}
 }
