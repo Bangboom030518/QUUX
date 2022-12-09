@@ -10,6 +10,7 @@ use std::rc::Rc;
 extern "C" {
     #[wasm_bindgen(js_namespace = console)]
     fn log(s: &str);
+    
     fn alert(s: &str);
 }
 
@@ -39,11 +40,11 @@ pub fn init_app() {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct App<'a> {
-    count: Store<'a, u32>,
+pub struct App {
+    count: Store<'static, u32>,
 }
 
-impl<'a> Component<'a> for App<'a> {
+impl Component<'static> for App {
     type Props = ();
 
     fn init(_props: Self::Props) -> Self {
@@ -72,36 +73,26 @@ impl<'a> Component<'a> for App<'a> {
     fn render(&mut self, context: shared::RenderContext) {
         use std::cell::RefCell;
 
-        let count = RefCell::new(self.count);
+        let mut count = Rc::new(RefCell::new(&mut self.count));
         log("The `render` method of `App` has been called.");
+        let button_count = Rc::clone(&count);
         view! {
             html(lang="en") {
                 head {
                 }
                 body {
-                    button(on:click=move || { 
-                        let count = count.borrow_mut();
-                        count.set(count.get() + 1);
+                    button(on:click=|| { 
+                        let before = button_count.borrow();
+                        let before = before.get();
+                        let mut count = button_count.borrow_mut();
+                        
+                        count.set(before + 1);
                     }) {
-                        $self.count
+                        $Rc::clone(&count).borrow()
                     }
                     @QUUXInitialise
                 }
             }
         };
-        // let closure = Closure::<dyn FnMut()>::new();
-
-        // web_sys::window()
-        //     .expect("Failed to get window (quux internal error)")
-        //     .document()
-        //     .expect("Failed to get document (quux internal error)")
-        //     .query_selector(&format!("[data-quux-scope-id='{}'] [data-quux-scoped-id='{}']", #scope_id, #scoped_id))
-        //     .expect("Failed to get element with scoped id (quux internal error)")
-        //     .expect("Failed to get element with scoped id (quux internal error)")
-        //     .add_event_listener_with_callback("click", closure.as_ref().unchecked_ref())
-        //     .expect("Adding event listener failed!");
-
-        // closure.forget();
-        self.count.set(300);
     }
 }

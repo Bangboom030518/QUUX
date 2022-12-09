@@ -21,7 +21,7 @@ impl Attributes {
         self.values.push(value);
     }
 
-    fn static_value(&mut self, key: String, value: Expr) {
+    fn add_static_value(&mut self, key: String, value: Expr) {
         if key.starts_with("on:") {
             self.reactive = true;
         } else {
@@ -29,7 +29,7 @@ impl Attributes {
         }
     }
 
-    fn reactive_value(&mut self, key: String, value: &Expr) {
+    fn add_reactive_value(&mut self, key: String, value: &Expr) {
         self.reactive_attributes.insert(key.clone(), value.clone());
         self.add_entry(
             key,
@@ -49,8 +49,8 @@ impl From<Vec<Attribute>> for Attributes {
         let mut result = Self::default();
         for Attribute { key, value } in attributes {
             match value {
-                AttributeValue::Static(value) => result.static_value(key, value),
-                AttributeValue::Reactive(value) => result.reactive_value(key, &value)
+                AttributeValue::Static(value) => result.add_static_value(key, value),
+                AttributeValue::Reactive(value) => result.add_reactive_value(key, &value)
             }
         }
         result
@@ -132,7 +132,7 @@ impl Data {
         Attributes {
             mut keys,
             mut values,
-            reactive_attributes: dyn_attributes,
+            reactive_attributes,
             reactive,
         }: Attributes,
         tag_name: &str,
