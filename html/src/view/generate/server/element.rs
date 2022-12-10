@@ -1,34 +1,17 @@
-mod attributes;
-mod component;
-mod element;
+use std::sync::atomic::Ordering::Relaxed;
 
-use super::GLOBAL_ID;
-use crate::view::parse::{Attribute, AttributeValue, Children, Element, Item};
-use attributes::Attributes;
+use super::{Attributes, GLOBAL_ID};
 use proc_macro2::TokenStream;
 use quote::quote;
-use std::sync::atomic::Ordering::Relaxed;
 use syn::Expr;
+
+use crate::view::parse::{Children, Element, Item};
 
 #[derive(Default)]
 struct Data {
-    /// tokens generating static SSR'd html
-    html: TokenStream,
-    /// tokens generating a `RenderContext` struct
     component_nodes: Vec<TokenStream>,
-    /// the component which must be inserted into the view
     component_constructors: Vec<TokenStream>,
-}
-
-impl From<Item> for Data {
-    /// Generates data for a single item in a view
-    fn from(item: Item) -> Self {
-        match item {
-            Item::Element(element) => element.into(),
-            Item::Component(component) => component.into(),
-            Item::Expression(expression) => expression.into(),
-        }
-    }
+    html: TokenStream,
 }
 
 impl From<Element> for Data {
@@ -65,12 +48,13 @@ impl Data {
         let mut html: Vec<_> = children
             .into_iter()
             .map(|child| {
-                let Self {
+                let super::Data {
                     mut component_nodes,
                     html,
                     mut component_constructors,
                 } = child.into();
                 self.component_nodes.append(&mut component_nodes);
+
                 self.component_constructors
                     .append(&mut component_constructors);
                 quote! { &#html }
@@ -84,11 +68,9 @@ impl Data {
         attributes.add_scoped_id(id);
 
         let html_string = Self::get_html_string(attributes.keys, tag_name);
-
         let html = &self.html;
-
         let values = attributes.values;
-
+        
         self.html = if values.is_empty() {
             quote! {
                 format!(#html_string, #html)
@@ -115,52 +97,12 @@ impl Data {
     }
 }
 
-impl From<Expr> for Data {
-    fn from(expression: Expr) -> Self {
+impl From<Data> for super::Data {
+    fn from(data: Data) -> Self {
         Self {
-            html: quote! {
-                #expression.to_string()
-            },
-            ..Default::default()
+            component_constructors: data.component_constructors,
+            component_nodes: data.component_nodes,
+            html: data.html,
         }
     }
-}
-
-pub fn generate(tree: &Element) -> TokenStream {
-    let mut tree = tree.clone();
-    tree.attributes.push(Attribute {
-        key: "data-quux-scope-id".to_string(),
-        value: AttributeValue::Static(
-            syn::parse(quote! { scope_id }.into())
-                .expect("Couldn't parse `scope_id` as Expr (quux internal error)"),
-        ),
-    });
-    let Data {
-        html,
-        component_nodes,
-        component_constructors,
-    } = Item::Element(tree).into();
-
-    let tokens = quote! {
-        let scope_id = shared::generate_id();
-        #(#component_constructors)*
-        shared::RenderData {
-            html: #html,
-            component_node: shared::ClientComponentNode {
-                component: shared::postcard::to_stdvec(self).expect("Couldn't serialize component (quux internal error)"),
-                render_context: shared::RenderContext {
-                    id: scope_id,
-                    children: vec![
-                        #(#component_nodes),*
-                    ],
-                }
-            }
-        }
-    };
-    std::fs::write(
-        "expansion-server.rs",
-        quote! {fn main() {#tokens}}.to_string(),
-    )
-    .unwrap();
-    tokens
 }

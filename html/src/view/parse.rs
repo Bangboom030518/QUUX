@@ -1,3 +1,5 @@
+use proc_macro2::TokenStream;
+use quote::quote;
 use syn::{
     braced, parenthesized,
     parse::{Parse, ParseStream},
@@ -156,7 +158,7 @@ impl Parse for Attribute {
                 key += ".";
                 continue;
             }
-            
+
             if input.peek(LitInt) {
                 key += &input.parse::<LitInt>()?.to_string();
                 continue;
@@ -178,6 +180,13 @@ impl Parse for Attribute {
 pub struct Prop {
     pub key: Ident,
     pub value: Expr,
+}
+
+impl Into<TokenStream> for Prop {
+    fn into(self) -> TokenStream {
+        let Self { key, value } = self;
+        quote! { #key: #value }
+    }
 }
 
 impl Parse for Prop {
