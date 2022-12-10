@@ -9,6 +9,46 @@ use syn::{
 
 mod test;
 
+fn parse_html_ident(input: ParseStream) -> syn::Result<String> {
+    let mut result = input.parse::<Ident>()?.to_string();
+
+    if input.peek(Ident) {
+        return Err(input.error("unexpected whitespace in html identifier"));
+    }
+
+    while !input.is_empty() {
+        if input.peek(Token![-]) {
+            input.parse::<Token![-]>()?;
+            result += "-";
+            continue;
+        }
+
+        if input.peek(Token![:]) {
+            input.parse::<Token![:]>()?;
+            result += ":";
+            continue;
+        }
+
+        if input.peek(Token![.]) {
+            input.parse::<Token![.]>()?;
+            result += ".";
+            continue;
+        }
+
+        if input.peek(LitInt) {
+            result += &input.parse::<LitInt>()?.to_string();
+            continue;
+        }
+
+        if input.peek(Ident) && !input.peek2(Ident) {
+            result += &input.parse::<Ident>()?.to_string();
+            continue;
+        }
+        break;
+    }
+    Ok(result)
+}
+
 #[derive(Clone)]
 pub enum Item {
     Component(Component),
@@ -70,14 +110,14 @@ impl Parse for Component {
 
 #[derive(Clone)]
 pub struct Element {
-    pub tag_name: Ident,
+    pub tag_name: String,
     pub attributes: Vec<Attribute>,
     pub children: Children,
 }
 
 impl Parse for Element {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        let tag_name = input.parse()?;
+        let tag_name = parse_html_ident(input)?;
 
         let mut attributes = Vec::new();
         if input.peek(Paren) {
@@ -126,6 +166,12 @@ impl Parse for Children {
     }
 }
 
+impl Default for Children {
+    fn default() -> Self {
+        Self::Children(Vec::new())
+    }
+}
+
 #[derive(Clone)]
 pub struct Attribute {
     pub key: String,
@@ -134,42 +180,7 @@ pub struct Attribute {
 
 impl Parse for Attribute {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        let mut key = input.parse::<Ident>()?.to_string();
-
-        if input.peek(Ident) {
-            return Err(input.error("unexpected whitespace in attribute key"));
-        }
-
-        while !input.is_empty() {
-            if input.peek(Token![-]) {
-                input.parse::<Token![-]>()?;
-                key += "-";
-                continue;
-            }
-
-            if input.peek(Token![:]) {
-                input.parse::<Token![:]>()?;
-                key += ":";
-                continue;
-            }
-
-            if input.peek(Token![.]) {
-                input.parse::<Token![.]>()?;
-                key += ".";
-                continue;
-            }
-
-            if input.peek(LitInt) {
-                key += &input.parse::<LitInt>()?.to_string();
-                continue;
-            }
-
-            if input.peek(Ident) && !input.peek2(Ident) {
-                key += &input.parse::<Ident>()?.to_string();
-                continue;
-            }
-            break;
-        }
+        let key = parse_html_ident(input)?;
         input.parse::<Token![=]>()?;
         let value = input.parse()?;
         Ok(Self { key, value })
@@ -214,3 +225,4 @@ impl Parse for AttributeValue {
         }
     }
 }
+
