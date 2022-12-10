@@ -4,6 +4,12 @@ use shared::generate_id;
 
 use crate::view::parse::{Prop, Component};
 
+impl From<Prop> for TokenStream {
+    fn from(Prop { key, value }: Prop) -> Self {
+        quote! { #key: #value }
+    }
+}
+
 pub struct Data {
     name: Ident,
     props: Vec<Prop>,

@@ -1,5 +1,3 @@
-use proc_macro2::TokenStream;
-use quote::quote;
 use syn::{
     braced, parenthesized,
     parse::{Parse, ParseStream},
@@ -193,12 +191,6 @@ pub struct Prop {
     pub value: Expr,
 }
 
-impl Into<TokenStream> for Prop {
-    fn into(self) -> TokenStream {
-        let Self { key, value } = self;
-        quote! { #key: #value }
-    }
-}
 
 impl Parse for Prop {
     fn parse(input: ParseStream) -> syn::Result<Self> {

@@ -111,3 +111,9 @@ impl From<Data> for super::Data {
         }
     }
 }
+
+impl From<Element> for super::Data {
+    fn from(element: Element) -> Self {
+        Data::from(element).into()
+    }
+}

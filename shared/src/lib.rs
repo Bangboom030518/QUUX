@@ -1,8 +1,8 @@
 #![warn(clippy::pedantic, clippy::nursery)]
+
 use std::sync::atomic::{AtomicU64, Ordering};
 pub use stores::Store;
 pub mod stores;
-use base64::encode;
 pub use cfg_if;
 pub use postcard;
 use serde::{Deserialize, Serialize};
@@ -34,7 +34,7 @@ where
     } = component.render();
     let bytes = postcard::to_stdvec(&component_node)
         .expect("Failed to serialize `RenderContext` (internal)");
-    let component_node = encode(bytes);
+    let component_node = base64::encode(bytes);
     format!(
         "<!DOCTYPE html>{}",
         html.replace(&TREE_INTERPOLATION_ID.to_string(), &component_node)

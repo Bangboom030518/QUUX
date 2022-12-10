@@ -3,7 +3,9 @@
     "..gitignore": true,
     ".vscode": true,
     "**/*.lock": true,
-    "target": true
+    "target": true,
+    ".devcontainer": true,
+    "assets": true
   },
   "rust-analyzer.cargo.target": "wasm32-unknown-unknown"
 }

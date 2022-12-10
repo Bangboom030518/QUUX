@@ -2,8 +2,7 @@
 #![warn(clippy::pedantic, clippy::nursery)]
 use html::view;
 use serde::{Deserialize, Serialize};
-use shared::{Component, QUUXInitialise, RenderData, Store};
-use std::rc::Rc;
+use shared::{Component, QUUXInitialise, Store};
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -34,7 +33,7 @@ pub fn init_app() {
     let tree: shared::ClientComponentNode =
         postcard::from_bytes(&base64::decode(tree).expect("Failed to decode tree as base64"))
             .expect("Render context tree malformatted");
-    let mut root_component: App =
+    let root_component: App =
         shared::postcard::from_bytes(&tree.component).expect("failed to deserialize Component");
     root_component.render(tree.render_context);
 }
@@ -54,7 +53,7 @@ impl<'a> Component<'a> for App {
     }
 
     #[cfg(not(target_arch = "wasm32"))]
-    fn render(&self) -> RenderData {
+    fn render(&self) -> shared::RenderData {
         view! {
             html(lang="en") {
                 head {
@@ -72,6 +71,7 @@ impl<'a> Component<'a> for App {
     #[cfg(target_arch = "wasm32")]
     fn render(self, context: shared::RenderContext) {
         use std::cell::RefCell;
+        use std::rc::Rc;
         let count = Rc::new(RefCell::new(self.count));
         let button_count = Rc::clone(&count);
         let interpolated_count = Rc::clone(&count);
