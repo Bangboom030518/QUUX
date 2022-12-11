@@ -55,31 +55,36 @@ impl From<Element> for Data {
 }
 
 impl Data {
+    fn add_attribute_data(&mut self, Attribute { key, value }: Attribute) {
+        let AttributeValue::Static(value) = value else {
+            return
+        };
+
+        let Some(event_name) = key.strip_prefix("on:") else {
+            return
+        };
+
+        let scoped_id = self.scoped_id.as_str();
+
+        self.reactivity.push(quote! {
+            let scope_id = Rc::clone(&scope_id);
+            let closure = wasm_bindgen::prelude::Closure::<dyn FnMut()>::new(#value);
+            web_sys::window()
+                .expect("Failed to get window (quux internal error)")
+                .document()
+                .expect("Failed to get document (quux internal error)")
+                .query_selector(&format!("[data-quux-scope-id='{}'] [data-quux-scoped-id='{}']", scope_id, #scoped_id))
+                .expect("Failed to get element with scoped id (quux internal error)")
+                .expect("Failed to get element with scoped id (quux internal error)")
+                .add_event_listener_with_callback(#event_name, closure.as_ref().unchecked_ref())
+                .expect("Failed to add event (quux internal error)");
+            closure.forget();
+        });
+    }
+
     fn add_event_data(&mut self, attributes: Vec<Attribute>) {
-        for Attribute { key, value } in attributes {
-            let AttributeValue::Static(value) = value else {
-                continue
-            };
-            let Some(event_name) = key.strip_prefix("on:") else {
-                continue
-            };
-
-            let scoped_id = self.scoped_id.as_str();
-
-            self.reactivity.push(quote! {
-                let scope_id = Rc::clone(&scope_id);
-                let closure = wasm_bindgen::prelude::Closure::<dyn FnMut()>::new(#value);
-                web_sys::window()
-                    .expect("Failed to get window (quux internal error)")
-                    .document()
-                    .expect("Failed to get document (quux internal error)")
-                    .query_selector(&format!("[data-quux-scope-id='{}'] [data-quux-scoped-id='{}']", scope_id, #scoped_id))
-                    .expect("Failed to get element with scoped id (quux internal error)")
-                    .expect("Failed to get element with scoped id (quux internal error)")
-                    .add_event_listener_with_callback(#event_name, closure.as_ref().unchecked_ref())
-                    .expect("Failed to add event (quux internal error)");
-                closure.forget();
-            });
+        for attribute in attributes {
+            self.add_attribute_data(attribute);
         }
     }
 
@@ -126,8 +131,6 @@ pub fn generate(tree: &Element) -> TokenStream {
         reactivity,
         ..
     } = Item::Element(tree).into();
-    // let components = components.into_iter().map(|ident|  quote! {
-    // });
     let tokens = quote! {
         use std::rc::Rc;
         use wasm_bindgen::JsCast;

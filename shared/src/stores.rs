@@ -1,8 +1,8 @@
 use std::{cell::RefCell, fmt, rc::Rc};
+use serde::{Serialize, Deserialize};
 
-use serde::{Deserialize, Serialize};
-
-pub struct StoreContainer<'a, T: fmt::Display>(Rc<RefCell<Store<'a, T>>>);
+#[derive(Clone, Copy)]
+pub struct StoreContainer<'a, T: fmt::Display>(&'a Rc<RefCell<Store<'a, T>>>);
 
 pub type StoreCallback<'a, T> = dyn FnMut(&T, &T) + 'a;
 

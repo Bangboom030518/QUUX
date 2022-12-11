@@ -25,8 +25,6 @@ impl From<Element> for Data {
             children,
         }: Element,
     ) -> Self {
-        // TODO: deal with reactive stores as attribute values
-
         let mut data = Self {
             tag_name,
             attributes: attributes.into(),
@@ -54,7 +52,6 @@ impl Data {
             mut component_constructors,
         } = item.into();
         self.component_nodes.append(&mut component_nodes);
-
         self.component_constructors
             .append(&mut component_constructors);
         quote! { &#html }

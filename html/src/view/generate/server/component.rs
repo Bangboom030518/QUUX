@@ -1,8 +1,8 @@
 use proc_macro2::{Ident, TokenStream};
-use quote::{quote, format_ident};
+use quote::{format_ident, quote};
 use shared::generate_id;
 
-use crate::view::parse::{Prop, Component};
+use crate::view::parse::{Component, Prop};
 
 impl From<Prop> for TokenStream {
     fn from(Prop { key, value }: Prop) -> Self {
@@ -82,7 +82,6 @@ impl From<Data> for super::Data {
             component_nodes: vec![data.generate_node()],
             component_constructors: vec![data.generate_constructor()],
         }
-
     }
 }
 
