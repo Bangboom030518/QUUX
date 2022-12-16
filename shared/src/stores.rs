@@ -1,8 +1,33 @@
-use std::{cell::RefCell, fmt, rc::Rc};
+use std::{cell::{RefCell, Ref}, fmt, pin::Pin, rc::Rc, cell::RefMut, ops::{Deref, DerefMut}};
 use serde::{Serialize, Deserialize};
 
 #[derive(Clone, Copy)]
-pub struct StoreContainer<'a, T: fmt::Display>(&'a Rc<RefCell<Store<'a, T>>>);
+pub struct StoreContainer<'a, T: fmt::Display>(*const Pin<Rc<RefCell<Store<'a, T>>>>);
+
+impl<'a, T: fmt::Display> Deref for StoreContainer<'a, T> {
+    type Target = Store<'a, T>;
+
+    fn deref(&self) -> &Self::Target {
+        unsafe {
+            &((*(*self.0)).borrow())
+        }
+    }
+}
+
+impl<'a, T: fmt::Display> DerefMut for StoreContainer<'a, T> {
+    type Target = Store<'a, T>;
+
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        unsafe {
+            &mut ((*(*self.0)).borrow_mut())
+        }
+    }
+}
+
+struct MySmartPointer<T> {
+    value: T,
+}
+
 
 pub type StoreCallback<'a, T> = dyn FnMut(&T, &T) + 'a;
 
@@ -48,7 +73,6 @@ impl<'a, T: fmt::Display> Store<'a, T> {
         self.value = value;
     }
 }
-
 impl<'a, T: fmt::Display> fmt::Display for Store<'a, T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.value)
