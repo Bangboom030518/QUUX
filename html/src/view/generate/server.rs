@@ -2,7 +2,7 @@ mod attributes;
 mod component;
 mod element;
 
-use super::GLOBAL_ID;
+use super::{parse, GLOBAL_ID};
 use crate::view::parse::{Attribute, AttributeValue, Element, Item};
 use attributes::Attributes;
 use proc_macro2::TokenStream;
@@ -45,10 +45,7 @@ pub fn generate(tree: &Element) -> TokenStream {
     let mut tree = tree.clone();
     tree.attributes.push(Attribute {
         key: "data-quux-scope-id".to_string(),
-        value: AttributeValue::Static(
-            syn::parse(quote! { scope_id }.into())
-                .expect("Couldn't parse `scope_id` as Expr (quux internal error)"),
-        ),
+        value: AttributeValue::Static(parse(quote! { scope_id })),
     });
     let Data {
         html,
@@ -62,7 +59,7 @@ pub fn generate(tree: &Element) -> TokenStream {
         shared::RenderData {
             html: #html,
             component_node: shared::ClientComponentNode {
-                component: shared::postcard::to_stdvec(self).expect("Couldn't serialize component (quux internal error)"),
+                component: shared::Component::serialize(self),
                 render_context: shared::RenderContext {
                     id: scope_id,
                     children: vec![

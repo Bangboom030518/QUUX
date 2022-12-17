@@ -19,11 +19,12 @@ axum = { version = "0.6", features = ["headers"] }
 tokio = { workspace = true }
 
 [target.'cfg(target_arch="wasm32")'.dependencies]
-web-sys = { version = "0.3", features = ['Document','Element', 'HtmlElement', 'Node', 'Window'] }
+web-sys = { workspace = true }
 lazy_static = { workspace = true }
 base64 = { workspace = true }
 postcard = { workspace = true }
 console_error_panic_hook = "0.1"
+once_cell = "1.16"
 
 [workspace.dependencies]
 wasm-bindgen = "0.2"
@@ -31,7 +32,8 @@ tokio = { version = "1", features = ["full"] }
 serde = { version = "1.0", features = ["derive", "rc"] }
 postcard = { version = "1.0", features = ["use-std"] }
 lazy_static = "1.4"
-base64 = "0.13"
+base64 = "0.20"
+web-sys = { version = "0.3", features = ['Document','Element', 'HtmlElement', 'Node', 'Window'] }
 
 [workspace]
 members = [

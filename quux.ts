@@ -1,5 +1,3 @@
-import type { QContext } from "./core/state/context";
-
 /**
  * Set up event listening for browser.
  *
@@ -8,53 +6,53 @@ import type { QContext } from "./core/state/context";
  *
  */
 
-export const qwikLoader = (hasInitialized?: number) => {
+function qwikLoader(hasInitialized?: number) {
   const Q_CONTEXT = "__q_context__";
   const events = new Set();
 
-  const broadcast = (infix: string, event: Event, type = event.type) => {
+  function broadcast(infix: string, event: Event, type = event.type) {
     document
       .querySelectorAll(`[on${infix}\\:${type}]`)
       .forEach((target) => dispatch(target, infix, event, type));
-  };
+  }
 
-  const resolveContainer = (containerEl: Element) => {
-    if ((containerEl as any)["_qwikjson_"] === undefined) {
-      const parentJSON =
-        containerEl === document.documentElement ? document.body : containerEl;
-      let script = parentJSON.lastElementChild;
-      while (script) {
-        if (
-          script.tagName === "SCRIPT" &&
-          script.getAttribute("type") === "qwik/json"
-        ) {
-          (containerEl as any)["_qwikjson_"] = JSON.parse(
-            script.textContent!.replace(/\\x3C(\/?script)/g, "<$1")
-          );
-          break;
-        }
-        script = script.previousElementSibling;
+  function resolveContainer(container: Element) {
+    if ((container as any)["_qwikjson_"] !== undefined) return;
+
+    const parentJSON =
+      container === document.documentElement ? document.body : container;
+    let script = parentJSON.lastElementChild;
+    while (script) {
+      if (
+        script.tagName === "SCRIPT" &&
+        script.getAttribute("type") === "qwik/json"
+      ) {
+        (container as any)["_qwikjson_"] = JSON.parse(
+          script.textContent!.replace(/\\x3C(\/?script)/g, "<$1")
+        );
+        break;
       }
+      script = script.previousElementSibling;
     }
-  };
+  }
 
   const createEvent = (eventName: string, detail?: any) =>
     new CustomEvent(eventName, {
       detail,
     });
 
-  const dispatch = async (
+  async function dispatch(
     element: Element,
     onPrefix: string,
     event: Event,
     eventName = event.type
-  ) => {
-    const attrName = "on" + onPrefix + ":" + eventName;
-    if (element.hasAttribute("preventdefault:" + eventName)) {
+  ) {
+    const attributeName = `on${onPrefix}:${eventName}`;
+    if (element.hasAttribute("preventdefault:" + eventName))
       event.preventDefault();
-    }
+
     const context = (element as any)["_qc_"] as QContext | undefined;
-    const qrls = context?.li.filter((li) => li[0] === attrName);
+    const qrls = context?.li.filter((li) => li[0] === attributeName);
     if (qrls && qrls.length > 0) {
       for (const q of qrls) {
         await q[1].getFn([element, event], () => element.isConnected)(
@@ -64,45 +62,39 @@ export const qwikLoader = (hasInitialized?: number) => {
       }
       return;
     }
-    const attrValue = element.getAttribute(attrName);
-    if (attrValue) {
-      const container = element.closest("[q\\:container]")!;
-      const base = new URL(
-        container.getAttribute("q:base")!,
-        document.baseURI
-      );
+    const attributeValue = element.getAttribute(attributeName);
+    if (!attributeValue) return;
+    const container = element.closest("[q\\:container]")!;
+    const base = new URL(container.getAttribute("q:base")!, document.baseURI);
 
-      for (const qrl of attrValue.split("\n")) {
-        const url = new URL(qrl, base);
-        const symbolName =
-          url.hash.replace(/^#?([^?[|]*).*$/, "$1") || "default";
-        const reqTime = performance.now();
-        const module = import(url.href.split("#")[0]);
-        resolveContainer(container);
-        const handler = findSymbol(await module, symbolName);
-        const previousContext = document[Q_CONTEXT];
-        if (element.isConnected) {
-          try {
-            document[Q_CONTEXT] = [element, event, url];
-            emitEvent("qsymbol", {
-              symbol: symbolName,
-              element: element,
-              reqTime,
-            });
-            await handler(event, element);
-          } finally {
-            document[Q_CONTEXT] = previousContext;
-          }
-        }
+    for (const qrl of attributeValue.split("\n")) {
+      if (!element.isConnected) return;
+      const url = new URL(qrl, base);
+      const symbolName = url.hash.replace(/^#?([^?[|]*).*$/, "$1") || "default";
+      const requestTime = performance.now();
+      const module = import(url.href.split("#")[0]);
+      resolveContainer(container);
+      const handler = findSymbol(await module, symbolName);
+      const previousContext = document[Q_CONTEXT];
+      try {
+        document[Q_CONTEXT] = [element, event, url];
+        emitEvent("qsymbol", {
+          symbol: symbolName,
+          element: element,
+          reqTime: requestTime,
+        });
+        await handler(event, element);
+      } finally {
+        document[Q_CONTEXT] = previousContext;
       }
     }
-  };
+  }
 
-  const emitEvent = (eventName: string, detail?: any) => {
+  function emitEvent(eventName: string, detail?: any) {
     document.dispatchEvent(createEvent(eventName, detail));
-  };
+  }
 
-  const findSymbol = (module: any, symbol: string) => {
+  function findSymbol(module: any, symbol: string) {
     if (symbol in module) {
       return module[symbol];
     }
@@ -112,7 +104,7 @@ export const qwikLoader = (hasInitialized?: number) => {
         return (value as any)[symbol];
       }
     }
-  };
+  }
 
   const camelToKebab = (str: string) =>
     str.replace(/([A-Z])/g, (a) => "-" + a.toLowerCase());
@@ -126,7 +118,7 @@ export const qwikLoader = (hasInitialized?: number) => {
    *
    * @param event - Browser event.
    */
-  const processDocumentEvent = async (event: Event) => {
+  async function processDocumentEvent(event: Event) {
     // eslint-disable-next-line prefer-const
     let type = camelToKebab(event.type);
     let element = event.target as Element | null;
@@ -139,49 +131,47 @@ export const qwikLoader = (hasInitialized?: number) => {
           ? element.parentElement
           : null;
     }
-  };
+  }
 
-  const processWindowEvent = (ev: Event) => {
-    broadcast("-window", ev, camelToKebab(ev.type));
-  };
+  function processWindowEvent(event: Event) {
+    broadcast("-window", event, camelToKebab(event.type));
+  }
 
-  const processReadyStateChange = () => {
-    const readyState = document.readyState;
-    if (
-      !hasInitialized &&
-      (readyState == "interactive" || readyState == "complete")
-    ) {
-      // document is ready
-      hasInitialized = 1;
-
-      emitEvent("qinit");
-      const riC = window.requestIdleCallback ?? window.setTimeout;
-      riC.bind(window)(() => emitEvent("qidle"));
-
-      if (events.has("qvisible")) {
-        const results = document.querySelectorAll("[on\\:qvisible]");
-        const observer = new IntersectionObserver((entries) => {
-          for (const entry of entries) {
-            if (entry.isIntersecting) {
-              observer.unobserve(entry.target);
-              dispatch(entry.target, "", createEvent("qvisible", entry));
-            }
-          }
-        });
-        results.forEach((el) => observer.observe(el));
-      }
-    }
-  };
-
-  const push = (eventNames: string[]) => {
+  function push(eventNames: string[]) {
     for (const eventName of eventNames) {
-      if (!events.has(eventName)) {
-        document.addEventListener(eventName, processDocumentEvent, { capture: true })
-        window.addEventListener(eventName, processWindowEvent);
-        events.add(eventName);
-      }
+      if (events.has(eventName)) continue;
+      document.addEventListener(eventName, processDocumentEvent, {
+        capture: true,
+      });
+      window.addEventListener(eventName, processWindowEvent);
+      events.add(eventName);
     }
-  };
+  }
+
+  function processReadyStateChange() {
+    if (
+      hasInitialized ||
+      ["interactive", "complete"].includes(document.readyState)
+    )
+      return;
+    // document is ready
+    hasInitialized = 1;
+    emitEvent("qinit");
+    const requestIdleCallback = window.requestIdleCallback ?? window.setTimeout;
+    requestIdleCallback.call(window, () => emitEvent("qidle"));
+
+    if (!events.has("qvisible")) return;
+
+    const results = document.querySelectorAll("[on\\:qvisible]");
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        observer.unobserve(entry.target);
+        dispatch(entry.target, "", createEvent("qvisible", entry));
+      }
+    });
+    results.forEach(observer.observe);
+  }
 
   if (!(document as any).qR) {
     const qwikevents = (window as any).qwikevents;
@@ -189,13 +179,9 @@ export const qwikLoader = (hasInitialized?: number) => {
       push(qwikevents);
     }
     (window as any).qwikevents = {
-      push: (...e: string[]) => push(e),
+      push: (...events: string[]) => push(events),
     };
     document.addEventListener("readystatechange", processReadyStateChange);
     processReadyStateChange();
   }
-};
-
-export interface QwikLoaderMessage extends MessageEvent {
-  data: string[];
 }

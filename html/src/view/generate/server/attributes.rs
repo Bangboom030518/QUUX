@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use super::parse;
 use quote::quote;
 use syn::Expr;
 
@@ -18,10 +19,7 @@ impl Attributes {
     pub fn add_scoped_id(&mut self, id: &str) {
         if self.reactive {
             self.keys.push(String::from("data-quux-scoped-id"));
-            self.values.push(
-                syn::parse(quote! { #id }.into())
-                    .expect("Couldn't parse `id` tokens as expression (quux internal error)"),
-            );
+            self.values.push(parse(quote! { #id }));
         }
     }
 
@@ -32,7 +30,7 @@ impl Attributes {
     }
 
     /// Add's a static attribute.
-    /// If it's an event listener, the attribute will be ignored and  reactive will be set to true 
+    /// If it's an event listener, the attribute will be ignored and  reactive will be set to true
     pub fn add_static_value(&mut self, key: String, value: Expr) {
         if key.starts_with("on:") {
             self.reactive = true;
@@ -46,13 +44,9 @@ impl Attributes {
         self.reactive_attributes.insert(key.clone(), value.clone());
         self.add_entry(
             key,
-            syn::parse(
-                quote! {
-                    quux::Store::get(#value)
-                }
-                .into(),
-            )
-            .expect("failed to parse `quux::Store::get(#value)` (QUUX internal)"),
+            parse(quote! {
+                quux::Store::get(#value)
+            }),
         );
     }
 

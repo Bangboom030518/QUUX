@@ -21,6 +21,7 @@ fn document() -> web_sys::Document {
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen(start)]
 pub fn init_app() {
+    
     std::panic::set_hook(Box::new(console_error_panic_hook::hook));
 
     let init_script = document()

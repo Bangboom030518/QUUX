@@ -69,7 +69,7 @@ impl Data {
         let props = self.generate_props();
 
         quote! {
-            let #component_ident = #name ::init(#props);
+            let #component_ident = <#name as shared::Component>::init(#props);
             let #rendered_component_ident = #component_ident.render();
         }
     }

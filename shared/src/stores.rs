@@ -1,6 +1,7 @@
-use std::{cell::{RefCell, Ref}, fmt, pin::Pin, rc::Rc, cell::RefMut, ops::{Deref, DerefMut}};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
+use std::fmt;
 
+pub type StoreCallback<'a, T> = dyn FnMut(&T, &T) + 'a;
 
 #[derive(Serialize, Deserialize)]
 pub struct Store<'a, T: fmt::Display>

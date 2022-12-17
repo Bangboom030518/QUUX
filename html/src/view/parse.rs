@@ -85,8 +85,8 @@ impl Parse for Component {
     // TODO: refactor
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let name = input.parse()?;
-
         let mut props = Vec::new();
+        
         if input.peek(Paren) {
             let attributes_buffer;
             parenthesized!(attributes_buffer in input);
@@ -95,9 +95,7 @@ impl Parse for Component {
                 if attributes_buffer.peek(Token![,]) {
                     attributes_buffer.parse::<Token![,]>()?;
                 } else if !attributes_buffer.is_empty() {
-                    return Err(
-                        attributes_buffer.error("Attributes should be seperated by commas, duh!")
-                    );
+                    return Err(attributes_buffer.error("Attributes should be seperated by commas, duh!"));
                 }
             }
         }
