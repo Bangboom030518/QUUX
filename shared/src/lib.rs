@@ -1,14 +1,20 @@
 #![warn(clippy::pedantic, clippy::nursery)]
 
+pub use cfg_if;
+use errors::MapInternal;
+pub use postcard;
+use serde::{Deserialize, Serialize};
 use std::{
     str::FromStr,
     sync::atomic::{AtomicU64, Ordering},
 };
 pub use stores::Store;
+
+pub mod errors;
 pub mod stores;
-pub use cfg_if;
-pub use postcard;
-use serde::{Deserialize, Serialize};
+
+#[cfg(target_arch = "wasm32")]
+pub mod dom;
 
 #[cfg(not(target_arch = "wasm32"))]
 lazy_static::lazy_static! {
@@ -26,27 +32,20 @@ pub fn escape(input: &str) -> String {
         .replace('"', "&quot;")
 }
 
-#[cfg(not(target_arch = "wasm32"))]
-pub fn render_to_string<'a, T, P>(component: &T) -> String
-where
-    T: Component<'a, Props = P>,
-{
-    let RenderData {
-        html,
-        component_node,
-    } = component.render();
-    let bytes = postcard::to_stdvec(&component_node)
-        .expect("Failed to serialize `RenderContext` (internal)");
-    let component_node = base64::encode(bytes);
-    format!(
-        "<!DOCTYPE html>{}",
-        html.replace(&TREE_INTERPOLATION_ID.to_string(), &component_node)
-    )
-}
-
 #[must_use]
 pub fn generate_id() -> String {
     GLOBAL_ID.fetch_add(1, Ordering::Relaxed).to_string()
+}
+
+pub trait SerializePostcard: Serialize {
+    fn serialize_bytes(&self) -> Vec<u8> {
+        postcard::to_stdvec(self).expect_internal("serialize struct")
+    }
+
+    fn serialize_base64(&self) -> String {
+        let bytes = self.serialize_bytes();
+        base64::encode(bytes)
+    }
 }
 
 pub struct RenderData {
@@ -59,8 +58,19 @@ pub trait Component<'a>: Serialize + Deserialize<'a> {
 
     fn init(props: Self::Props) -> Self;
 
-    fn serialize(&self) -> Vec<u8> {
-        postcard::to_stdvec(&self).expect("couldn't serialize component (quux internal error)")
+    #[cfg(not(target_arch = "wasm32"))]
+    fn render_to_string(&self) -> String {
+        let RenderData {
+            html,
+            component_node,
+        } = self.render();
+        let bytes =
+            postcard::to_stdvec(&component_node).expect_internal("serialize `RenderContext`");
+        let component_node = base64::encode(bytes);
+        format!(
+            "<!DOCTYPE html>{}",
+            html.replace(&TREE_INTERPOLATION_ID.to_string(), &component_node)
+        )
     }
 
     #[cfg(not(target_arch = "wasm32"))]
@@ -73,7 +83,27 @@ pub trait Component<'a>: Serialize + Deserialize<'a> {
     fn from_bytes(bytes: &'a [u8]) -> Self {
         postcard::from_bytes(bytes).expect("couldn't deserialize component (quux internal error)")
     }
+
+    #[cfg(ignore)]
+    #[cfg(target_arch = "wasm32")]
+    fn init_as_root()
+    where
+        Self: Component<'a>,
+    {
+        let init_script = get_document()
+            .get_element_by_id("__quux_init_script__")
+            .expect("`__quux_init_script__` not found");
+
+        let tree = init_script
+            .get_attribute("data-quux-tree")
+            .expect("`__quux_init_script__` doesn't have a tree attached");
+        let tree: ClientComponentNode = tree.parse().unwrap();
+        let root_component = Self::from_bytes(&tree.component);
+        root_component.render(tree.render_context);
+    }
 }
+
+impl<'a, T: Component<'a>> SerializePostcard for T {}
 
 #[derive(Serialize, Deserialize)]
 /// Represents a reactive node on the client. Only for `Component`s.
@@ -84,44 +114,16 @@ pub struct ClientComponentNode {
 }
 
 impl FromStr for ClientComponentNode {
-    type Err = ClientParseError;
+    type Err = errors::ClientParse;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let bytes = base64::decode(s).map_err(ClientParseError::Base64Decode)?;
-        let node = postcard::from_bytes(&bytes).map_err(ClientParseError::PostcardDecode)?;
+        let bytes = base64::decode(s).map_err(errors::ClientParse::Base64Decode)?;
+        let node = postcard::from_bytes(&bytes).map_err(errors::ClientParse::PostcardDecode)?;
         Ok(node)
     }
 }
 
-pub enum ClientParseError {
-    Base64Decode(base64::DecodeError),
-    PostcardDecode(postcard::Error),
-}
-
-impl ClientParseError {
-    const BASE_64_MESSAGE: &str = "Failed to decode data as base64";
-    const POSTCARD_DECODE_MESSAGE: &str = "Failed to decode bytes";
-}
-
-impl std::fmt::Display for ClientParseError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Base64Decode(_) => write!(f, "{}", Self::BASE_64_MESSAGE),
-            Self::PostcardDecode(_) => write!(f, "{}", Self::POSTCARD_DECODE_MESSAGE),
-        }
-    }
-}
-
-impl std::fmt::Debug for ClientParseError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Base64Decode(err) => write!(f, "{}: {err:?}", Self::BASE_64_MESSAGE),
-            Self::PostcardDecode(err) => write!(f, "{}: {err:?}", Self::POSTCARD_DECODE_MESSAGE),
-        }
-    }
-}
-
-impl std::error::Error for ClientParseError {}
+impl SerializePostcard for ClientComponentNode {}
 
 /// The id is passed to render method on client
 /// Children are recusively hydrated
@@ -171,7 +173,7 @@ impl<'a> Component<'a> for QUUXInitialise {
                 include_str!("../../assets/quux.js"),
             ),
             component_node: ClientComponentNode {
-                component: postcard::to_stdvec(&self).expect("Failed to serialize component (quux internal error)"),
+                component: self.serialize_bytes(),
                 render_context: RenderContext::default()
             },
         }
@@ -179,41 +181,4 @@ impl<'a> Component<'a> for QUUXInitialise {
 
     #[cfg(target_arch = "wasm32")]
     fn render(self, _: RenderContext) {}
-}
-
-#[cfg(target_arch = "wasm32")]
-#[must_use]
-pub fn get_reactive_element(scope_id: &str, scoped_id: &str) -> web_sys::Element {
-    get_document()
-        .query_selector(&format!(
-            "[data-quux-scope-id='{scope_id}'] [data-quux-scoped-id='{scoped_id}']"
-        ))
-        .expect("Failed to get element with scoped id (quux internal error)")
-        .expect("Failed to get element with scoped id (quux internal error)")
-}
-
-#[cfg(target_arch = "wasm32")]
-#[must_use]
-pub fn get_document() -> web_sys::Document {
-    web_sys::window()
-        .expect("Failed to get window (quux internal error)")
-        .document()
-        .expect("Failed to get document (quux internal error)")
-}
-
-#[cfg(target_arch = "wasm32")]
-pub fn init_app<'a, T>()
-where
-    T: Component<'a>,
-{
-    let init_script = get_document()
-        .get_element_by_id("__quux_init_script__")
-        .expect("`__quux_init_script__` not found");
-
-    let tree = init_script
-        .get_attribute("data-quux-tree")
-        .expect("`__quux_init_script__` doesn't have a tree attached (quux internal error)");
-    let tree: ClientComponentNode = tree.parse().unwrap();
-    let root_component = T::from_bytes(&tree.component);
-    root_component.render(tree.render_context);
 }

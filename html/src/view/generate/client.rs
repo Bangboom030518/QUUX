@@ -69,15 +69,9 @@ impl Data {
         self.reactivity.push(quote! {
             let scope_id = Rc::clone(&scope_id);
             let closure = wasm_bindgen::prelude::Closure::<dyn FnMut()>::new(#value);
-            web_sys::window()
-                .expect("Failed to get window (quux internal error)")
-                .document()
-                .expect("Failed to get document (quux internal error)")
-                .query_selector(&format!("[data-quux-scope-id='{}'] [data-quux-scoped-id='{}']", scope_id, #scoped_id))
-                .expect("Failed to get element with scoped id (quux internal error)")
-                .expect("Failed to get element with scoped id (quux internal error)")
+            shared::dom::get_reactive_element(&*scope_id, #scoped_id)
                 .add_event_listener_with_callback(#event_name, closure.as_ref().unchecked_ref())
-                .expect("Failed to add event (quux internal error)");
+                .expect_internal("add event");
             closure.forget();
         });
     }
@@ -107,17 +101,9 @@ impl Data {
         self.reactivity.push(quote! {
             let scope_id = Rc::clone(&scope_id);
             shared::Store::on_change(&mut #store, move |_, new| {
-                wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlElement>(
-                    web_sys::window()
-                        .expect("Failed to get window (quux internal error)")
-                        .document()
-                        .expect("Failed to get document (quux internal error)")
-                        .query_selector(&format!("[data-quux-scope-id='{}'] [data-quux-scoped-id='{}']", scope_id, #scoped_id))
-                        .expect("Failed to get element with scoped id (quux internal error)")
-                        .expect("Failed to get element with scoped id (quux internal error)")
-                )
-                    .expect("`JSCast` from `Element` to `HTMLElement` (quux internal error)")
-                    .set_inner_text(&std::string::ToString::to_string(new))
+                let element = shared::dom::get_reactive_element(&*scope_id, #scoped_id);
+                shared::dom::as_html_element(element)
+                    .set_inner_text(&std::string::ToString::to_string(new));
             });
         });
         
@@ -134,10 +120,11 @@ pub fn generate(tree: &Element) -> TokenStream {
     let tokens = quote! {
         use std::rc::Rc;
         use wasm_bindgen::JsCast;
+        use shared::errors::MapInternal;
         let mut children = context.children.into_iter();
         let scope_id = Rc::new(context.id);
         #({
-            let child = children.next().expect("Client and server child lists don't match");
+            let child = children.next().expect_internal("retrieve all child data: client and server child lists don't match");
             let mut component: #components = shared::postcard::from_bytes(&child.component).expect("Couldn't deserialize component");
             component.render(child.render_context);
         })*

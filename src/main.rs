@@ -1,4 +1,4 @@
-// #![warn(clippy::pedantic, clippy::nursery)]
+#![warn(clippy::pedantic, clippy::nursery)]
 #![cfg(not(target_arch = "wasm32"))]
 use axum::{
     headers::{ContentType, Header, HeaderValue},
@@ -7,13 +7,13 @@ use axum::{
     Router, TypedHeader,
 };
 use quux::App;
-use shared::{render_to_string, Component};
+use shared::Component;
 use std::net::SocketAddr;
 
 mod tests;
 
 async fn root() -> Html<String> {
-    render_to_string(&App::init(())).into()
+    App::init(()).render_to_string().into()
 }
 
 async fn wasm() -> (TypedHeader<ContentType>, &'static [u8]) {

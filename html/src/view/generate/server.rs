@@ -59,12 +59,10 @@ pub fn generate(tree: &Element) -> TokenStream {
         shared::RenderData {
             html: #html,
             component_node: shared::ClientComponentNode {
-                component: shared::Component::serialize(self),
+                component: shared::SerializePostcard::serialize_bytes(self),
                 render_context: shared::RenderContext {
                     id: scope_id,
-                    children: vec![
-                        #(#component_nodes),*
-                    ],
+                    children: vec![#(#component_nodes),*],
                 }
             }
         }
