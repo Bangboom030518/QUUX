@@ -52,29 +52,32 @@ function qwikLoader(hasInitialized?: number) {
       event.preventDefault();
 
     const context = (element as any)["_qc_"] as QContext | undefined;
-    const qrls = context?.li.filter((li) => li[0] === attributeName);
-    if (qrls && qrls.length > 0) {
-      for (const q of qrls) {
-        await q[1].getFn([element, event], () => element.isConnected)(
+    const listeners = context?.li.filter((listener) => listener[0] === attributeName);
+    // There are already listeners to apply
+    if (listeners && listeners.length > 0) {
+      for (const listener of listeners) {
+        await listener[1].getFn([element, event], () => element.isConnected)(
           event,
           element
         );
+        // this => Element
+        // (event) => { ... }
       }
       return;
     }
+    // we need to add the listeners
     const attributeValue = element.getAttribute(attributeName);
     if (!attributeValue) return;
     const container = element.closest("[q\\:container]")!;
     const base = new URL(container.getAttribute("q:base")!, document.baseURI);
 
-    for (const qrl of attributeValue.split("\n")) {
+    for (const eventModuleUrl of attributeValue.split("\n")) {
       if (!element.isConnected) return;
-      const url = new URL(qrl, base);
+      const url = new URL(eventModuleUrl, base);
       const symbolName = url.hash.replace(/^#?([^?[|]*).*$/, "$1") || "default";
       const requestTime = performance.now();
-      const module = import(url.href.split("#")[0]);
       resolveContainer(container);
-      const handler = findSymbol(await module, symbolName);
+      const handler = findSymbol(await import(url.href.split("#")[0]), symbolName);
       const previousContext = document[Q_CONTEXT];
       try {
         document[Q_CONTEXT] = [element, event, url];
@@ -159,10 +162,13 @@ function qwikLoader(hasInitialized?: number) {
     emitEvent("qinit");
     const requestIdleCallback = window.requestIdleCallback ?? window.setTimeout;
     requestIdleCallback.call(window, () => emitEvent("qidle"));
+    
+    // Adds a `qvisible` browser event for when elements become visible, for the developer
 
-    if (!events.has("qvisible")) return;
-
+    if (!events.has("qvisible")) return; // The rest of the code in this function is pointless, as there are no `qvisible` events
+      
     const results = document.querySelectorAll("[on\\:qvisible]");
+    
     const observer = new IntersectionObserver((entries) => {
       for (const entry of entries) {
         if (!entry.isIntersecting) continue;
@@ -173,15 +179,15 @@ function qwikLoader(hasInitialized?: number) {
     results.forEach(observer.observe);
   }
 
-  if (!(document as any).qR) {
-    const qwikevents = (window as any).qwikevents;
-    if (Array.isArray(qwikevents)) {
-      push(qwikevents);
-    }
-    (window as any).qwikevents = {
-      push: (...events: string[]) => push(events),
-    };
-    document.addEventListener("readystatechange", processReadyStateChange);
-    processReadyStateChange();
+  if ((document as any).qR) return;
+
+  const qwikevents = (window as any).qwikevents;
+  if (Array.isArray(qwikevents)) {
+    push(qwikevents);
   }
+  (window as any).qwikevents = {
+    push: (...events: string[]) => push(events),
+  };
+  document.addEventListener("readystatechange", processReadyStateChange);
+  processReadyStateChange();
 }

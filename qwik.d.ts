@@ -29,7 +29,35 @@ interface VirtualElement {
   readonly parentElement: Element | null;
 }
 
+export interface QRLInternalMethods<TYPE> {
+  readonly $chunk$: string | null;
+  readonly $symbol$: string;
+  readonly $refSymbol$: string | null;
+  readonly $hash$: string;
+
+  $capture$: string[] | null;
+  $captureRef$: any[] | null;
+  $dev$: QRLDev | null;
+
+  resolve(): Promise<TYPE>;
+  getSymbol(): string;
+  getHash(): string;
+  getFn(
+    currentCtx?: InvokeContext | InvokeTuple,
+    beforeFn?: () => void
+  ): TYPE extends (...args: infer ARGS) => infer Return
+    ? (...args: ARGS) => ValueOrPromise<Return>
+    : any;
+
+  $setContainer$(containerEl: Element | undefined): void;
+  $resolveLazy$(containerEl?: Element): ValueOrPromise<TYPE>;
+}
+
 type QwikElement = Element | VirtualElement;
+
+export interface QRLInternal<TYPE = any> extends QRL<TYPE>, QRLInternalMethods<TYPE> {}
+
+type Listener = [eventName: string, qrl: QRLInternal];
 
 interface QContext {
   $element$: QwikElement;
