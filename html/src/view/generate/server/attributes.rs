@@ -45,7 +45,7 @@ impl Attributes {
         self.add_entry(
             key,
             parse(quote! {
-                quux::Store::get(#value)
+                #value.get()
             }),
         );
     }

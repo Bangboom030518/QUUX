@@ -48,10 +48,14 @@ pub trait SerializePostcard: Serialize {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 pub struct RenderData {
     pub html: String,
     pub component_node: ClientComponentNode,
 }
+
+#[cfg(target_arch = "wasm32")]
+pub type RenderData = ();
 
 pub trait Component<'a>: Serialize + Deserialize<'a> {
     type Props;
@@ -63,7 +67,7 @@ pub trait Component<'a>: Serialize + Deserialize<'a> {
         let RenderData {
             html,
             component_node,
-        } = self.render();
+        } = self.render(RenderContext::default());
         let bytes =
             postcard::to_stdvec(&component_node).expect_internal("serialize `RenderContext`");
         let component_node = base64::encode(bytes);
@@ -73,11 +77,7 @@ pub trait Component<'a>: Serialize + Deserialize<'a> {
         )
     }
 
-    #[cfg(not(target_arch = "wasm32"))]
-    fn render(&self) -> RenderData;
-
-    #[cfg(target_arch = "wasm32")]
-    fn render(self, context: RenderContext);
+    fn render(&self, context: RenderContext) -> RenderData;
 
     #[must_use]
     fn from_bytes(bytes: &'a [u8]) -> Self {
@@ -105,7 +105,7 @@ pub trait Component<'a>: Serialize + Deserialize<'a> {
 
 impl<'a, T: Component<'a>> SerializePostcard for T {}
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 /// Represents a reactive node on the client. Only for `Component`s.
 pub struct ClientComponentNode {
     /// The serialised component
@@ -165,7 +165,7 @@ impl<'a> Component<'a> for QUUXInitialise {
     }
 
     #[cfg(not(target_arch = "wasm32"))]
-    fn render(&self) -> RenderData {
+    fn render(&self, _: RenderContext) -> RenderData {
         RenderData {
             html: format!(
                 "<script type=\"module\" id=\"__quux_init_script__\" data-quux-tree=\"{}\">{}; await init('./assets/quux_bg.wasm')</script>",
@@ -180,5 +180,5 @@ impl<'a> Component<'a> for QUUXInitialise {
     }
 
     #[cfg(target_arch = "wasm32")]
-    fn render(self, _: RenderContext) {}
+    fn render(&self, _: RenderContext) {}
 }

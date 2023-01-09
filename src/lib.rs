@@ -2,7 +2,7 @@
 #![warn(clippy::pedantic, clippy::nursery)]
 use html::view;
 use serde::{Deserialize, Serialize};
-use shared::{errors::MapInternal, Component, QUUXInitialise, Store};
+use shared::{Component, QUUXInitialise, Store};
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -23,6 +23,7 @@ fn document() -> web_sys::Document {
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen(start)]
 pub fn init_app() {
+    use shared::errors::MapInternal;
     std::panic::set_hook(Box::new(console_error_panic_hook::hook));
 
     let init_script = document()
@@ -51,47 +52,24 @@ impl<'a> Component<'a> for App {
         }
     }
 
-    #[cfg(not(target_arch = "wasm32"))]
-    fn render(&self) -> shared::RenderData {
+    fn render(&self, context: shared::RenderContext) -> shared::RenderData {
         view! {
             html(lang="en") {
                 head {
                 }
                 body {
-                    button(on:click=|| log("HELLO!!!!!!")) {
+                    button(on:click={
+                        let count = self.count.clone();
+                        move || {
+                            let before = *count.get();
+                            count.set(before + 1);
+                        }
+                    }) {
                         $self.count
                     }
                     @QUUXInitialise
                 }
             }
         }
-    }
-
-    #[cfg(target_arch = "wasm32")]
-    fn render(self, context: shared::RenderContext) {
-        use std::cell::RefCell;
-        use std::rc::Rc;
-        let count = Rc::new(RefCell::new(self.count));
-        let button_count = Rc::clone(&count);
-        let interpolated_count = Rc::clone(&count);
-        view! {
-            html(lang="en") {
-                head {
-                }
-                body {
-                    button(on:click=move || {
-                        let before = {
-                            let before_store = button_count.borrow();
-                            *before_store.get()
-                        };
-                        let mut count = button_count.borrow_mut();
-                        count.set(before + 1);
-                    }) {
-                        $interpolated_count.borrow_mut()
-                    }
-                    @QUUXInitialise
-                }
-            }
-        };
     }
 }

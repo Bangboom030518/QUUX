@@ -100,7 +100,7 @@ impl Data {
         let scoped_id = self.scoped_id.as_str();
         self.reactivity.push(quote! {
             let scope_id = Rc::clone(&scope_id);
-            shared::Store::on_change(&mut #store, move |_, new| {
+            #store.on_change(move |_, new| {
                 let element = shared::dom::get_reactive_element(&*scope_id, #scoped_id);
                 shared::dom::as_html_element(element)
                     .set_inner_text(&std::string::ToString::to_string(new));

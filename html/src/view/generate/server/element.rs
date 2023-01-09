@@ -95,7 +95,7 @@ impl Data {
 
     fn add_store_data(&mut self, store: &Expr) {
         self.attributes.reactive = true;
-        self.html = quote! { shared::Store::get(&#store) };
+        self.html = quote! { #store.get() };
     }
 }
 

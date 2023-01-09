@@ -70,7 +70,7 @@ impl Data {
 
         quote! {
             let #component_ident = <#name as shared::Component>::init(#props);
-            let #rendered_component_ident = #component_ident.render();
+            let #rendered_component_ident = #component_ident.render(shared::RenderContext::default());
         }
     }
 }
