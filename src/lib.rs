@@ -23,19 +23,20 @@ fn document() -> web_sys::Document {
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen(start)]
 pub fn init_app() {
-    use shared::errors::MapInternal;
-    std::panic::set_hook(Box::new(console_error_panic_hook::hook));
+    // use shared::errors::MapInternal;
+    // std::panic::set_hook(Box::new(console_error_panic_hook::hook));
 
-    let init_script = document()
-        .get_element_by_id("__quux_init_script__")
-        .expect("`__quux_init_script__` not found");
+    // let init_script = document()
+    //     .get_element_by_id("__quux_init_script__")
+    //     .expect("`__quux_init_script__` not found");
 
-    let tree = init_script
-        .get_attribute("data-quux-tree")
-        .expect_internal("get tree attribute from init script");
-    let tree: shared::ClientComponentNode = tree.parse().unwrap();
-    let root_component = App::from_bytes(&tree.component);
-    root_component.render(tree.render_context);
+    // let tree = init_script
+    //     .get_attribute("data-quux-tree")
+    //     .expect_internal("get tree attribute from init script");
+    // let tree: shared::ClientComponentNode = tree.parse().unwrap();
+    // let root_component = App::from_bytes(&tree.component);
+    // root_component.render(tree.render_context);
+    App::init_as_root();
 }
 
 #[derive(Serialize, Deserialize)]
@@ -43,7 +44,7 @@ pub struct App {
     count: Store<'static, u32>,
 }
 
-impl<'a> Component<'a> for App {
+impl Component for App {
     type Props = ();
 
     fn init(_props: Self::Props) -> Self {

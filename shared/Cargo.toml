@@ -16,3 +16,4 @@ lazy_static = { workspace = true }
 
 [target.'cfg(target_arch="wasm32")'.dependencies]
 web-sys = { workspace = true }
+console_error_panic_hook = "0.1"

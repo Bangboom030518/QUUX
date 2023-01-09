@@ -691,6 +691,7 @@ version = "0.1.0"
 dependencies = [
  "base64 0.20.0",
  "cfg-if",
+ "console_error_panic_hook",
  "lazy_static",
  "postcard",
  "serde",

@@ -3,7 +3,7 @@
 pub use cfg_if;
 use errors::MapInternal;
 pub use postcard;
-use serde::{Deserialize, Serialize};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::{
     str::FromStr,
     sync::atomic::{AtomicU64, Ordering},
@@ -57,7 +57,7 @@ pub struct RenderData {
 #[cfg(target_arch = "wasm32")]
 pub type RenderData = ();
 
-pub trait Component<'a>: Serialize + Deserialize<'a> {
+pub trait Component: Serialize + DeserializeOwned {
     type Props;
 
     fn init(props: Self::Props) -> Self;
@@ -80,17 +80,15 @@ pub trait Component<'a>: Serialize + Deserialize<'a> {
     fn render(&self, context: RenderContext) -> RenderData;
 
     #[must_use]
-    fn from_bytes(bytes: &'a [u8]) -> Self {
+    fn from_bytes(bytes: &[u8]) -> Self {
         postcard::from_bytes(bytes).expect("couldn't deserialize component (quux internal error)")
     }
 
-    #[cfg(ignore)]
     #[cfg(target_arch = "wasm32")]
-    fn init_as_root()
-    where
-        Self: Component<'a>,
-    {
-        let init_script = get_document()
+    fn init_as_root() -> Self {
+        std::panic::set_hook(Box::new(console_error_panic_hook::hook));
+        
+        let init_script = dom::get_document()
             .get_element_by_id("__quux_init_script__")
             .expect("`__quux_init_script__` not found");
 
@@ -100,10 +98,11 @@ pub trait Component<'a>: Serialize + Deserialize<'a> {
         let tree: ClientComponentNode = tree.parse().unwrap();
         let root_component = Self::from_bytes(&tree.component);
         root_component.render(tree.render_context);
+        root_component
     }
 }
 
-impl<'a, T: Component<'a>> SerializePostcard for T {}
+impl<T: Component> SerializePostcard for T {}
 
 #[derive(Serialize, Deserialize, Default)]
 /// Represents a reactive node on the client. Only for `Component`s.
@@ -157,7 +156,7 @@ pub struct EmptyProps {}
 #[derive(Serialize, Deserialize)]
 pub struct QUUXInitialise;
 
-impl<'a> Component<'a> for QUUXInitialise {
+impl Component for QUUXInitialise {
     type Props = EmptyProps;
 
     fn init(_: Self::Props) -> Self {
