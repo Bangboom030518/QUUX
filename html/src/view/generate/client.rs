@@ -1,13 +1,13 @@
 use super::GLOBAL_ID;
 use crate::view::parse::{Attribute, AttributeValue, Children, Element, Item};
-use proc_macro2::{Ident, TokenStream};
+use proc_macro2::TokenStream;
 use quote::quote;
 use std::sync::atomic::Ordering::Relaxed;
-use syn::Expr;
+use syn::{Expr, Path};
 
 #[derive(Default)]
 struct Data {
-    components: Vec<Ident>,
+    components: Vec<Path>,
     /// Code to update DOM on changes - hydration
     reactivity: Vec<TokenStream>,
     scoped_id: String,
@@ -106,7 +106,6 @@ impl Data {
                     .set_inner_text(&std::string::ToString::to_string(new));
             });
         });
-        
     }
 }
 

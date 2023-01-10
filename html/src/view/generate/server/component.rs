@@ -1,3 +1,4 @@
+use syn::Path;
 use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote};
 use shared::generate_id;
@@ -11,7 +12,7 @@ impl From<Prop> for TokenStream {
 }
 
 pub struct Data {
-    name: Ident,
+    name: Path,
     props: Vec<Prop>,
     component_ident: Ident,
     rendered_component_ident: Ident,

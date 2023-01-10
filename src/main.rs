@@ -10,8 +10,6 @@ use quux::App;
 use shared::Component;
 use std::net::SocketAddr;
 
-mod tests;
-
 async fn root() -> Html<String> {
     App::init(()).render_to_string().into()
 }

@@ -1,22 +1,11 @@
 #![feature(more_qualified_paths, stmt_expr_attributes)]
 #![warn(clippy::pedantic, clippy::nursery)]
+use components::flashcard;
 use html::view;
 use serde::{Deserialize, Serialize};
 use shared::{Component, QUUXInitialise, Store};
 use wasm_bindgen::prelude::*;
-
-#[wasm_bindgen]
-extern "C" {
-    #[wasm_bindgen(js_namespace = console)]
-    fn log(s: &str);
-
-    fn alert(s: &str);
-}
-
-#[cfg(target_arch = "wasm32")]
-fn document() -> web_sys::Document {
-    web_sys::window().unwrap().document().unwrap()
-}
+mod components;
 
 /// # Panics
 /// This function will panic if it's unable to retrieve and parse the tree sent by the server
@@ -47,18 +36,16 @@ impl Component for App {
                     meta(charset="UTF-8") {}
                     meta(http-equiv="X-UA-Compatible", content="IE=edge") {}
                     meta(name="viewport", content="width=device-width, initial-scale=1.0") {}
+                    style {
+                        { include_str!("../dist/output.css") }
+                    }
                     title {{ "Document" }}
                 }
                 body {
-                    button(on:click={
-                        let count = self.count.clone();
-                        move || {
-                            let before = *count.get();
-                            count.set(before + 1);
-                        }
-                    }) {
-                        $self.count
+                    h1 {
+                        { "Welcome to Quuxlet" }
                     }
+                    @flashcard::Flashcard(term = "a", definition = "b")
                     @QUUXInitialise
                 }
             }

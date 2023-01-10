@@ -1,8 +1,10 @@
+// TODO: take `context` as first 'argument'
+
 use syn::{
     braced, parenthesized,
     parse::{Parse, ParseStream},
     token::{Brace, Paren},
-    Expr, Ident, LitInt, Token,
+    Expr, Ident, LitInt, Token, Path,
 };
 
 mod test;
@@ -77,7 +79,7 @@ impl Parse for Item {
 
 #[derive(Clone)]
 pub struct Component {
-    pub name: Ident,
+    pub name: Path,
     pub props: Vec<Prop>,
 }
 
