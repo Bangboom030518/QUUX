@@ -38,9 +38,18 @@ impl From<Element> for Data {
 }
 
 impl Data {
+    const SELF_CLOSING_ELEMENTS: &'static [&'static str] = &[
+        "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "source", "source",
+        "track", "wbr",
+    ];
+
+    fn is_self_closing(&self) -> bool {
+        Self::SELF_CLOSING_ELEMENTS.contains(&self.tag_name.to_lowercase().as_str())
+    }
+
     fn add_children_data(&mut self, children: Children) {
         match children {
-            Children::Children(children) => self.add_regular_children_data(children),
+            Children::Children(children) => self.add_element_children_data(children),
             Children::ReactiveStore(store) => self.add_store_data(&store),
         };
     }
@@ -57,13 +66,22 @@ impl Data {
         quote! { &#html }
     }
 
-    fn add_regular_children_data(&mut self, children: Vec<Item>) {
+    fn add_element_children_data(&mut self, children: Vec<Item>) {
+        if self.is_self_closing() {
+            assert!(
+                children.is_empty(),
+                "Self-closing element '{}' cannot have children",
+                self.tag_name
+            )
+        }
         let mut html: Vec<_> = children
             .into_iter()
             .map(|item| self.add_item_data(item))
             .collect();
         html.insert(0, quote! { String::new() });
-        self.html = quote!(#(#html)+*);
+        self.html = quote! {
+            #(#html)+*
+        };
     }
 
     fn add_attribute_data(&mut self) {
@@ -72,7 +90,11 @@ impl Data {
         let html = &self.html;
         let values = &self.attributes.values;
 
-        self.html = if values.is_empty() {
+        self.html = if self.is_self_closing() {
+            quote! {
+                #html_string.to_string()
+            }
+        } else if values.is_empty() {
             quote! {
                 format!(#html_string, #html)
             }
@@ -90,10 +112,22 @@ impl Data {
             .iter()
             .map(|key| format!("{key}=\"{{}}\""))
             .collect::<String>();
-        format!("<{0} {1}>{{}}</{0}>", self.tag_name, attributes)
+
+        if self.is_self_closing() {
+            format!("<{0} {1} />", self.tag_name, attributes)
+        } else {
+            format!("<{0} {1}>{{}}</{0}>", self.tag_name, attributes)
+        }
     }
 
     fn add_store_data(&mut self, store: &Expr) {
+        if self.is_self_closing() {
+            panic!(
+                "Self closing element {} cannot have store children",
+                self.tag_name
+            )
+        }
+
         self.attributes.reactive = true;
         self.html = quote! { #store.get() };
     }

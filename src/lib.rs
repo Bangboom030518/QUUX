@@ -23,19 +23,6 @@ fn document() -> web_sys::Document {
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen(start)]
 pub fn init_app() {
-    // use shared::errors::MapInternal;
-    // std::panic::set_hook(Box::new(console_error_panic_hook::hook));
-
-    // let init_script = document()
-    //     .get_element_by_id("__quux_init_script__")
-    //     .expect("`__quux_init_script__` not found");
-
-    // let tree = init_script
-    //     .get_attribute("data-quux-tree")
-    //     .expect_internal("get tree attribute from init script");
-    // let tree: shared::ClientComponentNode = tree.parse().unwrap();
-    // let root_component = App::from_bytes(&tree.component);
-    // root_component.render(tree.render_context);
     App::init_as_root();
 }
 
@@ -57,6 +44,10 @@ impl Component for App {
         view! {
             html(lang="en") {
                 head {
+                    meta(charset="UTF-8") {}
+                    meta(http-equiv="X-UA-Compatible", content="IE=edge") {}
+                    meta(name="viewport", content="width=device-width, initial-scale=1.0") {}
+                    title {{ "Document" }}
                 }
                 body {
                     button(on:click={
