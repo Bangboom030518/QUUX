@@ -1,2 +1,2 @@
 @echo off
-tailwindcss -i ./src/style.css -o ./dist/output.css -c ./tailwind.config.js --minify && wasm-pack build --target web --out-dir assets && cargo run
+tailwindcss -i ./src/style.css -o ./dist/output.css -c ./tailwind.config.js --minify && wasm-pack build --target web --out-dir dist && esbuild init.ts --bundle=true --allow-overwrite --minify --outdir=dist --format=esm && cargo run

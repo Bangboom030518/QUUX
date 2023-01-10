@@ -87,7 +87,7 @@ pub trait Component: Serialize + DeserializeOwned {
     #[cfg(target_arch = "wasm32")]
     fn init_as_root() -> Self {
         std::panic::set_hook(Box::new(console_error_panic_hook::hook));
-        
+
         let init_script = dom::get_document()
             .get_element_by_id("__quux_init_script__")
             .expect("`__quux_init_script__` not found");
@@ -136,7 +136,9 @@ pub struct RenderContext {
     pub id: String,
 }
 
-pub struct EmptyProps {}
+pub struct QUUXInitialiseProps {
+    pub init_script_content: &'static str,
+}
 
 /// Put this in the root component, at the end of the body
 ///
@@ -154,22 +156,31 @@ pub struct EmptyProps {}
 /// }
 /// ```
 #[derive(Serialize, Deserialize)]
-pub struct QUUXInitialise;
+pub struct QUUXInitialise {
+    #[serde(skip)]
+    init_script_content: &'static str,
+}
 
 impl Component for QUUXInitialise {
-    type Props = EmptyProps;
+    type Props = QUUXInitialiseProps;
 
-    fn init(_: Self::Props) -> Self {
-        Self {}
+    fn init(
+        Self::Props {
+            init_script_content,
+        }: Self::Props,
+    ) -> Self {
+        Self {
+            init_script_content,
+        }
     }
 
     #[cfg(not(target_arch = "wasm32"))]
     fn render(&self, _: RenderContext) -> RenderData {
         RenderData {
             html: format!(
-                "<script type=\"module\" id=\"__quux_init_script__\" data-quux-tree=\"{}\">{}; await init('./assets/quux_bg.wasm')</script>",
+                "<script type=\"module\" id=\"__quux_init_script__\" data-quux-tree=\"{}\">{};</script>",
                 *TREE_INTERPOLATION_ID,
-                include_str!("../../assets/quux.js"),
+                self.init_script_content,
             ),
             component_node: ClientComponentNode {
                 component: self.serialize_bytes(),

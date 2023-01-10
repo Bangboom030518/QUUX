@@ -46,7 +46,7 @@ impl Component for App {
                         { "Welcome to Quuxlet" }
                     }
                     @flashcard::Flashcard(term = "a", definition = "b")
-                    @QUUXInitialise
+                    @QUUXInitialise(init_script_content = include_str!("../dist/init.js"))
                 }
             }
         }
