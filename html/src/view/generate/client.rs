@@ -60,20 +60,33 @@ impl Data {
             return
         };
 
-        let Some(event_name) = key.strip_prefix("on:") else {
-            return
-        };
+        if let Some(event_name) = key.strip_prefix("on:") {
+            let scoped_id = self.scoped_id.as_str();
 
-        let scoped_id = self.scoped_id.as_str();
+            self.reactivity.push(quote! {
+                let scope_id = Rc::clone(&scope_id);
+                let closure = wasm_bindgen::prelude::Closure::<dyn FnMut()>::new(#value);
+                shared::dom::get_reactive_element(&*scope_id, #scoped_id)
+                    .add_event_listener_with_callback(#event_name, closure.as_ref().unchecked_ref())
+                    .expect_internal("add event");
+                closure.forget();
+            });
+        } else if key == "class:active-when" {
+            let scoped_id = self.scoped_id.as_str();
+            
+            self.reactivity.push(quote! {
+                let (store, mapping, class_name) = #value;
+                let store = shared::Store::clone(store);
+                let scope_id = Rc::clone(&scope_id);
+                let class_list = shared::dom::get_reactive_element(&*scope_id, #scoped_id).class_list();
+                store.on_change(move |previous, current| if mapping(std::clone::Clone::clone(current)) {
+                    class_list.add_1(class_name);
+                } else {
+                    class_list.remove_1(class_name);
+                })
+            });
 
-        self.reactivity.push(quote! {
-            let scope_id = Rc::clone(&scope_id);
-            let closure = wasm_bindgen::prelude::Closure::<dyn FnMut()>::new(#value);
-            shared::dom::get_reactive_element(&*scope_id, #scoped_id)
-                .add_event_listener_with_callback(#event_name, closure.as_ref().unchecked_ref())
-                .expect_internal("add event");
-            closure.forget();
-        });
+        }
     }
 
     fn add_event_data(&mut self, attributes: Vec<Attribute>) {

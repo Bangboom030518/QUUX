@@ -3,3 +3,5 @@ dist
 expansion-client.rs
 expansion-server.rs
 expansion.rs
+**/*lock*
+node_modules

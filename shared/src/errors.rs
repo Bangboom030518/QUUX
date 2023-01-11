@@ -2,12 +2,12 @@ pub trait MapInternal<T, E: std::fmt::Debug> {
     /// Returns a result, mapping the error variant of an `Option` or `Result` to an `errors::Internal` error with `action`.
     /// # Errors
     /// This function should return an error variant if `self` is also the error variant
-    fn map_internal_error(self, action: &'static str) -> Result<T, Internal<E>>;
+    fn map_internal_error(self, action: &str) -> Result<T, Internal<E>>;
 
     /// Maps the error variant of an `Option` or `Result` to an `errors::Internal` error with `action`, unwrapping the result.
     /// # Panics
     /// This function panics on an error variant of `self`, by calling `.unwrap()`.
-    fn expect_internal(self, action: &'static str) -> T
+    fn expect_internal(self, action: &str) -> T
     where
         Self: Sized,
     {
@@ -16,25 +16,28 @@ pub trait MapInternal<T, E: std::fmt::Debug> {
 }
 
 impl<T, E: std::fmt::Debug> MapInternal<T, E> for Result<T, E> {
-    fn map_internal_error(self, action: &'static str) -> Result<T, Internal<E>> {
+    fn map_internal_error(self, action: &str) -> Result<T, Internal<E>> {
         self.map_err(|error| Internal::new(error, action))
     }
 }
 
 impl<T> MapInternal<T, ()> for Option<T> {
-    fn map_internal_error(self, action: &'static str) -> Result<T, Internal<()>> {
+    fn map_internal_error(self, action: &str) -> Result<T, Internal<()>> {
         self.map_or_else(|| Err(Internal::new((), action)), Ok)
     }
 }
 
 pub struct Internal<T: std::fmt::Debug> {
     error: T,
-    action: &'static str,
+    action: String,
 }
 
 impl<T: std::fmt::Debug> Internal<T> {
-    const fn new(error: T, action: &'static str) -> Self {
-        Self { error, action }
+    fn new(error: T, action: &str) -> Self {
+        Self {
+            error,
+            action: action.to_string(),
+        }
     }
 }
 

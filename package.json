@@ -1,0 +1,23 @@
+{
+  "name": "quux",
+  "version": "1.0.0",
+  "description": "",
+  "main": "tailwind.config.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Bangboom030518/QUUX.git"
+  },
+  "author": "Alan Randon and Charlie Clift",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Bangboom030518/QUUX/issues"
+  },
+  "homepage": "https://github.com/Bangboom030518/QUUX#readme",
+  "dependencies": {
+    "@tailwindcss/typography": "^0.5.9",
+    "daisyui": "^2.46.1"
+  }
+}

@@ -9,7 +9,7 @@ pub type StoreCallback<'a, T> = Box<dyn FnMut(&T, &T) + 'a>;
 type RcCell<T> = Rc<RefCell<T>>;
 
 #[derive(Serialize, Deserialize)]
-pub struct Store<'a, T: fmt::Display>
+pub struct Store<'a, T>
 where
     Self: 'a,
 {
@@ -18,7 +18,7 @@ where
     listeners: RcCell<Vec<StoreCallback<'a, T>>>,
 }
 
-impl<'a, T: fmt::Display> Store<'a, T> {
+impl<'a, T> Store<'a, T> {
     /// Creates a new store.
     pub fn new(value: T) -> Self {
         Self {
@@ -57,18 +57,18 @@ impl<'a, T: fmt::Display> Store<'a, T> {
     }
 }
 
-impl<'a, T: fmt::Display> fmt::Display for Store<'a, T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.get())
-    }
-}
-
-impl<'a, T: fmt::Display> Clone for Store<'a, T> {
+impl<'a, T> Clone for Store<'a, T> {
     fn clone(&self) -> Self {
         Self {
             value: Rc::clone(&self.value),
             listeners: Rc::clone(&self.listeners),
         }
+    }
+}
+
+impl<'a, T: fmt::Display> fmt::Display for Store<'a, T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result where T: fmt::Display {
+        write!(f, "{}", self.get())
     }
 }
 

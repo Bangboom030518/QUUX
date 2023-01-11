@@ -3,12 +3,14 @@ use super::errors::MapInternal;
 #[cfg(target_arch = "wasm32")]
 #[must_use]
 pub fn get_reactive_element(scope_id: &str, scoped_id: &str) -> web_sys::Element {
+    let error_message =
+        format!("get element with scoped id (scoped_id='{scoped_id}', scope_id='{scope_id}')");
     get_document()
         .query_selector(&format!(
             "[data-quux-scope-id='{scope_id}'] [data-quux-scoped-id='{scoped_id}']"
         ))
-        .expect_internal("get element with scoped id")
-        .expect_internal("get element with scoped id")
+        .expect_internal(&error_message)
+        .expect_internal(&error_message)
 }
 
 #[cfg(target_arch = "wasm32")]
