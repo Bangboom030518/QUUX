@@ -16,18 +16,21 @@ pub struct Data {
     props: Vec<Prop>,
     component_ident: Ident,
     rendered_component_ident: Ident,
+    component_context_ident: Ident,
 }
 
 impl Data {
     pub fn new(Component { name, props }: Component) -> Self {
         let id = generate_id();
-        let component_ident = format_ident!("component_{}", id);
-        let rendered_component_ident = format_ident!("rendered_component_{}", id);
+        let component_ident = format_ident!("component_{id}");
+        let rendered_component_ident = format_ident!("rendered_component_{id}");
+        let component_context_ident = format_ident!("component_context_{id}");
         Self {
             name,
             props,
             component_ident,
             rendered_component_ident,
+            component_context_ident,
         }
     }
 
@@ -38,13 +41,20 @@ impl Data {
 
     fn generate_node(&self) -> TokenStream {
         let component = &self.component_ident;
+        let render_context = &self.component_context_ident;
         quote! {
             shared::ClientComponentNode {
                 component: shared::postcard::to_stdvec(&#component).expect("Couldn't serialize component tree (QUUX internal)"),
-                render_context: shared::RenderContext {
-                    id: shared::generate_id(),
-                    children: Vec::new(),
-                }
+                render_context: #render_context,
+            }
+        }
+    }
+
+    fn generate_context(&self) -> TokenStream {
+        quote! {
+            shared::RenderContext {
+                id: shared::generate_id(),
+                children: Vec::new(),
             }
         }
     }
@@ -64,14 +74,17 @@ impl Data {
         let Self {
             component_ident,
             rendered_component_ident,
+            component_context_ident,
             name,
             ..
         } = &self;
         let props = self.generate_props();
+        let context = self.generate_context();
 
         quote! {
             let #component_ident = <#name as shared::Component>::init(#props);
-            let #rendered_component_ident = #component_ident.render(shared::RenderContext::default());
+            let #component_context_ident = #context;
+            let #rendered_component_ident = #component_ident.render(std::clone::Clone::clone(&#component_context_ident));
         }
     }
 }

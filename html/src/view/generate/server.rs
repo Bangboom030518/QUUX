@@ -54,7 +54,7 @@ pub fn generate(tree: &Element) -> TokenStream {
     } = Item::Element(tree).into();
 
     let tokens = quote! {
-        let scope_id = shared::generate_id();
+        let scope_id = context.id;
         #(#component_constructors)*
         shared::RenderData {
             html: #html,

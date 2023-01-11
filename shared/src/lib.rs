@@ -104,7 +104,7 @@ pub trait Component: Serialize + DeserializeOwned {
 
 impl<T: Component> SerializePostcard for T {}
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Clone, Default)]
 /// Represents a reactive node on the client. Only for `Component`s.
 pub struct ClientComponentNode {
     /// The serialised component
@@ -130,10 +130,19 @@ impl SerializePostcard for ClientComponentNode {}
 ///
 /// For an `view!()`, this will contain an id used on the client for reactivity, as well as any children that are components.
 /// This will allow for a `view!()` to manage its children by encapsulating them under one unique id.
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct RenderContext {
     pub children: Vec<ClientComponentNode>,
     pub id: String,
+}
+
+impl Default for RenderContext {
+    fn default() -> Self {
+        Self {
+            children: Vec::new(),
+            id: generate_id()
+        }
+    }
 }
 
 pub struct QUUXInitialiseProps {
