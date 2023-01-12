@@ -140,7 +140,7 @@ impl Default for RenderContext {
     fn default() -> Self {
         Self {
             children: Vec::new(),
-            id: generate_id()
+            id: generate_id(),
         }
     }
 }

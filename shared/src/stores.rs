@@ -5,20 +5,17 @@ use std::{
     rc::Rc,
 };
 
-pub type StoreCallback<'a, T> = Box<dyn FnMut(&T, &T) + 'a>;
+pub type StoreCallback<T> = Box<dyn FnMut(&T, &T) + 'static>;
 type RcCell<T> = Rc<RefCell<T>>;
 
 #[derive(Serialize, Deserialize)]
-pub struct Store<'a, T>
-where
-    Self: 'a,
-{
+pub struct Store<T> {
     value: RcCell<T>,
     #[serde(skip)]
-    listeners: RcCell<Vec<StoreCallback<'a, T>>>,
+    listeners: RcCell<Vec<StoreCallback<T>>>,
 }
 
-impl<'a, T> Store<'a, T> {
+impl<T> Store<T> {
     /// Creates a new store.
     pub fn new(value: T) -> Self {
         Self {
@@ -32,7 +29,7 @@ impl<'a, T> Store<'a, T> {
     /// > *NOTE*: You will need to wrap any values borrowed by the closure in a [`RefCell`](https://doc.rust-lang.org/std/cell/struct.RefCell.html) or similar if you plan to use it again afterwards.
     pub fn on_change<F>(&self, listener: F)
     where
-        F: FnMut(&T, &T) + 'a,
+        F: FnMut(&T, &T) + 'static,
     {
         let mut listeners = self.listeners.borrow_mut();
         listeners.push(Box::new(listener));
@@ -57,7 +54,7 @@ impl<'a, T> Store<'a, T> {
     }
 }
 
-impl<'a, T> Clone for Store<'a, T> {
+impl<T> Clone for Store<T> {
     fn clone(&self) -> Self {
         Self {
             value: Rc::clone(&self.value),
@@ -66,8 +63,11 @@ impl<'a, T> Clone for Store<'a, T> {
     }
 }
 
-impl<'a, T: fmt::Display> fmt::Display for Store<'a, T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result where T: fmt::Display {
+impl<T: fmt::Display> fmt::Display for Store<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
+    where
+        T: fmt::Display,
+    {
         write!(f, "{}", self.get())
     }
 }
@@ -75,15 +75,19 @@ impl<'a, T: fmt::Display> fmt::Display for Store<'a, T> {
 #[test]
 fn store_test() {
     use std::cell::RefCell;
-
-    let result_1: RefCell<Vec<(u8, u8)>> = RefCell::new(Vec::new());
-    let result_2: RefCell<Vec<(u8, u8)>> = RefCell::new(Vec::new());
+    let result_1: Rc<RefCell<Vec<(u8, u8)>>> = Rc::new(RefCell::new(Vec::new()));
+    let result_2: Rc<RefCell<Vec<(u8, u8)>>> = Rc::new(RefCell::new(Vec::new()));
     let store = Store::new(0);
-    store.on_change(|&previous, &current| result_1.borrow_mut().push((previous, current)));
-
-    store.on_change(|&previous, &current| {
-        result_2.borrow_mut().push((previous + 10, current + 10));
+    store.on_change({
+        let result_1 = Rc::clone(&result_1);
+        move |&previous, &current| result_1.borrow_mut().push((previous, current))
     });
+
+    store.on_change({
+        let result_2 = Rc::clone(&result_2);
+        move |&previous, &current| {
+        result_2.borrow_mut().push((previous + 10, current + 10));
+    }});
     for _ in 0..3 {
         store.set(*store.get() + 1);
     }

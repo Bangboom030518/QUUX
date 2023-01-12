@@ -1,7 +1,7 @@
-use syn::Path;
 use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote};
 use shared::generate_id;
+use syn::Path;
 
 use crate::view::parse::{Component, Prop};
 

@@ -73,7 +73,7 @@ impl Data {
             });
         } else if key == "class:active-when" {
             let scoped_id = self.scoped_id.as_str();
-            
+
             self.reactivity.push(quote! {
                 let (store, mapping, class_name) = #value;
                 let store = shared::Store::clone(store);
@@ -85,7 +85,6 @@ impl Data {
                     class_list.remove_1(class_name);
                 })
             });
-
         }
     }
 
@@ -128,7 +127,7 @@ pub fn generate(tree: &Element) -> TokenStream {
         components,
         reactivity,
         ..
-    } = Item::Element(tree).into();
+    } = Item::Element(tree.clone()).into();
     let tokens = quote! {
         use std::rc::Rc;
         use wasm_bindgen::JsCast;
@@ -142,10 +141,14 @@ pub fn generate(tree: &Element) -> TokenStream {
         })*
         #({ #reactivity });*
     };
-    std::fs::write(
-        "expansion-client.rs",
-        quote! {fn main() {#tokens}}.to_string(),
-    )
-    .unwrap();
+    if let Some(attr) = tree.attributes.first() {
+        if attr.key == "magic" {
+            std::fs::write(
+                "expansion-client.rs",
+                quote! {fn main() {#tokens}}.to_string(),
+            )
+            .unwrap();
+        }
+    }
     tokens
 }

@@ -1,8 +1,8 @@
 use super::parse::Element;
 use proc_macro2::TokenStream;
 use quote::quote;
-use std::sync::atomic::{AtomicU64, Ordering::Relaxed};
 use shared::errors::MapInternal;
+use std::sync::atomic::{AtomicU64, Ordering::Relaxed};
 
 mod client;
 mod server;
@@ -28,4 +28,3 @@ pub fn generate(tree: &Element) -> TokenStream {
         }
     }
 }
-

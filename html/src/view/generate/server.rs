@@ -51,7 +51,7 @@ pub fn generate(tree: &Element) -> TokenStream {
         html,
         component_nodes,
         component_constructors,
-    } = Item::Element(tree).into();
+    } = Item::Element(tree.clone()).into();
 
     let tokens = quote! {
         let scope_id = context.id;
@@ -67,10 +67,14 @@ pub fn generate(tree: &Element) -> TokenStream {
             }
         }
     };
-    std::fs::write(
-        "expansion-server.rs",
-        quote! {fn main() {#tokens}}.to_string(),
-    )
-    .unwrap();
+    if let Some(attr) = tree.attributes.first() {
+        if attr.key == "magic" {
+            std::fs::write(
+                "expansion-server.rs",
+                quote! {fn main() {#tokens}}.to_string(),
+            )
+            .unwrap();
+        }
+    }
     tokens
 }

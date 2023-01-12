@@ -18,7 +18,7 @@ pub fn init_app() {
 
 #[derive(Serialize, Deserialize)]
 pub struct App {
-    count: Store<'static, u32>,
+    count: Store<u32>,
 }
 
 impl Component for App {
