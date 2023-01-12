@@ -63,9 +63,15 @@ impl Data {
         // TODO: remove `.cloned()`
         let props = self.props.iter().cloned().map::<TokenStream, _>(Prop::into);
         let name = &self.name;
-        quote! {
-            <#name as shared::Component>::Props {
-                #(#props),*
+        if props.is_empty() {
+            quote! {
+                ()
+            }
+        } else {
+            quote! {
+                <#name as shared::Component>::Props {
+                    #(#props),*
+                }
             }
         }
     }

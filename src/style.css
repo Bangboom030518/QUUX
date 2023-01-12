@@ -2,10 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-
 @layer base {
   :root {
-    @apply  w-full h-full m-0 prose dark:prose-invert max-w-none;
+    @apply w-full h-full m-0 prose dark:prose-invert max-w-none;
   }
 
   body {
@@ -13,6 +12,12 @@
   }
 
   * {
-    @apply box-border ;
+    @apply box-border;
+  }
+}
+
+@layer components {
+  .flashcard-hidden {
+    @apply opacity-0 translate-y-10 pointer-events-none -z-10;
   }
 }

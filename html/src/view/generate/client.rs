@@ -1,7 +1,7 @@
 use super::GLOBAL_ID;
 use crate::view::parse::{Attribute, AttributeValue, Children, Element, Item};
 use proc_macro2::TokenStream;
-use quote::quote;
+use quote::{quote, ToTokens};
 use std::sync::atomic::Ordering::Relaxed;
 use syn::{Expr, Path};
 
@@ -128,27 +128,27 @@ pub fn generate(tree: &Element) -> TokenStream {
         reactivity,
         ..
     } = Item::Element(tree.clone()).into();
+    let components = components.into_iter().map(|component| {
+        let component_string = component.to_token_stream().to_string();
+        quote! {{
+            let child = children.next().expect_internal(concat!("retrieve all child data (", #component_string, ") : client and server child lists don't match"));
+            let mut component: #component = shared::postcard::from_bytes(&child.component).expect("Couldn't deserialize component");
+            component.render(child.render_context);
+        }}
+    });
     let tokens = quote! {
         use std::rc::Rc;
         use wasm_bindgen::JsCast;
         use shared::errors::MapInternal;
         let mut children = context.children.into_iter();
         let scope_id = Rc::new(context.id);
-        #({
-            let child = children.next().expect_internal("retrieve all child data: client and server child lists don't match");
-            let mut component: #components = shared::postcard::from_bytes(&child.component).expect("Couldn't deserialize component");
-            component.render(child.render_context);
-        })*
+        #(#components);*;
         #({ #reactivity });*
     };
-    if let Some(attr) = tree.attributes.first() {
-        if attr.key == "magic" {
-            std::fs::write(
-                "expansion-client.rs",
-                quote! {fn main() {#tokens}}.to_string(),
-            )
-            .unwrap();
-        }
-    }
+    std::fs::write(
+        "expansion-client.rs",
+        quote! {fn main() {#tokens}}.to_string(),
+    )
+    .unwrap();
     tokens
 }

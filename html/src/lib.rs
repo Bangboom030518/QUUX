@@ -1,4 +1,5 @@
 #![warn(clippy::pedantic, clippy::nursery)]
+#![feature(exact_size_is_empty)]
 use proc_macro::TokenStream;
 use syn::parse_macro_input;
 

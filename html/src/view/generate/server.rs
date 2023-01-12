@@ -67,14 +67,10 @@ pub fn generate(tree: &Element) -> TokenStream {
             }
         }
     };
-    if let Some(attr) = tree.attributes.first() {
-        if attr.key == "magic" {
-            std::fs::write(
-                "expansion-server.rs",
-                quote! {fn main() {#tokens}}.to_string(),
-            )
-            .unwrap();
-        }
-    }
+    std::fs::write(
+        "expansion-server.rs",
+        quote! {fn main() {#tokens}}.to_string(),
+    )
+    .unwrap();
     tokens
 }
