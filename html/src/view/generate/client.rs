@@ -80,9 +80,9 @@ impl Data {
                 let scope_id = Rc::clone(&scope_id);
                 let class_list = shared::dom::get_reactive_element(&*scope_id, #scoped_id).class_list();
                 store.on_change(move |previous, current| if mapping(std::clone::Clone::clone(current)) {
-                    class_list.add_1(class_name);
+                    class_list.add_1(class_name).unwrap();
                 } else {
-                    class_list.remove_1(class_name);
+                    class_list.remove_1(class_name).unwrap();
                 })
             });
         }
@@ -136,19 +136,36 @@ pub fn generate(tree: &Element) -> TokenStream {
             component.render(child.render_context);
         }}
     });
+    // TODO: remove
+    let debug_code = if let Some(Attribute { key, .. }) = tree.attributes.first() {
+        if key == "magic" {
+            quote! {
+                // panic!("{:?}", children.map(|child| format!("{:?}", child)).collect::<Vec<_>>())
+            }
+        } else {
+            TokenStream::new()
+        }
+    } else {
+        TokenStream::new()
+    };
     let tokens = quote! {
         use std::rc::Rc;
         use wasm_bindgen::JsCast;
         use shared::errors::MapInternal;
         let mut children = context.children.into_iter();
         let scope_id = Rc::new(context.id);
+        #debug_code;
         #(#components);*;
         #({ #reactivity });*
     };
-    std::fs::write(
-        "expansion-client.rs",
-        quote! {fn main() {#tokens}}.to_string(),
-    )
-    .unwrap();
+    if let Some(Attribute { key, .. }) = tree.attributes.first() {
+        if key == "magic" {
+            std::fs::write(
+                "expansion-client.rs",
+                quote! {fn main() {#tokens}}.to_string(),
+            )
+            .unwrap();
+        }
+    }
     tokens
 }

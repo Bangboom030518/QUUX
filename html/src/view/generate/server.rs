@@ -51,7 +51,34 @@ pub fn generate(tree: &Element) -> TokenStream {
         html,
         component_nodes,
         component_constructors,
-    } = Item::Element(tree.clone()).into();
+    } = Item::Element(
+        // TODO: remove `.clone()`
+        tree.clone(),
+    )
+    .into();
+
+    // TODO: remove
+    if let Some(Attribute { key, .. }) = tree.attributes.first() {
+        if key == "magic" {
+            std::fs::write(
+                "nuclear-waste-facility.txt",
+                format!(
+                    "{}\n\n\n{}",
+                    component_nodes
+                        .iter()
+                        .map(ToString::to_string)
+                        .intersperse("\n".to_string())
+                        .collect::<String>(),
+                    component_constructors
+                        .iter()
+                        .map(ToString::to_string)
+                        .intersperse("\n".to_string())
+                        .collect::<String>(),
+                ),
+            )
+            .unwrap();
+        }
+    }
 
     let tokens = quote! {
         let scope_id = context.id;

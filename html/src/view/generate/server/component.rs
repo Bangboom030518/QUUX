@@ -42,10 +42,17 @@ impl Data {
     fn generate_node(&self) -> TokenStream {
         let component = &self.component_ident;
         let render_context = &self.component_context_ident;
+        let rendered_component = &self.rendered_component_ident;
         quote! {
             shared::ClientComponentNode {
                 component: shared::postcard::to_stdvec(&#component).expect("Couldn't serialize component tree (QUUX internal)"),
-                render_context: #render_context,
+                render_context: shared::RenderContext {
+                    id: #render_context.id,
+                    children: #rendered_component
+                        .component_node
+                        .render_context
+                        .children,
+                },
             }
         }
     }
@@ -54,7 +61,7 @@ impl Data {
         quote! {
             shared::RenderContext {
                 id: shared::generate_id(),
-                children: Vec::new(),
+                children: Vec::new()
             }
         }
     }
