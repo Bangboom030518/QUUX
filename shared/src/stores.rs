@@ -86,8 +86,9 @@ fn store_test() {
     store.on_change({
         let result_2 = Rc::clone(&result_2);
         move |&previous, &current| {
-        result_2.borrow_mut().push((previous + 10, current + 10));
-    }});
+            result_2.borrow_mut().push((previous + 10, current + 10));
+        }
+    });
     for _ in 0..3 {
         store.set(*store.get() + 1);
     }

@@ -1,6 +1,6 @@
 use html::view;
 use serde::{Deserialize, Serialize};
-use shared::{Component, EmptyProps, Store};
+use shared::{Component, Store};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 enum Rating {

@@ -1,5 +1,6 @@
 // TODO: take `context` as first 'argument'
 
+use quote::ToTokens;
 use syn::{
     braced, parenthesized,
     parse::{Parse, ParseStream},
@@ -215,6 +216,15 @@ impl Parse for AttributeValue {
             Ok(Self::Reactive(input.parse()?))
         } else {
             Ok(Self::Static(input.parse()?))
+        }
+    }
+}
+
+impl std::fmt::Display for AttributeValue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Reactive(expr) => write!(f, "${}", expr.to_token_stream()),
+            Self::Static(expr) => write!(f, "{}", expr.to_token_stream()),
         }
     }
 }

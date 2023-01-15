@@ -18,8 +18,9 @@ impl Attributes {
     /// Adds the scoped id attribute with the value of `id`, if `attributes.reactive` is true. If the element is not reactive, nothing is added.
     pub fn add_scoped_id(&mut self, id: &str) {
         if self.reactive {
-            self.keys.push(String::from("data-quux-scoped-id"));
-            self.values.push(parse(quote! { #id }));
+            self.keys.push("data-quux-scoped-id".to_string());
+            self.values
+                .push(parse(quote! { format!("{}.{}", scope_id, #id) }));
         }
     }
 

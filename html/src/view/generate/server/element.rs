@@ -1,6 +1,6 @@
 use std::sync::atomic::Ordering::Relaxed;
 
-use super::{Attributes, GLOBAL_ID};
+use super::{super::GLOBAL_ID, Attributes};
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::Expr;
@@ -26,11 +26,28 @@ impl From<Element> for Data {
         }: Element,
     ) -> Self {
         let mut data = Self {
-            tag_name,
-            attributes: attributes.into(),
+            tag_name: tag_name.clone(),
+            attributes: attributes.clone().into(),
             id: GLOBAL_ID.fetch_add(1, Relaxed).to_string(),
             ..Default::default()
         };
+
+        std::fs::write(
+            "id.log",
+            format!(
+                "{}\n---\n{}\n$tagname = \"{tag_name}\"\n$id = \"{}\"\n\n",
+                std::fs::read_to_string("id.log").unwrap(),
+                attributes
+                    .iter()
+                    .map(|crate::view::parse::Attribute { key, value }| {
+                        format!("{key} = {value}\n")
+                    })
+                    .collect::<String>(),
+                &data.id
+            ),
+        )
+        .unwrap();
+
         data.add_children_data(children);
         data.add_attribute_data();
         data

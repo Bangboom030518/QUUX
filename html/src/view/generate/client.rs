@@ -10,7 +10,7 @@ struct Data {
     components: Vec<Path>,
     /// Code to update DOM on changes - hydration
     reactivity: Vec<TokenStream>,
-    scoped_id: String,
+    id: String,
 }
 
 impl Data {
@@ -42,7 +42,7 @@ impl From<Element> for Data {
         }: Element,
     ) -> Self {
         let mut data = Self {
-            scoped_id: GLOBAL_ID.fetch_add(1, Relaxed).to_string(),
+            id: GLOBAL_ID.fetch_add(1, Relaxed).to_string(),
             ..Default::default()
         };
         data.add_event_data(attributes);
@@ -61,7 +61,7 @@ impl Data {
         };
 
         if let Some(event_name) = key.strip_prefix("on:") {
-            let scoped_id = self.scoped_id.as_str();
+            let scoped_id = self.id.as_str();
 
             self.reactivity.push(quote! {
                 let scope_id = Rc::clone(&scope_id);
@@ -72,7 +72,7 @@ impl Data {
                 closure.forget();
             });
         } else if key == "class:active-when" {
-            let scoped_id = self.scoped_id.as_str();
+            let scoped_id = self.id.as_str();
 
             self.reactivity.push(quote! {
                 let (store, mapping, class_name) = #value;
@@ -109,7 +109,7 @@ impl Data {
     fn add_store_data(&mut self, store: &Expr) {
         // TODO: Consider initializing store only once
         // TODO: Consider initializing the document only once
-        let scoped_id = self.scoped_id.as_str();
+        let scoped_id = self.id.as_str();
         self.reactivity.push(quote! {
             let scope_id = Rc::clone(&scope_id);
             #store.on_change(move |_, new| {
@@ -123,11 +123,15 @@ impl Data {
 
 pub fn generate(tree: &Element) -> TokenStream {
     let tree = tree.clone();
+
+    // TODO: remove
+    // std::fs::write("id.log", "").unwrap();
+
     let Data {
         components,
         reactivity,
         ..
-    } = Item::Element(tree.clone()).into();
+    } = tree.clone().into();
     let components = components.into_iter().map(|component| {
         let component_string = component.to_token_stream().to_string();
         quote! {{

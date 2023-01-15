@@ -146,9 +146,6 @@ impl Default for RenderContext {
     }
 }
 
-// TODO: allow `()` for props
-pub struct EmptyProps;
-
 pub struct QUUXInitialiseProps {
     pub init_script_content: &'static str,
 }

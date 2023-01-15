@@ -2,7 +2,7 @@ mod attributes;
 mod component;
 mod element;
 
-use super::{parse, GLOBAL_ID};
+use super::parse;
 use crate::view::parse::{Attribute, AttributeValue, Element, Item};
 use attributes::Attributes;
 use proc_macro2::TokenStream;
@@ -47,15 +47,12 @@ pub fn generate(tree: &Element) -> TokenStream {
         key: "data-quux-scope-id".to_string(),
         value: AttributeValue::Static(parse(quote! { scope_id })),
     });
+    // TODO: remove `.clone()`
     let Data {
         html,
         component_nodes,
         component_constructors,
-    } = Item::Element(
-        // TODO: remove `.clone()`
-        tree.clone(),
-    )
-    .into();
+    } = tree.clone().into();
 
     // TODO: remove
     if let Some(Attribute { key, .. }) = tree.attributes.first() {
@@ -94,10 +91,15 @@ pub fn generate(tree: &Element) -> TokenStream {
             }
         }
     };
-    std::fs::write(
-        "expansion-server.rs",
-        quote! {fn main() {#tokens}}.to_string(),
-    )
-    .unwrap();
+    // TODO: remove
+    if let Some(attribute) = tree.attributes.first() {
+        if attribute.key == "magic" {
+            std::fs::write(
+                "expansion-server.rs",
+                quote! {fn main() {#tokens}}.to_string(),
+            )
+            .unwrap();
+        }
+    }
     tokens
 }
