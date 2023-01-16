@@ -17,6 +17,7 @@ fn parse<T: syn::parse::Parse>(tokens: TokenStream) -> T {
 }
 
 pub fn generate(tree: &Element) -> TokenStream {
+    GLOBAL_ID.swap(0, Relaxed);
     let server = server::generate(tree);
     GLOBAL_ID.swap(0, Relaxed);
     let client = client::generate(tree);
