@@ -15,6 +15,7 @@ pub struct Flashcard {
     term: String,
     definition: String,
     side: Store<Side>,
+    flipped: Store<bool>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
@@ -56,6 +57,7 @@ impl Component for Flashcard {
             term: term.to_string(),
             definition: definition.to_string(),
             side: Store::new(Side::Term),
+            flipped: Store::new(false),
         }
     }
 
@@ -82,12 +84,16 @@ impl Component for Flashcard {
                 }
                 button(class = "btn", on:click = {
                     let side = self.side.clone();
+                    let flipped = self.flipped.clone();
                     move || {
                         let previous = *side.get();
                         side.set(previous.flip());
+                        if !*flipped.get() {
+                            flipped.set(true)
+                        }
                     }
                 }) {{"flip"}}
-                @ConfidenceRating
+                @ConfidenceRating(is_visible = self.flipped.clone())
             }
         }
     }

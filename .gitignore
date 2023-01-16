@@ -6,3 +6,4 @@ expansion.rs
 **/*lock*
 node_modules
 nuclear-waste-facility.txt
+id.log
