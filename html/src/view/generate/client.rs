@@ -3,11 +3,11 @@ use crate::view::parse::{Attribute, AttributeValue, Children, Element, Item};
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
 use std::sync::atomic::Ordering::Relaxed;
-use syn::{Expr, Path};
+use syn::Expr;
 
 #[derive(Default)]
 struct Data {
-    components: Vec<Path>,
+    components: Vec<TokenStream>,
     /// Code to update DOM on changes - hydration
     reactivity: Vec<TokenStream>,
     id: String,
@@ -23,7 +23,25 @@ impl From<Item> for Data {
     fn from(item: Item) -> Self {
         match item {
             Item::Component(component) => Self {
-                components: vec![component.name],
+                components: {
+                    let binding = component.binding.map_or_else(TokenStream::new, |binding| {
+                        quote! {
+                            #binding = component
+                        }
+                    });
+
+                    let component_string = component.name.to_token_stream().to_string();
+                    let name = component.name;
+
+                    vec![quote! {
+                        {
+                            let child = children.next().expect_internal(concat!("retrieve all child data (", #component_string, ") : client and server child lists don't match"));
+                            let mut component: #name = shared::postcard::from_bytes(&child.component).expect("Couldn't deserialize component");
+                            component.render(child.render_context);
+                            #binding;
+                        }
+                    }]
+                },
                 reactivity: Vec::new(),
                 ..Default::default()
             },
@@ -132,14 +150,15 @@ pub fn generate(tree: &Element) -> TokenStream {
         reactivity,
         ..
     } = tree.clone().into();
-    let components = components.into_iter().map(|component| {
-        let component_string = component.to_token_stream().to_string();
-        quote! {{
-            let child = children.next().expect_internal(concat!("retrieve all child data (", #component_string, ") : client and server child lists don't match"));
-            let mut component: #component = shared::postcard::from_bytes(&child.component).expect("Couldn't deserialize component");
-            component.render(child.render_context);
-        }}
-    });
+
+    // let components = components.into_iter().map(|component| {
+    //     let component_string = component.to_token_stream().to_string();
+    //     quote! {{
+    //         let child = children.next().expect_internal(concat!("retrieve all child data (", #component_string, ") : client and server child lists don't match"));
+    //         let mut component: #component = shared::postcard::from_bytes(&child.component).expect("Couldn't deserialize component");
+    //         component.render(child.render_context);
+    //     }}
+    // });
     // TODO: remove
     let debug_code = if let Some(Attribute { key, .. }) = tree.attributes.first() {
         if key == "magic" {

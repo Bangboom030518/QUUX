@@ -1,4 +1,5 @@
 use super::errors::MapInternal;
+use wasm_bindgen::prelude::*;
 
 #[cfg(target_arch = "wasm32")]
 #[must_use]
@@ -6,9 +7,7 @@ pub fn get_reactive_element(scope_id: &str, scoped_id: &str) -> web_sys::Element
     let error_message =
         format!("get element with selector ([data-quux-scoped-id='{scope_id}.{scoped_id}'])");
     get_document()
-        .query_selector(&format!(
-            "[data-quux-scoped-id='{scope_id}.{scoped_id}']"
-        ))
+        .query_selector(&format!("[data-quux-scoped-id='{scope_id}.{scoped_id}']"))
         .expect_internal(&error_message)
         .expect_internal(&error_message)
 }
@@ -27,3 +26,16 @@ pub fn get_document() -> web_sys::Document {
 pub fn as_html_element(element: web_sys::Element) -> web_sys::HtmlElement {
     wasm_bindgen::JsCast::dyn_into(element).expect_internal("cast `Element` to `HTMLElement`")
 }
+
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(js_namespace = console)]
+    pub fn log(input: &str);
+}
+
+#[macro_export]
+macro_rules! console_log {
+    ($($t:tt)*) => (unsafe { shared::dom::log(&format_args!($($t)*).to_string()) })
+}
+
+pub use console_log;

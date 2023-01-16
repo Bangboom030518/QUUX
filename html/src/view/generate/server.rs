@@ -3,7 +3,7 @@ mod component;
 mod element;
 
 use super::parse;
-use crate::view::parse::{Attribute, AttributeValue, Element, Item};
+use crate::view::parse::{Attribute, Element, Item};
 use attributes::Attributes;
 use proc_macro2::TokenStream;
 use quote::quote;

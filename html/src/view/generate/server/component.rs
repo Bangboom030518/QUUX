@@ -22,7 +22,7 @@ pub struct Data {
 }
 
 impl Data {
-    pub fn new(Component { name, props }: Component) -> Self {
+    pub fn new(Component { name, props, .. }: Component) -> Self {
         let id = generate_id();
         let component_ident = format_ident!("component_{id}");
         let rendered_component_ident = format_ident!("rendered_component_{id}");
@@ -95,7 +95,6 @@ impl Data {
         } = &self;
         let props = self.generate_props();
         let context = self.generate_context();
-
         quote! {
             let #component_ident = <#name as shared::Component>::init(#props);
             let #component_context_ident = #context;

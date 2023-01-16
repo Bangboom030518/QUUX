@@ -21,6 +21,7 @@ pub fn generate(tree: &Element) -> TokenStream {
     let server = server::generate(tree);
     GLOBAL_ID.swap(0, Relaxed);
     let client = client::generate(tree);
+    // TODO: move component bindings outside!!?
     quote! {
         shared::cfg_if::cfg_if! {
             if #[cfg(target_arch = "wasm32")] {

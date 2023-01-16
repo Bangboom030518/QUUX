@@ -82,6 +82,7 @@ impl Parse for Item {
 pub struct Component {
     pub name: Path,
     pub props: Vec<Prop>,
+    pub binding: Option<Ident>,
 }
 
 impl Parse for Component {
@@ -105,7 +106,14 @@ impl Parse for Component {
             }
         }
 
-        Ok(Self { name, props })
+        let binding = if input.peek(Token![:]) {
+            input.parse::<Token![:]>()?;
+            Some(input.parse()?)
+        } else {
+            None
+        };
+
+        Ok(Self { name, props, binding })
     }
 }
 

@@ -62,6 +62,13 @@ impl Component for Flashcard {
     }
 
     fn render(&self, context: shared::RenderContext) -> shared::RenderData {
+        #[cfg(target_arch = "wasm32")]
+        {
+            self.flipped
+                .on_change(|_, new| shared::dom::console_log!("YAY!!! {new}"))
+        }
+
+        let confidence_rating: ConfidenceRating;
         view! {
             article(magic = true, class = "grid place-items-center gap-4 text-center") {
                 div(class = "relative min-w-[60ch] min-h-[40ch]") {
@@ -89,11 +96,12 @@ impl Component for Flashcard {
                         let previous = *side.get();
                         side.set(previous.flip());
                         if !*flipped.get() {
-                            flipped.set(true)
+                            flipped.set(true);
+                            confidence_rating.show();
                         }
                     }
                 }) {{"flip"}}
-                @ConfidenceRating(is_visible = self.flipped.clone())
+                @ConfidenceRating: confidence_rating
             }
         }
     }

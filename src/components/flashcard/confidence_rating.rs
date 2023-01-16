@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use shared::{Component, Store};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
-enum Rating {
+pub enum Rating {
     Terrible,
     Bad,
     Medium,
@@ -17,29 +17,45 @@ impl Default for Rating {
     }
 }
 
-pub struct Props {
-    pub is_visible: Store<bool>,
-}
-
 #[derive(Serialize, Deserialize, Clone)]
 pub struct ConfidenceRating {
     is_visible: Store<bool>,
     rating: Store<Rating>,
 }
 
-impl Component for ConfidenceRating {
-    type Props = Props;
+impl ConfidenceRating {
+    pub fn show(&self) {
+        self.is_visible.set(true);
+    }
 
-    fn init(Props { is_visible }: Self::Props) -> Self {
+    pub fn get_rating_store(&self) -> Store<Rating> {
+        self.rating.clone()
+    }
+}
+
+impl Component for ConfidenceRating {
+    type Props = ();
+
+    fn init(_: Self::Props) -> Self {
         Self {
-            is_visible,
+            is_visible: Store::new(false),
             rating: Store::new(Rating::Medium),
         }
     }
 
     fn render(&self, context: shared::RenderContext) -> shared::RenderData {
+        #[cfg(target_arch = "wasm32")]
+        {
+            shared::dom::console_log!("{}", *self.is_visible.get());
+            self.is_visible
+                .on_change(|_, new| shared::dom::console_log!("YAY2!!! {new}"))
+        }
+
         view! {
-            div(class = "flashcard-hidden btn-group", class:active-when = (&self.is_visible, |visible: bool| !visible, "flashcard-hidden")) {
+            div(class = "flashcard-hidden btn-group", class:active-when = (&self.is_visible, |visible: bool| {
+                shared::dom::console_log!("{visible}");
+                !visible
+            }, "flashcard-hidden")) {
                 button(class = "btn btn-error") {
                     {"Terrible"}
                 }
@@ -47,7 +63,7 @@ impl Component for ConfidenceRating {
                     {"Bad"}
                 }
                 button(class = "btn btn-primary") {
-                    {"Medium"}   
+                    {"Medium"}
                 }
                 button(class = "btn btn-secondary") {
                     {"Good"}
