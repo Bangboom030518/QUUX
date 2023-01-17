@@ -56,7 +56,7 @@ impl Component for ConfidenceRating {
                 shared::dom::console_log!("{visible}");
                 !visible
             }, "flashcard-hidden")) {
-                button(class = "btn btn-error") {
+                button(class = "btn btn-terrible") {
                     {"Terrible"}
                 }
                 button(class = "btn btn-warning") {
