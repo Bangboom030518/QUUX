@@ -1,4 +1,4 @@
-const colors = require("@tailwindcss/colors")
+const colors = require("tailwindcss/colors")
 
 /** @type {import('tailwindcss').Config} */
 
@@ -10,6 +10,22 @@ module.exports = {
                 terrible: {
                     DEFAULT: colors.red["500"],
                     accent: colors.red["600"],
+                },
+                bad: {
+                    DEFAULT: colors.orange["500"],
+                    accent: colors.orange["600"]
+                },
+                ok: {
+                    DEFAULT: colors.yellow["500"],
+                    accent: colors.yellow["600"]
+                },
+                good: {
+                    DEFAULT: colors.lime["500"],
+                    accent: colors.lime["600"]
+                },
+                perfect: {
+                    DEFAULT: colors.green["500"],
+                    accent: colors.green["600"]
                 }
             }
         },

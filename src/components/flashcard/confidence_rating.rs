@@ -6,14 +6,14 @@ use shared::{Component, Store};
 pub enum Rating {
     Terrible,
     Bad,
-    Medium,
+    Ok,
     Good,
     Perfect,
 }
 
 impl Default for Rating {
     fn default() -> Self {
-        Self::Medium
+        Self::Ok
     }
 }
 
@@ -39,7 +39,7 @@ impl Component for ConfidenceRating {
     fn init(_: Self::Props) -> Self {
         Self {
             is_visible: Store::new(false),
-            rating: Store::new(Rating::Medium),
+            rating: Store::new(Rating::Ok),
         }
     }
 
@@ -59,16 +59,16 @@ impl Component for ConfidenceRating {
                 button(class = "btn btn-terrible") {
                     {"Terrible"}
                 }
-                button(class = "btn btn-warning") {
+                button(class = "btn btn-bad") {
                     {"Bad"}
                 }
                 button(class = "btn btn-primary") {
-                    {"Medium"}
+                    {"Ok"}
                 }
-                button(class = "btn btn-secondary") {
+                button(class = "btn btn-good") {
                     {"Good"}
                 }
-                button(class = "btn btn-success") {
+                button(class = "btn btn-perfect") {
                     {"Perfect"}
                 }
             }

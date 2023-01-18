@@ -4,7 +4,7 @@
   "description": "",
   "main": "tailwind.config.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "postcss ./src/style.css -o ./dist/output.css && wasm-pack build --target web --out-dir dist && esbuild init.ts --bundle=true --allow-overwrite --minify --outdir=dist --format=esm && cargo run"
   },
   "repository": {
     "type": "git",
