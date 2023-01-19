@@ -44,18 +44,8 @@ impl Component for ConfidenceRating {
     }
 
     fn render(&self, context: shared::RenderContext) -> shared::RenderData {
-        #[cfg(target_arch = "wasm32")]
-        {
-            shared::dom::console_log!("{}", *self.is_visible.get());
-            self.is_visible
-                .on_change(|_, new| shared::dom::console_log!("YAY2!!! {new}"))
-        }
-
         view! {
-            div(class = "flashcard-hidden btn-group", class:active-when = (&self.is_visible, |visible: bool| {
-                shared::dom::console_log!("{visible}");
-                !visible
-            }, "flashcard-hidden")) {
+            div(class = "flashcard-hidden btn-group", class:active-when = (&self.is_visible, |visible: bool| !visible, "flashcard-hidden")) {
                 button(class = "tooltip btn btn-icon btn-terrible", on:click = {
                     let rating = self.rating.clone();
                     move || rating.set(Rating::Terrible)

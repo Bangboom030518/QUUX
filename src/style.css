@@ -17,7 +17,7 @@
 }
 
 @define-mixin btn $color {
-  @mixin-content;
+  /* @mixin-content; */
 
   .btn-$(color) {
     --tw-border-opacity: 1;
@@ -25,6 +25,7 @@
     --tw-bg-opacity: 1;
     background-color: theme("colors.$color.DEFAULT" / var(--tw-bg-opacity));
     --tw-text-opacity: 1;
+    /* TODO: Fix `color` */
     color: hsl(var(--pc) / var(--tw-text-opacity));
 
     &.btn-active,

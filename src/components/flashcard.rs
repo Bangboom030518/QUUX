@@ -62,12 +62,6 @@ impl Component for Flashcard {
     }
 
     fn render(&self, context: shared::RenderContext) -> shared::RenderData {
-        #[cfg(target_arch = "wasm32")]
-        {
-            self.flipped
-                .on_change(|_, new| shared::dom::console_log!("YAY!!! {new}"))
-        }
-
         let confidence_rating: ConfidenceRating;
         view! {
             article(magic = true, class = "grid place-items-center gap-4 text-center") {
