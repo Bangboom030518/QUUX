@@ -16,51 +16,46 @@
   }
 }
 
+@define-mixin btn $color {
+  @mixin-content;
+
+  .btn-$(color) {
+    --tw-border-opacity: 1;
+    border-color: theme("colors.$color.DEFAULT" / var(--tw-border-opacity));
+    --tw-bg-opacity: 1;
+    background-color: theme("colors.$color.DEFAULT" / var(--tw-bg-opacity));
+    --tw-text-opacity: 1;
+    color: hsl(var(--pc) / var(--tw-text-opacity));
+
+    &.btn-active,
+    &:hover {
+      --tw-border-opacity: 1;
+      border-color: theme("colors.$color.accent" / var(--tw-border-opacity));
+      --tw-bg-opacity: 1;
+      background-color: theme("colors.$color.accent" / var(--tw-bg-opacity));
+    }
+
+    &:focus-visible {
+      outline: 2px solid theme("colors.$color.DEFAULT");
+    }
+  }
+}
+
 @layer components {
   .flashcard-hidden {
     @apply opacity-0 translate-y-10 pointer-events-none -z-10;
   }
 
-  .btn-terrible {
-    --tw-border-opacity: 1;
-    border-color: theme(colors.terrible.DEFAULT / var(--tw-border-opacity));
-    --tw-bg-opacity: 1;
-    background-color: theme(colors.terrible.DEFAULT / var(--tw-bg-opacity));
-    --tw-text-opacity: 1;
-    color: hsl(var(--pc) / var(--tw-text-opacity));
+  .btn-icon {
+    @apply p-1 h-fit;
+    svg {
+      @apply w-12 h-12;
+    }
   }
 
-  .btn-terrible.btn-active,
-  .btn-terrible:hover {
-    --tw-border-opacity: 1;
-    border-color: theme(colors.terrible.accent / var(--tw-border-opacity));
-    --tw-bg-opacity: 1;
-    background-color: theme(colors.terrible.accent / var(--tw-bg-opacity));
-  }
-
-  .btn-terrible:focus-visible {
-    outline: 2px solid theme(colors.terrible.DEFAULT);
-  }
-
-  .btn-bad {
-    --tw-border-opacity: 1;
-    border-color: theme(colors.bad.DEFAULT / var(--tw-border-opacity));
-    --tw-bg-opacity: 1;
-    background-color: theme(colors.bad.DEFAULT / var(--tw-bg-opacity));
-    --tw-text-opacity: 1;
-    color: hsl(var(--pc) / var(--tw-text-opacity));
-  }
-
-  .btn-bad.btn-active,
-  .btn-bad:hover {
-    --tw-border-opacity: 1;
-    border-color: theme(colors.bad.accent / var(--tw-border-opacity));
-    --tw-bg-opacity: 1;
-    background-color: theme(colors.bad.accent / var(--tw-bg-opacity));
-  }
-
-  .btn-bad:focus-visible {
-    outline: 2px solid theme(colors.bad.DEFAULT);
-  }
-
+  @mixin btn terrible;
+  @mixin btn bad;
+  @mixin btn ok;
+  @mixin btn good;
+  @mixin btn perfect;
 }

@@ -56,20 +56,35 @@ impl Component for ConfidenceRating {
                 shared::dom::console_log!("{visible}");
                 !visible
             }, "flashcard-hidden")) {
-                button(class = "btn btn-terrible") {
-                    {"Terrible"}
+                button(class = "tooltip btn btn-icon btn-terrible", on:click = {
+                    let rating = self.rating.clone();
+                    move || rating.set(Rating::Terrible)
+                }, data-tip="Terrible", title="Terrible") {
+                    {include_str!("../../../assets/terrible.svg")}
                 }
-                button(class = "btn btn-bad") {
-                    {"Bad"}
+                button(class = "tooltip btn btn-icon btn-bad", on:click = {
+                    let rating = self.rating.clone();
+                    move || rating.set(Rating::Bad)
+                }, data-tip = "Bad", title = "Bad") {
+                    {include_str!("../../../assets/bad.svg")}
                 }
-                button(class = "btn btn-primary") {
-                    {"Ok"}
+                button(class = "tooltip btn btn-icon btn-ok", on:click = {
+                    let rating = self.rating.clone();
+                    move || rating.set(Rating::Ok)
+                }, data-tip = "Ok", title = "Ok") {
+                    {include_str!("../../../assets/ok.svg")}
                 }
-                button(class = "btn btn-good") {
-                    {"Good"}
+                button(class = "tooltip btn btn-icon btn-good", on:click = {
+                    let rating = self.rating.clone();
+                    move || rating.set(Rating::Good)
+                }, data-tip = "Good", title = "Good") {
+                    {include_str!("../../../assets/good.svg")}
                 }
-                button(class = "btn btn-perfect") {
-                    {"Perfect"}
+                button(class = "tooltip btn btn-icon btn-perfect", on:click = {
+                    let rating = self.rating.clone();
+                    move || rating.set(Rating::Perfect)
+                }, data-tip = "Perfect", title = "Perfect") {
+                    {include_str!("../../../assets/perfect.svg")}
                 }
             }
         }
