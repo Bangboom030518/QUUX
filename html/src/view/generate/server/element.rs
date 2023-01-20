@@ -5,7 +5,8 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::Expr;
 
-use crate::view::parse::{Children, Element, Item};
+use crate::view::parse::prelude::*;
+use element::Children;
 
 #[derive(Default)]
 struct Data {
@@ -26,27 +27,25 @@ impl From<Element> for Data {
         }: Element,
     ) -> Self {
         let mut data = Self {
-            tag_name: tag_name.clone(),
-            attributes: attributes.clone().into(),
+            tag_name,
+            attributes: attributes.into(),
             id: GLOBAL_ID.fetch_add(1, Relaxed).to_string(),
             ..Default::default()
         };
-
-        std::fs::write(
-            "id.log",
-            format!(
-                "{}\n---\n{}\n$tagname = \"{tag_name}\"\n$id = \"{}\"\n\n",
-                std::fs::read_to_string("id.log").unwrap(),
-                attributes
-                    .iter()
-                    .map(|crate::view::parse::Attribute { key, value }| {
-                        format!("{key} = {value}\n")
-                    })
-                    .collect::<String>(),
-                &data.id
-            ),
-        )
-        .unwrap();
+        // TODO: remove
+        // std::fs::write(
+        //     "id.log",
+        //     format!(
+        //         "{}\n---\n{}\n$tagname = \"{tag_name}\"\n$id = \"{}\"\n\n",
+        //         std::fs::read_to_string("id.log").unwrap(),
+        //         attributes
+        //             .iter()
+        //             .map(|Attribute { key, value }| { format!("{key} = {value}\n") })
+        //             .collect::<String>(),
+        //         &data.id
+        //     ),
+        // )
+        // .unwrap();
 
         data.add_children_data(children);
         data.add_attribute_data();
@@ -68,6 +67,7 @@ impl Data {
         match children {
             Children::Children(children) => self.add_element_children_data(children),
             Children::ReactiveStore(store) => self.add_store_data(&store),
+            Children::ForLoop(_) => todo!("implement for loops"),
         };
     }
 
@@ -89,7 +89,7 @@ impl Data {
                 children.is_empty(),
                 "Self-closing element '{}' cannot have children",
                 self.tag_name
-            )
+            );
         }
         let mut html: Vec<_> = children
             .into_iter()
@@ -138,12 +138,11 @@ impl Data {
     }
 
     fn add_store_data(&mut self, store: &Expr) {
-        if self.is_self_closing() {
-            panic!(
-                "Self closing element {} cannot have store children",
-                self.tag_name
-            )
-        }
+        assert!(
+            self.is_self_closing(),
+            "Self closing element {} cannot have store children",
+            self.tag_name
+        );
 
         self.attributes.reactive = true;
         self.html = quote! { #store.get() };

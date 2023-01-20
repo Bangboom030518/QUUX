@@ -1,5 +1,6 @@
 use super::GLOBAL_ID;
-use crate::view::parse::{Attribute, AttributeValue, Children, Element, Item};
+use crate::view::parse::prelude::*;
+use element::{Attribute, Children, attribute};
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
 use std::sync::atomic::Ordering::Relaxed;
@@ -67,6 +68,7 @@ impl From<Element> for Data {
         match children {
             Children::Children(children) => data.add_child_data(children),
             Children::ReactiveStore(store) => data.add_store_data(&store),
+            Children::ForLoop(_) => todo!("implement for loops!")
         };
         data
     }
@@ -74,7 +76,7 @@ impl From<Element> for Data {
 
 impl Data {
     fn add_attribute_data(&mut self, Attribute { key, value }: Attribute) {
-        let AttributeValue::Static(value) = value else {
+        let attribute::Value::Static(value) = value else {
             return
         };
 
@@ -151,14 +153,6 @@ pub fn generate(tree: &Element) -> TokenStream {
         ..
     } = tree.clone().into();
 
-    // let components = components.into_iter().map(|component| {
-    //     let component_string = component.to_token_stream().to_string();
-    //     quote! {{
-    //         let child = children.next().expect_internal(concat!("retrieve all child data (", #component_string, ") : client and server child lists don't match"));
-    //         let mut component: #component = shared::postcard::from_bytes(&child.component).expect("Couldn't deserialize component");
-    //         component.render(child.render_context);
-    //     }}
-    // });
     // TODO: remove
     let debug_code = if let Some(Attribute { key, .. }) = tree.attributes.first() {
         if key == "magic" {

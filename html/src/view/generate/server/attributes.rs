@@ -3,8 +3,8 @@ use std::collections::HashMap;
 use super::parse;
 use quote::quote;
 use syn::Expr;
-
-use crate::view::parse::{Attribute, AttributeValue};
+use crate::view::parse::prelude::*;
+use element::{attribute::Value, Attribute};
 
 #[derive(Default)]
 pub struct Attributes {
@@ -54,8 +54,8 @@ impl Attributes {
     /// Adds an `Attribute`
     fn add_attribute(&mut self, Attribute { key, value }: Attribute) {
         match value {
-            AttributeValue::Static(value) => self.add_static_value(key, value),
-            AttributeValue::Reactive(value) => self.add_reactive_value(key, &value),
+            Value::Static(value) => self.add_static_value(key, value),
+            Value::Reactive(value) => self.add_reactive_value(key, &value),
         }
     }
 }

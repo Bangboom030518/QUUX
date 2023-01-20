@@ -1,16 +1,12 @@
 // TODO: take `context` as first 'argument'
+use internal::prelude::*;
 
-use quote::ToTokens;
-use syn::{
-    braced, parenthesized,
-    parse::{Parse, ParseStream},
-    token::{Brace, Paren},
-    Expr, Ident, LitInt, Path, Token,
-};
+pub mod component;
+pub mod element;
+pub mod test;
 
-mod test;
-
-fn parse_html_ident(input: ParseStream) -> syn::Result<String> {
+#[allow(clippy::module_name_repetitions)]
+pub fn parse_html_ident(input: ParseStream) -> syn::Result<String> {
     let mut result = input.parse::<Ident>()?.to_string();
 
     if input.peek(Ident) {
@@ -78,161 +74,23 @@ impl Parse for Item {
     }
 }
 
-#[derive(Clone)]
-pub struct Component {
-    pub name: Path,
-    pub props: Vec<Prop>,
-    pub binding: Option<Ident>,
+pub mod prelude {
+    pub use super::{
+        component::{self, Component},
+        element::{self, Element},
+        Item,
+    };
 }
 
-impl Parse for Component {
-    // TODO: refactor
-    fn parse(input: ParseStream) -> syn::Result<Self> {
-        let name = input.parse()?;
-        let mut props = Vec::new();
-
-        if input.peek(Paren) {
-            let attributes_buffer;
-            parenthesized!(attributes_buffer in input);
-            while !attributes_buffer.is_empty() {
-                props.push(attributes_buffer.parse()?);
-                if attributes_buffer.peek(Token![,]) {
-                    attributes_buffer.parse::<Token![,]>()?;
-                } else if !attributes_buffer.is_empty() {
-                    return Err(
-                        attributes_buffer.error("Attributes should be seperated by commas, duh!")
-                    );
-                }
-            }
-        }
-
-        let binding = if input.peek(Token![:]) {
-            input.parse::<Token![:]>()?;
-            Some(input.parse()?)
-        } else {
-            None
+mod internal {
+    pub mod prelude {
+        pub use super::super::{prelude::*, parse_html_ident};
+        pub use quote::ToTokens;
+        pub use syn::{
+            braced, parenthesized,
+            parse::{Parse, ParseStream},
+            token::{Brace, Paren},
+            Expr, Ident, LitInt, Path, Token, Pat
         };
-
-        Ok(Self { name, props, binding })
-    }
-}
-
-#[derive(Clone)]
-pub struct Element {
-    pub tag_name: String,
-    pub attributes: Vec<Attribute>,
-    pub children: Children,
-}
-
-impl Parse for Element {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
-        let tag_name = parse_html_ident(input)?;
-
-        let mut attributes = Vec::new();
-        if input.peek(Paren) {
-            let attributes_buffer;
-            parenthesized!(attributes_buffer in input);
-            while !attributes_buffer.is_empty() {
-                attributes.push(attributes_buffer.parse()?);
-                if attributes_buffer.peek(Token![,]) {
-                    attributes_buffer.parse::<Token![,]>()?;
-                } else if !attributes_buffer.is_empty() {
-                    return Err(
-                        attributes_buffer.error("Attributes should be seperated by commas, duh!")
-                    );
-                }
-            }
-        }
-
-        let children;
-        braced!(children in input);
-        Ok(Self {
-            tag_name,
-            attributes,
-            children: children.parse()?,
-        })
-    }
-}
-
-#[derive(Clone)]
-pub enum Children {
-    Children(Vec<Item>),
-    ReactiveStore(Box<Expr>),
-}
-
-impl Parse for Children {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
-        if input.peek(Token![$]) {
-            input.parse::<Token![$]>()?;
-            Ok(Self::ReactiveStore(input.parse()?))
-        } else {
-            let mut items = Vec::new();
-            while !input.is_empty() {
-                items.push(input.parse()?);
-            }
-            Ok(Self::Children(items))
-        }
-    }
-}
-
-impl Default for Children {
-    fn default() -> Self {
-        Self::Children(Vec::new())
-    }
-}
-
-#[derive(Clone)]
-pub struct Attribute {
-    pub key: String,
-    pub value: AttributeValue,
-}
-
-impl Parse for Attribute {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
-        let key = parse_html_ident(input)?;
-        input.parse::<Token![=]>()?;
-        let value = input.parse()?;
-        Ok(Self { key, value })
-    }
-}
-
-#[derive(Clone)]
-pub struct Prop {
-    pub key: Ident,
-    pub value: Expr,
-}
-
-impl Parse for Prop {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
-        let key = input.parse()?;
-        input.parse::<Token![=]>()?;
-        let value = input.parse()?;
-        Ok(Self { key, value })
-    }
-}
-
-#[derive(Clone)]
-pub enum AttributeValue {
-    Reactive(Expr),
-    Static(Expr),
-}
-
-impl Parse for AttributeValue {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
-        if input.peek(Token![$]) {
-            input.parse::<Token![$]>()?;
-            Ok(Self::Reactive(input.parse()?))
-        } else {
-            Ok(Self::Static(input.parse()?))
-        }
-    }
-}
-
-impl std::fmt::Display for AttributeValue {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Reactive(expr) => write!(f, "${}", expr.to_token_stream()),
-            Self::Static(expr) => write!(f, "{}", expr.to_token_stream()),
-        }
     }
 }

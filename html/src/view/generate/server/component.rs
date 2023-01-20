@@ -4,8 +4,8 @@ use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote};
 use shared::generate_id;
 use syn::Path;
-
-use crate::view::parse::{Component, Prop};
+use crate::view::parse::prelude::*;
+use component::Prop;
 
 impl From<Prop> for TokenStream {
     fn from(Prop { key, value }: Prop) -> Self {

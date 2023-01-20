@@ -3,7 +3,7 @@ use html::view;
 use serde::{Deserialize, Serialize};
 use shared::{Component, Store};
 
-mod confidence_rating;
+pub mod confidence_rating;
 
 pub struct Props {
     pub term: &'static str,

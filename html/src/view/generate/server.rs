@@ -1,13 +1,13 @@
-mod attributes;
-mod component;
-mod element;
-
 use super::parse;
-use crate::view::parse::{Attribute, Element, Item};
+use crate::view::parse::prelude::{*, element::Attribute};
 use attributes::Attributes;
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::Expr;
+
+mod attributes;
+mod component;
+mod element;
 
 #[derive(Default)]
 struct Data {
