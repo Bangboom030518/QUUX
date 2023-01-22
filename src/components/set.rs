@@ -29,14 +29,8 @@ impl Component for Set {
     fn render(&self, context: shared::RenderContext) -> shared::RenderData {
         view! {
             div {
-                // for term in terms {
-                //     div(class = "lolz") {
-
-                //     }
-                //     // @Flashcard(term = term, definition = definition)
-                // }
-                for (a in b) {
-                    c
+                for term in terms {
+                    @Flashcard(term = term, definition = definition)
                 }
             }
         }
