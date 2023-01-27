@@ -3,7 +3,6 @@ use internal::prelude::*;
 
 pub mod component;
 pub mod element;
-pub mod test;
 
 #[allow(clippy::module_name_repetitions)]
 pub fn parse_html_ident(input: ParseStream) -> syn::Result<String> {

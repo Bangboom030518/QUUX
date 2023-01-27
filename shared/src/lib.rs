@@ -105,7 +105,7 @@ pub trait Component: Serialize + DeserializeOwned {
 
 impl<T: Component> SerializePostcard for T {}
 
-trait Render {
+trait Render: erased_serde::Serialize {
     fn render(&self, context: RenderContext) -> RenderData;
 }
 
@@ -113,6 +113,29 @@ impl<T: Component> Render for T {
     fn render(&self, context: RenderContext) -> RenderData {
         self.render(context)
     }
+}
+
+erased_serde::serialize_trait_object!(Render);
+
+
+fn deserialize<T: serde::de::DeserializeOwned>(bytes: &[u8]) -> Result<T, erased_serde::Error> {
+    // Construct some deserializers.
+    let deserializer = &mut postcard::Deserializer::from_bytes(bytes);
+    let deserializer = &mut <dyn erased_serde::Deserializer>::erase(deserializer);
+    erased_serde::deserialize(deserializer)
+}
+
+#[test]
+fn trait_objects_serde() {
+    let component = QUUXInitialise::init(QUUXInitialiseProps {
+        init_script_content: "",
+    });
+    let object: Box<dyn Render> = Box::new(component.clone());
+    let serialized = postcard::to_stdvec(&object).unwrap();
+    dbg!(&serialized);
+    let deserialized = deserialize(&serialized).unwrap();
+    assert_eq!(component, deserialized);
+    // deserialize(object)
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
@@ -175,7 +198,7 @@ pub struct QUUXInitialiseProps {
 ///     }
 /// }
 /// ```
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
 pub struct QUUXInitialise {
     #[serde(skip)]
     init_script_content: &'static str,
