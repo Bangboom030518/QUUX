@@ -1,6 +1,6 @@
 use super::internal::prelude::*;
 pub use attribute::Attribute;
-pub use children::Children;
+pub use children::{Children, ForLoop};
 
 pub mod attribute;
 pub mod children;

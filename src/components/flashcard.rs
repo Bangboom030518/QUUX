@@ -6,8 +6,8 @@ use shared::{Component, Store};
 pub mod confidence_rating;
 
 pub struct Props {
-    pub term: &'static str,
-    pub definition: &'static str,
+    pub term: String,
+    pub definition: String,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -64,7 +64,7 @@ impl Component for Flashcard {
     fn render(&self, context: shared::RenderContext) -> shared::RenderData {
         let confidence_rating: ConfidenceRating;
         view! {
-            article(magic = true, class = "grid place-items-center gap-4 text-center") {
+            article(class = "grid place-items-center gap-4 text-center") {
                 div(class = "relative min-w-[60ch] min-h-[40ch]") {
                     div(
                         class = "card bg-base-200 shadow term absolute top-0 left-0 w-full h-full grid place-items-center transition-[opacity,transform] duration-300",

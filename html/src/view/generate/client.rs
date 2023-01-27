@@ -1,6 +1,6 @@
 use super::GLOBAL_ID;
 use crate::view::parse::prelude::*;
-use element::{Attribute, Children, attribute};
+use element::{attribute, Attribute, Children};
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
 use std::sync::atomic::Ordering::Relaxed;
@@ -68,7 +68,7 @@ impl From<Element> for Data {
         match children {
             Children::Children(children) => data.add_child_data(children),
             Children::ReactiveStore(store) => data.add_store_data(&store),
-            Children::ForLoop(_) => todo!("implement for loops!")
+            Children::ForLoop(_) => {}, // TODO: reactive for????
         };
         data
     }

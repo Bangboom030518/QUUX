@@ -32,9 +32,9 @@ impl Default for Children {
 
 #[derive(Clone)]
 pub struct ForLoop {
-    pattern: Pat,
-    iterable: Expr,
-    item: Box<Item>,
+    pub pattern: Pat,
+    pub iterable: Expr,
+    pub item: Box<Item>,
 }
 
 impl Parse for ForLoop {

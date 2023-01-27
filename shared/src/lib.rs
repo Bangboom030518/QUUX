@@ -105,6 +105,16 @@ pub trait Component: Serialize + DeserializeOwned {
 
 impl<T: Component> SerializePostcard for T {}
 
+trait Render {
+    fn render(&self, context: RenderContext) -> RenderData;
+}
+
+impl<T: Component> Render for T {
+    fn render(&self, context: RenderContext) -> RenderData {
+        self.render(context)
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 /// Represents a reactive node on the client. Only for `Component`s.
 pub struct ClientComponentNode {

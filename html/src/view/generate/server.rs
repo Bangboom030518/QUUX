@@ -78,6 +78,7 @@ pub fn generate(tree: &Element) -> TokenStream {
 
     let tokens = quote! {
         let scope_id = context.id;
+        let mut dynamic_component_nodes: Vec<shared::ClientComponentNode> = Vec::new();
         #(#component_constructors)*
         shared::RenderData {
             html: #html,
@@ -85,7 +86,7 @@ pub fn generate(tree: &Element) -> TokenStream {
                 component: shared::SerializePostcard::serialize_bytes(self),
                 render_context: shared::RenderContext {
                     id: scope_id,
-                    children: vec![#(#component_nodes),*],
+                    children: vec![vec![#(#component_nodes),*], dynamic_component_nodes].concat(),
                 }
             }
         }

@@ -1,6 +1,6 @@
 #![feature(more_qualified_paths, stmt_expr_attributes)]
 #![warn(clippy::pedantic, clippy::nursery)]
-use components::flashcard;
+use components::{flashcard, set};
 use html::view;
 use serde::{Deserialize, Serialize};
 use shared::{Component, QUUXInitialise, Store};
@@ -46,7 +46,8 @@ impl Component for App {
                     h1 {
                         { "Welcome to Quuxlet" }
                     }
-                    @flashcard::Flashcard(term = "a", definition = "b")
+                    @flashcard::Flashcard(term = "a".to_string(), definition = "b".to_string())
+                    @set::Set(terms = vec![set::Term::new("0", "1"), set::Term::new("2", "3")])
                     @QUUXInitialise(init_script_content = include_str!("../dist/init.js"))
                 }
             }

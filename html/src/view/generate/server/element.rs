@@ -6,7 +6,7 @@ use quote::quote;
 use syn::Expr;
 
 use crate::view::parse::prelude::*;
-use element::Children;
+use element::{Children, ForLoop};
 
 #[derive(Default)]
 struct Data {
@@ -67,11 +67,35 @@ impl Data {
         match children {
             Children::Children(children) => self.add_element_children_data(children),
             Children::ReactiveStore(store) => self.add_store_data(&store),
-            Children::ForLoop(_) => todo!("implement for loops"),
+            Children::ForLoop(for_loop) => self.add_for_loop_data(for_loop),
         };
     }
 
-    fn add_item_data(&mut self, item: Item) -> TokenStream {
+    fn add_for_loop_data(
+        &mut self,
+        ForLoop {
+            pattern,
+            iterable,
+            item,
+        }: ForLoop,
+    ) {
+        // TODO: components!!!
+        let super::Data {
+            component_nodes,
+            html,
+            component_constructors,
+        } = (*item).into();
+        let html = quote! {{
+            #(#component_constructors);*;
+            #(dynamic_component_nodes.push(#component_nodes));*;
+            #html
+        }};
+        self.html = quote! {
+            (#iterable).map(|#pattern| String::from(#html)).collect::<String>()
+        };
+    }
+
+    fn get_item_html(&mut self, item: Item) -> TokenStream {
         let super::Data {
             mut component_nodes,
             html,
@@ -93,7 +117,7 @@ impl Data {
         }
         let mut html: Vec<_> = children
             .into_iter()
-            .map(|item| self.add_item_data(item))
+            .map(|item| self.get_item_html(item))
             .collect();
         html.insert(0, quote! { String::new() });
         self.html = quote! {
