@@ -5,11 +5,7 @@
 pub use cfg_if;
 use errors::MapInternal;
 pub use postcard;
-use serde::{
-    de::DeserializeOwned,
-    de::{self, Visitor},
-    Deserialize, Deserializer, Serialize,
-};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::fmt::Debug;
 use std::{
     str::FromStr,
@@ -232,5 +228,9 @@ impl Component for QUUXInitialise {
     }
 
     #[cfg(target_arch = "wasm32")]
-    fn render<T>(&self, _: RenderContext<T: Serialize + DeserializeOwned>) {}
+    fn render<T>(&self, _: RenderContext<T>)
+    where
+        T: ComponentEnum,
+    {
+    }
 }
