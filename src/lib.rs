@@ -21,6 +21,11 @@ pub struct App {
     count: Store<u32>,
 }
 
+enum Component {
+    App(App),
+    Flashcard(flashcard::Flashcard),
+}
+
 impl Component for App {
     type Props = ();
 

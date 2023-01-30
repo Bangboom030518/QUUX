@@ -1,3 +1,5 @@
+// TODO: add component enum instead of trait, should auto generate
+
 #![warn(clippy::pedantic, clippy::nursery)]
 
 pub use cfg_if;
@@ -8,6 +10,7 @@ use serde::{
     de::{self, Visitor},
     Deserialize, Deserializer, Serialize,
 };
+use std::fmt::Debug;
 use std::{
     str::FromStr,
     sync::atomic::{AtomicU64, Ordering},
@@ -53,9 +56,12 @@ pub trait SerializePostcard: Serialize {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-pub struct RenderData {
+pub struct RenderData<T>
+where
+    T: ComponentEnum,
+{
     pub html: String,
-    pub component_node: ClientComponentNode,
+    pub component_node: ClientComponentNode<T>,
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -67,11 +73,14 @@ pub trait Component: Serialize + DeserializeOwned {
     fn init(props: Self::Props) -> Self;
 
     #[cfg(not(target_arch = "wasm32"))]
-    fn render_to_string(&self) -> String {
+    fn render_to_string<T>(&self) -> String
+    where
+        T: ComponentEnum,
+    {
         let RenderData {
             html,
             component_node,
-        } = self.render(RenderContext::default());
+        } = self.render::<T>(RenderContext::default());
         let bytes =
             postcard::to_stdvec(&component_node).expect_internal("serialize `RenderContext`");
         let component_node = base64::encode(bytes);
@@ -81,7 +90,9 @@ pub trait Component: Serialize + DeserializeOwned {
         )
     }
 
-    fn render(&self, context: RenderContext) -> RenderData;
+    fn render<T>(&self, context: RenderContext<T>) -> RenderData<T>
+    where
+        T: ComponentEnum;
 
     #[must_use]
     fn from_bytes(bytes: &[u8]) -> Self {
@@ -109,164 +120,21 @@ pub trait Component: Serialize + DeserializeOwned {
 
 impl<T: Component> SerializePostcard for T {}
 
-trait Render: erased_serde::Serialize {
-    fn render(&self, context: RenderContext) -> RenderData;
-}
-
-impl<T: Component + Clone> Render for T {
-    fn render(&self, context: RenderContext) -> RenderData {
-        self.render(context)
-    }
-}
-
-trait ErasedDeserialize<'de>: Sized {
-    fn deserialize<D>(deserializer: D) -> Result<Self, erased_serde::Error>
-    where
-        D: erased_serde::Deserializer<'de>;
-}
-
-erased_serde::serialize_trait_object!(Render);
-
-/*
-the trait bound `dyn Render: _::_serde::Deserialize<'_>` is not satisfied
-the following other types implement trait `_::_serde::Deserialize<'de>`:
-  &'a [u8]
-  &'a std::path::Path
-  &'a str
-  ()
-  (T0, T1)
-  (T0, T1, T2)
-  (T0, T1, T2, T3)
-  (T0, T1, T2, T3, T4)
-*/
-
-// fn<'de, D>(D) -> Result<T, D::Error> where D: Deserializer<'de>
-
-fn deserialize_trait_object<'a, D, T>(deserializer: D) -> Result<T, D::Error>
-where
-    T: ErasedDeserialize<'a>,
-    D: serde::Deserializer<'a>,
-{
-    // let deserializer = &mut postcard::Deserializer::from_bytes(bytes);
-    let deserializer = &mut <dyn erased_serde::Deserializer>::erase(deserializer);
-    // TODO: custom implementhttps://docs.rs/erased-serde/latest/src/erased_serde/de.rs.html#36-41
-    erased_serde::deserialize(deserializer).map_err(<D::Error as de::Error>::custom)
-}
-
-fn lolz(serialized: Vec<u8>) {
-    let deserializer = &mut postcard::Deserializer::from_bytes(&serialized);
-    let deserializer = &mut <dyn erased_serde::Deserializer>::erase(deserializer);
-    let deserialized: Box<dyn Render> = erased_serde::deserialize(deserializer).unwrap();
-}
-
-#[test]
-fn trait_objects_serde() {
-    let component = QUUXInitialise::init(QUUXInitialiseProps {
-        init_script_content: "",
-    });
-    let object: Box<dyn Render> = Box::new(component.clone());
-    let serialized = postcard::to_stdvec(&object).unwrap();
-    dbg!(&serialized);
-    let deserialized = {
-        let deserializer = &mut postcard::Deserializer::from_bytes(&serialized);
-        let deserializer = &mut <dyn erased_serde::Deserializer>::erase(deserializer);
-        erased_serde::deserialize(deserializer)
-    }
-    .unwrap();
-    assert_eq!(component, deserialized);
-    // deserialize(object)
-}
-
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 /// Represents a reactive node on the client. Only for `Component`s.
-pub struct ClientComponentNode {
-    /// The serialised component
-    #[serde(deserialize_with = "deserialize_trait_object")]
-    pub component: Box<dyn Render>,
-    pub render_context: RenderContext,
+pub struct ClientComponentNode<T>
+where
+    T: ComponentEnum,
+{
+    pub component: T,
+    // #[serde(bound(deserialize = "T: Deserialize<'a>"))]
+    pub render_context: RenderContext<T>,
 }
-// impl<'a> Deserialize<'a> for ClientComponentNode {
-//     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-//         where D: serde::Deserializer<'a> {
 
-//     }
-// }
-// impl<'de> Deserialize<'de> for ClientComponentNode {
-//     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-//     where
-//         D: Deserializer<'de>,
-//     {
-//         #[derive(Deserialize)]
-//         #[serde(field_identifier, rename_all = "lowercase")]
-//         enum Field {
-//             Component,
-//             RenderContext,
-//         }
-
-//         struct ClientComponentNodeVisitor;
-
-//         impl<'de> Visitor<'de> for ClientComponentNodeVisitor {
-//             type Value = ClientComponentNode;
-
-//             fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-//                 formatter.write_str("struct ClientComponentNode")
-//             }
-
-//             fn visit_seq<V>(self, mut seq: V) -> Result<Self::Value, V::Error>
-//             where
-//                 V: de::SeqAccess<'de>,
-//             {
-//                 let component = seq
-//                     .next_element()?
-//                     .ok_or_else(|| de::Error::invalid_length(0, &self))?;
-//                 let component = seq
-//                     .next_element()?
-//                     .ok_or_else(|| de::Error::invalid_length(1, &self))?;
-//                 Ok(Self::Value {
-//                     component,
-//                     render_context,
-//                 })
-//             }
-
-//             fn visit_map<V>(self, mut map: V) -> Result<Self::Value, V::Error>
-//             where
-//                 V: de::MapAccess<'de>,
-//             {
-//                 let mut component = None;
-//                 let mut render_context = None;
-//                 while let Some(key) = map.next_key()? {
-//                     match key {
-//                         Field::Component => {
-//                             if component.is_some() {
-//                                 return Err(de::Error::duplicate_field("secs"));
-//                             }
-//                             component = Some(map.next_value()?);
-//                         }
-//                         Field::RenderContext => {
-//                             if render_context.is_some() {
-//                                 return Err(de::Error::duplicate_field("nanos"));
-//                             }
-//                             render_context = Some(map.next_value()?);
-//                         }
-//                     }
-//                 }
-//                 let component = component.ok_or_else(|| de::Error::missing_field("component"))?;
-//                 let render_context =
-//                     render_context.ok_or_else(|| de::Error::missing_field("render_context"))?;
-//                 Ok(Self::Value {
-//                     component,
-//                     render_context,
-//                 })
-//             }
-//         }
-
-//         const FIELDS: &[&str] = &["component", "render_context"];
-//         deserializer.deserialize_struct("Duration", FIELDS, ClientComponentNodeVisitor)
-//         // erased_serde::deserialize(deserializer)
-//     }
-// }
-
-impl FromStr for ClientComponentNode {
+impl<T> FromStr for ClientComponentNode<T>
+where
+    T: ComponentEnum + DeserializeOwned,
+{
     type Err = errors::ClientParse;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -276,7 +144,9 @@ impl FromStr for ClientComponentNode {
     }
 }
 
-impl SerializePostcard for ClientComponentNode {}
+impl<T> SerializePostcard for ClientComponentNode<T> where T: ComponentEnum {}
+
+pub trait ComponentEnum: Serialize + Debug + Clone + From<QUUXInitialise> {}
 
 /// The id is passed to render method on client
 /// Children are recusively hydrated
@@ -285,12 +155,18 @@ impl SerializePostcard for ClientComponentNode {}
 /// For an `view!()`, this will contain an id used on the client for reactivity, as well as any children that are components.
 /// This will allow for a `view!()` to manage its children by encapsulating them under one unique id.
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct RenderContext {
-    pub children: Vec<ClientComponentNode>,
+pub struct RenderContext<T>
+where
+    T: ComponentEnum,
+{
+    pub children: Vec<ClientComponentNode<T>>,
     pub id: String,
 }
 
-impl Default for RenderContext {
+impl<T> Default for RenderContext<T>
+where
+    T: ComponentEnum,
+{
     fn default() -> Self {
         Self {
             children: Vec::new(),
@@ -338,7 +214,10 @@ impl Component for QUUXInitialise {
     }
 
     #[cfg(not(target_arch = "wasm32"))]
-    fn render(&self, _: RenderContext) -> RenderData {
+    fn render<T>(&self, _: RenderContext<T>) -> RenderData<T>
+    where
+        T: ComponentEnum,
+    {
         RenderData {
             html: format!(
                 "<script type=\"module\" id=\"__quux_init_script__\" data-quux-tree=\"{}\">{};</script>",
@@ -346,12 +225,12 @@ impl Component for QUUXInitialise {
                 self.init_script_content,
             ),
             component_node: ClientComponentNode {
-                component: self.serialize_bytes(),
+                component: self.clone().into(),
                 render_context: RenderContext::default()
             },
         }
     }
 
     #[cfg(target_arch = "wasm32")]
-    fn render(&self, _: RenderContext) {}
+    fn render<T>(&self, _: RenderContext<T: Serialize + DeserializeOwned>) {}
 }
