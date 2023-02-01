@@ -1,6 +1,6 @@
 use html::view;
 use serde::{Deserialize, Serialize};
-use shared::{Component, Store};
+use shared::{Component, Store, ComponentEnum};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Rating {
@@ -17,7 +17,7 @@ impl Default for Rating {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ConfidenceRating {
     is_visible: Store<bool>,
     rating: Store<Rating>,
@@ -43,7 +43,7 @@ impl Component for ConfidenceRating {
         }
     }
 
-    fn render(&self, context: shared::RenderContext) -> shared::RenderData {
+    fn render<T: ComponentEnum>(&self, context: shared::RenderContext<T>) -> shared::RenderData<T> {
         view! {
             div(class = "flashcard-hidden btn-group", class:active-when = (&self.is_visible, |visible: bool| !visible, "flashcard-hidden")) {
                 button(class = "tooltip btn btn-icon btn-terrible", on:click = {

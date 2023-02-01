@@ -3,7 +3,7 @@
 use components::{flashcard, set};
 use html::view;
 use serde::{Deserialize, Serialize};
-use shared::{Component, QUUXInitialise, Store};
+use shared::{Component, ComponentEnum, QUUXInitialise, Store};
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
 mod components;
@@ -13,17 +13,47 @@ mod components;
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen(start)]
 pub fn init_app() {
-    App::init_as_root();
+    App::init_as_root::<QUUXComponentEnum>();
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct App {
-    count: Store<u32>,
-}
-
-enum Component {
+#[derive(Serialize, Deserialize, Clone, Debug)]
+enum QUUXComponentEnum {
     App(App),
     Flashcard(flashcard::Flashcard),
+    QUUXInitialise(QUUXInitialise),
+}
+
+impl ComponentEnum for QUUXComponentEnum {
+    fn render(&self, context: shared::RenderContext<Self>) -> shared::RenderData<Self> {
+        match self {
+            Self::App(component) => component.render(context),
+            Self::Flashcard(component) => component.render(context),
+            Self::QUUXInitialise(component) => component.render(context),
+        }
+    }
+}
+
+impl From<QUUXInitialise> for QUUXComponentEnum {
+    fn from(value: QUUXInitialise) -> Self {
+        Self::QUUXInitialise(value)
+    }
+}
+
+impl From<App> for QUUXComponentEnum {
+    fn from(value: App) -> Self {
+        Self::App(value)
+    }
+}
+
+impl From<flashcard::Flashcard> for QUUXComponentEnum {
+    fn from(value: flashcard::Flashcard) -> Self {
+        Self::Flashcard(value)
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct App {
+    count: Store<u32>,
 }
 
 impl Component for App {
@@ -35,7 +65,7 @@ impl Component for App {
         }
     }
 
-    fn render(&self, context: shared::RenderContext) -> shared::RenderData {
+    fn render<T: ComponentEnum>(&self, context: shared::RenderContext<T>) -> shared::RenderData<T> {
         view! {
             html(lang="en") {
                 head {

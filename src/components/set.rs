@@ -2,7 +2,7 @@ use super::flashcard::confidence_rating::ConfidenceRating;
 use super::flashcard::Flashcard;
 use html::view;
 use serde::{Deserialize, Serialize};
-use shared::{Component, Store};
+use shared::{Component, ComponentEnum, Store};
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Term {
@@ -35,13 +35,10 @@ impl Component for Set {
         Self { terms }
     }
 
-    fn render(&self, context: shared::RenderContext) -> shared::RenderData {
+    fn render<T: ComponentEnum>(&self, context: shared::RenderContext<T>) -> shared::RenderData<T> {
         view! {
             div(magic = true) {
                 for Term { term, definition } in self.terms.clone().into_iter() {
-                    // div {
-                    //     {format!("{term}={definition}")}
-                    // }
                     @Flashcard(term = term, definition = definition)
                 }
             }

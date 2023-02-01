@@ -67,7 +67,7 @@ pub struct RenderData<T> {
 
 #[cfg(target_arch = "wasm32")]
 impl<T> RenderData<T> {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             _phantom: std::marker::PhantomData,
         }
@@ -242,9 +242,10 @@ impl Component for QUUXInitialise {
     }
 
     #[cfg(target_arch = "wasm32")]
-    fn render<T>(&self, _: RenderContext<T>)
+    fn render<T>(&self, _: RenderContext<T>) -> RenderData<T>
     where
         T: ComponentEnum,
     {
+        RenderData::new()
     }
 }

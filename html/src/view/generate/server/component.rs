@@ -47,7 +47,7 @@ impl Data {
         let rendered_component = &self.rendered_component_ident;
         quote! {
             shared::ClientComponentNode {
-                component: shared::postcard::to_stdvec(&#component).expect("Couldn't serialize component tree (QUUX internal)"),
+                component: T::from(#component),
                 render_context: shared::RenderContext {
                     id: #render_context.id,
                     children: #rendered_component

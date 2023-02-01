@@ -1,7 +1,7 @@
 use confidence_rating::ConfidenceRating;
 use html::view;
 use serde::{Deserialize, Serialize};
-use shared::{Component, Store};
+use shared::{Component, Store, ComponentEnum};
 
 pub mod confidence_rating;
 
@@ -10,7 +10,7 @@ pub struct Props {
     pub definition: String,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Flashcard {
     term: String,
     definition: String,
@@ -61,7 +61,7 @@ impl Component for Flashcard {
         }
     }
 
-    fn render(&self, context: shared::RenderContext) -> shared::RenderData {
+    fn render<T: ComponentEnum>(&self, context: shared::RenderContext<T>) -> shared::RenderData<T> {
         let confidence_rating: ConfidenceRating;
         view! {
             article(class = "grid place-items-center gap-4 text-center") {

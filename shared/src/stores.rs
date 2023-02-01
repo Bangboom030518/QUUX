@@ -72,6 +72,16 @@ impl<T: fmt::Display> fmt::Display for Store<T> {
     }
 }
 
+impl<T: fmt::Debug> fmt::Debug for Store<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
+    where
+        T: fmt::Debug,
+    {
+        write!(f, "{:?}", self.get())
+    }
+}
+
+
 #[test]
 fn store_test() {
     use std::cell::RefCell;

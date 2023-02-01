@@ -78,7 +78,7 @@ pub fn generate(tree: &Element) -> TokenStream {
 
     let tokens = quote! {
         let scope_id = context.id;
-        let mut dynamic_component_nodes: Vec<shared::ClientComponentNode> = Vec::new();
+        let mut dynamic_component_nodes: Vec<shared::ClientComponentNode<T>> = Vec::new();
         #(#component_constructors)*
         shared::RenderData {
             html: #html,
