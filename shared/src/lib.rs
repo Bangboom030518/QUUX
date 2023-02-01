@@ -61,7 +61,18 @@ where
 }
 
 #[cfg(target_arch = "wasm32")]
-pub type RenderData = ();
+pub struct RenderData<T> {
+    _phantom: std::marker::PhantomData<T>,
+}
+
+#[cfg(target_arch = "wasm32")]
+impl<T> RenderData<T> {
+    fn new() -> Self {
+        Self {
+            _phantom: std::marker::PhantomData,
+        }
+    }
+}
 
 pub trait Component: Serialize + DeserializeOwned {
     type Props;
@@ -95,8 +106,9 @@ pub trait Component: Serialize + DeserializeOwned {
         postcard::from_bytes(bytes).expect("couldn't deserialize component (quux internal error)")
     }
 
+    // TODO: doesn't need to be associated with this trait
     #[cfg(target_arch = "wasm32")]
-    fn init_as_root() -> Self {
+    fn init_as_root<T: ComponentEnum + DeserializeOwned>() {
         std::panic::set_hook(Box::new(console_error_panic_hook::hook));
 
         let init_script = dom::get_document()
@@ -106,11 +118,11 @@ pub trait Component: Serialize + DeserializeOwned {
         let tree = init_script
             .get_attribute("data-quux-tree")
             .expect("`__quux_init_script__` doesn't have a tree attached");
-        let tree: ClientComponentNode = tree.parse().unwrap();
+        let tree: ClientComponentNode<T> = tree.parse().unwrap();
 
-        let root_component = Self::from_bytes(&tree.component);
-        root_component.render(tree.render_context);
-        root_component
+        // Don't deserialize here!
+        // let root_component = Self::from_bytes(&tree.component);
+        tree.component.render(tree.render_context);
     }
 }
 
@@ -142,7 +154,9 @@ where
 
 impl<T> SerializePostcard for ClientComponentNode<T> where T: ComponentEnum {}
 
-pub trait ComponentEnum: Serialize + Debug + Clone + From<QUUXInitialise> {}
+pub trait ComponentEnum: Serialize + Debug + Clone + From<QUUXInitialise> {
+    fn render(&self, context: RenderContext<Self>) -> RenderData<Self>;
+}
 
 /// The id is passed to render method on client
 /// Children are recusively hydrated

@@ -1,1 +1,0 @@
-npx tailwindcss -i ./src/style.css -o ./dist/output.css -c ./tailwind.config.js --minify && npx wasm-pack build --target web --out-dir dist && npx esbuild init.ts --bundle=true --allow-overwrite --minify --outdir=dist --format=esm && cargo run

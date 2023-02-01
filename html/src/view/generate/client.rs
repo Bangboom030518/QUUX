@@ -173,7 +173,8 @@ pub fn generate(tree: &Element) -> TokenStream {
         let scope_id = Rc::new(context.id);
         #debug_code;
         #(#components);*;
-        #({ #reactivity });*
+        #({ #reactivity });*;
+        shared::RenderData::new()
     };
     if let Some(Attribute { key, .. }) = tree.attributes.first() {
         if key == "magic" {
