@@ -1,9 +1,9 @@
 #![feature(more_qualified_paths, stmt_expr_attributes)]
 #![warn(clippy::pedantic, clippy::nursery)]
 use components::{flashcard, set};
-use html::view;
+use quux::{Component, ComponentEnum, QUUXInitialise, Store};
+use quux::prelude::*;
 use serde::{Deserialize, Serialize};
-use shared::{Component, ComponentEnum, QUUXInitialise, Store};
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
 mod components;
@@ -24,7 +24,7 @@ enum QUUXComponentEnum {
 }
 
 impl ComponentEnum for QUUXComponentEnum {
-    fn render(&self, context: shared::RenderContext<Self>) -> shared::RenderData<Self> {
+    fn render(&self, context: quux::RenderContext<Self>) -> quux::RenderData<Self> {
         match self {
             Self::App(component) => component.render(context),
             Self::Flashcard(component) => component.render(context),
@@ -65,7 +65,7 @@ impl Component for App {
         }
     }
 
-    fn render<T: ComponentEnum>(&self, context: shared::RenderContext<T>) -> shared::RenderData<T> {
+    fn render<T: ComponentEnum>(&self, context: quux::RenderContext<T>) -> quux::RenderData<T> {
         view! {
             html(lang="en") {
                 head {

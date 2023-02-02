@@ -1,8 +1,9 @@
 use super::flashcard::confidence_rating::ConfidenceRating;
 use super::flashcard::Flashcard;
 use html::view;
+use quux::{Component, ComponentEnum, Store};
+use quux::prelude::*;
 use serde::{Deserialize, Serialize};
-use shared::{Component, ComponentEnum, Store};
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Term {
@@ -35,7 +36,7 @@ impl Component for Set {
         Self { terms }
     }
 
-    fn render<T: ComponentEnum>(&self, context: shared::RenderContext<T>) -> shared::RenderData<T> {
+    fn render<T: ComponentEnum>(&self, context: quux::RenderContext<T>) -> quux::RenderData<T> {
         view! {
             div(magic = true) {
                 for Term { term, definition } in self.terms.clone().into_iter() {

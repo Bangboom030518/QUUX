@@ -1,6 +1,6 @@
-use html::view;
+use quux::prelude::*;
+use quux::{Component, ComponentEnum, Store};
 use serde::{Deserialize, Serialize};
-use shared::{Component, Store, ComponentEnum};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Rating {
@@ -43,7 +43,7 @@ impl Component for ConfidenceRating {
         }
     }
 
-    fn render<T: ComponentEnum>(&self, context: shared::RenderContext<T>) -> shared::RenderData<T> {
+    fn render<T: ComponentEnum>(&self, context: quux::RenderContext<T>) -> quux::RenderData<T> {
         view! {
             div(class = "flashcard-hidden btn-group", class:active-when = (&self.is_visible, |visible: bool| !visible, "flashcard-hidden")) {
                 button(class = "tooltip btn btn-icon btn-terrible", on:click = {

@@ -1,7 +1,7 @@
 use confidence_rating::ConfidenceRating;
-use html::view;
+use quux::{Component, ComponentEnum, Store};
 use serde::{Deserialize, Serialize};
-use shared::{Component, Store, ComponentEnum};
+use quux::prelude::*;
 
 pub mod confidence_rating;
 
@@ -61,7 +61,7 @@ impl Component for Flashcard {
         }
     }
 
-    fn render<T: ComponentEnum>(&self, context: shared::RenderContext<T>) -> shared::RenderData<T> {
+    fn render<T: ComponentEnum>(&self, context: quux::RenderContext<T>) -> quux::RenderData<T> {
         let confidence_rating: ConfidenceRating;
         view! {
             article(class = "grid place-items-center gap-4 text-center") {

@@ -317,16 +317,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "html"
-version = "0.1.0"
-dependencies = [
- "proc-macro2",
- "quote",
- "shared",
- "syn",
-]
-
-[[package]]
 name = "http"
 version = "0.2.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -575,15 +565,41 @@ dependencies = [
 name = "quux"
 version = "0.1.0"
 dependencies = [
+ "base64 0.20.0",
+ "cfg-if",
+ "console_error_panic_hook",
+ "erased-serde",
+ "lazy_static",
+ "postcard",
+ "quux-macros",
+ "serde",
+ "uuid",
+ "wasm-bindgen",
+ "web-sys",
+]
+
+[[package]]
+name = "quux-macros"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "quuxlet"
+version = "0.1.0"
+dependencies = [
  "axum",
  "base64 0.20.0",
  "console_error_panic_hook",
- "html",
  "lazy_static",
  "once_cell",
  "postcard",
+ "quux",
+ "quux-macros",
  "serde",
- "shared",
  "tokio",
  "wasm-bindgen",
  "web-sys",
@@ -692,22 +708,6 @@ dependencies = [
  "cfg-if",
  "cpufeatures",
  "digest",
-]
-
-[[package]]
-name = "shared"
-version = "0.1.0"
-dependencies = [
- "base64 0.20.0",
- "cfg-if",
- "console_error_panic_hook",
- "erased-serde",
- "lazy_static",
- "postcard",
- "serde",
- "uuid",
- "wasm-bindgen",
- "web-sys",
 ]
 
 [[package]]

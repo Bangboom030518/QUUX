@@ -1,11 +1,13 @@
 // TODO: Can we remove scope id now ??!1!?
 
-use proc_macro2::{Ident, TokenStream};
-use quote::{format_ident, quote};
-use shared::generate_id;
-use syn::Path;
+use std::sync::atomic::{AtomicU64, Ordering::Relaxed};
 use crate::view::parse::prelude::*;
 use component::Prop;
+use proc_macro2::{Ident, TokenStream};
+use quote::{format_ident, quote};
+use syn::Path;
+
+static ID: AtomicU64 = AtomicU64::new(0);
 
 impl From<Prop> for TokenStream {
     fn from(Prop { key, value }: Prop) -> Self {
@@ -23,7 +25,7 @@ pub struct Data {
 
 impl Data {
     pub fn new(Component { name, props, .. }: Component) -> Self {
-        let id = generate_id();
+        let id = ID.fetch_add(1, Relaxed);
         let component_ident = format_ident!("component_{id}");
         let rendered_component_ident = format_ident!("rendered_component_{id}");
         let component_context_ident = format_ident!("component_context_{id}");
@@ -46,24 +48,15 @@ impl Data {
         let render_context = &self.component_context_ident;
         let rendered_component = &self.rendered_component_ident;
         quote! {
-            shared::ClientComponentNode {
+            quux::ClientComponentNode {
                 component: T::from(#component),
-                render_context: shared::RenderContext {
+                render_context: quux::RenderContext {
                     id: #render_context.id,
                     children: #rendered_component
                         .component_node
                         .render_context
                         .children,
                 },
-            }
-        }
-    }
-
-    fn generate_context(&self) -> TokenStream {
-        quote! {
-            shared::RenderContext {
-                id: shared::generate_id(),
-                children: Vec::new()
             }
         }
     }
@@ -78,7 +71,7 @@ impl Data {
             }
         } else {
             quote! {
-                <#name as shared::Component>::Props {
+                <#name as quux::Component>::Props {
                     #(#props),*
                 }
             }
@@ -94,10 +87,12 @@ impl Data {
             ..
         } = &self;
         let props = self.generate_props();
-        let context = self.generate_context();
         quote! {
-            let #component_ident = <#name as shared::Component>::init(#props);
-            let #component_context_ident = #context;
+            let #component_ident = <#name as quux::Component>::init(#props);
+            let #component_context_ident = quux::RenderContext {
+                id: quux::generate_id(),
+                children: Vec::new()
+            };
             let #rendered_component_ident = #component_ident.render(std::clone::Clone::clone(&#component_context_ident));
         }
     }

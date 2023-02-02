@@ -189,5 +189,5 @@ where
 
 pub mod prelude {
     pub use super::{Component, RenderContext, RenderData, ClientComponentNode, ComponentEnum};
-    
+    pub use quux_macros::view;
 }

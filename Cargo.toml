@@ -1,5 +1,5 @@
 [package]
-name = "quux"
+name = "quuxlet"
 version = "0.1.0"
 edition = "2021"
 
@@ -9,8 +9,8 @@ edition = "2021"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-shared = { path = "./shared" }
-html = { path = "./html" }
+quux = { path = "./quux" }
+quux-macros = { path = "./quux-macros" }
 wasm-bindgen = { workspace = true }
 serde = { workspace = true }
 
@@ -37,6 +37,6 @@ web-sys = { version = "0.3", features = ["Document", "Element", "HtmlElement", "
 
 [workspace]
 members = [
-    "html",
-    "shared"
+    "quux-macros",
+    "quux"
 ]

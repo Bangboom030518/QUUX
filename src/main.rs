@@ -7,7 +7,7 @@ use axum::{
     Router, TypedHeader,
 };
 use quux::App;
-use shared::Component;
+use quux::Component;
 use std::net::SocketAddr;
 
 async fn root() -> Html<String> {

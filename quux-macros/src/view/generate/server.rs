@@ -1,5 +1,5 @@
 use super::parse;
-use crate::view::parse::prelude::{*, element::Attribute};
+use crate::view::parse::prelude::{element::Attribute, *};
 use attributes::Attributes;
 use proc_macro2::TokenStream;
 use quote::quote;
@@ -78,13 +78,13 @@ pub fn generate(tree: &Element) -> TokenStream {
 
     let tokens = quote! {
         let scope_id = context.id;
-        let mut dynamic_component_nodes: Vec<shared::ClientComponentNode<T>> = Vec::new();
+        let mut dynamic_component_nodes: Vec<quux::ClientComponentNode<T>> = Vec::new();
         #(#component_constructors)*
-        shared::RenderData {
+        quux::RenderData {
             html: #html,
-            component_node: shared::ClientComponentNode {
-                component: shared::SerializePostcard::serialize_bytes(self),
-                render_context: shared::RenderContext {
+            component_node: quux::ClientComponentNode {
+                component: quux::SerializePostcard::serialize_bytes(self),
+                render_context: quux::RenderContext {
                     id: scope_id,
                     children: vec![vec![#(#component_nodes),*], dynamic_component_nodes].concat(),
                 }

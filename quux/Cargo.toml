@@ -1,5 +1,5 @@
 [package]
-name = "shared"
+name = "quux"
 version = "0.1.0"
 edition = "2021"
 
@@ -10,6 +10,7 @@ postcard = { workspace = true }
 base64 = { workspace = true }
 cfg-if = "1.0"
 erased-serde = "0.3"
+quux-macros = { path = "../quux-macros/" }
 
 [target.'cfg(not(target_arch="wasm32"))'.dependencies]
 uuid = { version = "1.2", features = ["v4"] }

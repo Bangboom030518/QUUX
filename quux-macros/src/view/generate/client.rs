@@ -37,7 +37,7 @@ impl From<Item> for Data {
                     vec![quote! {
                         {
                             let child = children.next().expect_internal(concat!("retrieve all child data (", #component_string, ") : client and server child lists don't match"));
-                            let mut component: #name = shared::postcard::from_bytes(&child.component).expect("Couldn't deserialize component");
+                            let mut component: #name = quux::postcard::from_bytes(&child.component).expect("Couldn't deserialize component");
                             component.render(child.render_context);
                             #binding;
                         }
@@ -68,7 +68,7 @@ impl From<Element> for Data {
         match children {
             Children::Children(children) => data.add_child_data(children),
             Children::ReactiveStore(store) => data.add_store_data(&store),
-            Children::ForLoop(_) => {}, // TODO: reactive for????
+            Children::ForLoop(_) => {} // TODO: reactive for????
         };
         data
     }
@@ -86,7 +86,7 @@ impl Data {
             self.reactivity.push(quote! {
                 let scope_id = Rc::clone(&scope_id);
                 let closure = wasm_bindgen::prelude::Closure::<dyn FnMut()>::new(#value);
-                shared::dom::get_reactive_element(&*scope_id, #scoped_id)
+                quux::dom::get_reactive_element(&*scope_id, #scoped_id)
                     .add_event_listener_with_callback(#event_name, closure.as_ref().unchecked_ref())
                     .expect_internal("add event");
                 closure.forget();
@@ -96,9 +96,9 @@ impl Data {
 
             self.reactivity.push(quote! {
                 let (store, mapping, class_name) = #value;
-                let store = shared::Store::clone(store);
+                let store = quux::Store::clone(store);
                 let scope_id = Rc::clone(&scope_id);
-                let class_list = shared::dom::get_reactive_element(&*scope_id, #scoped_id).class_list();
+                let class_list = quux::dom::get_reactive_element(&*scope_id, #scoped_id).class_list();
                 store.on_change(move |previous, current| if mapping(std::clone::Clone::clone(current)) {
                     class_list.add_1(class_name).unwrap();
                 } else {
@@ -133,8 +133,8 @@ impl Data {
         self.reactivity.push(quote! {
             let scope_id = Rc::clone(&scope_id);
             #store.on_change(move |_, new| {
-                let element = shared::dom::get_reactive_element(&*scope_id, #scoped_id);
-                shared::dom::as_html_element(element)
+                let element = quux::dom::get_reactive_element(&*scope_id, #scoped_id);
+                quux::dom::as_html_element(element)
                     .set_inner_text(&std::string::ToString::to_string(new));
             });
         });
@@ -168,13 +168,13 @@ pub fn generate(tree: &Element) -> TokenStream {
     let tokens = quote! {
         use std::rc::Rc;
         use wasm_bindgen::JsCast;
-        use shared::errors::MapInternal;
+        use quux::errors::MapInternal;
         let mut children = context.children.into_iter();
         let scope_id = Rc::new(context.id);
         #debug_code;
         #(#components);*;
         #({ #reactivity });*;
-        shared::RenderData::new()
+        quux::RenderData::new()
     };
     if let Some(Attribute { key, .. }) = tree.attributes.first() {
         if key == "magic" {
