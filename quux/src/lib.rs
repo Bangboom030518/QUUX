@@ -14,8 +14,8 @@ use std::{
 pub use stores::Store;
 
 pub mod errors;
-pub mod stores;
 pub mod quux_initialise;
+pub mod stores;
 pub use quux_initialise::QUUXInitialise;
 
 #[cfg(target_arch = "wasm32")]
@@ -78,18 +78,16 @@ impl<T> RenderData<T> {
 
 pub trait Component: Serialize + DeserializeOwned {
     type Props;
+    type ComponentEnum: ComponentEnum;
 
     fn init(props: Self::Props) -> Self;
 
     #[cfg(not(target_arch = "wasm32"))]
-    fn render_to_string<T>(&self) -> String
-    where
-        T: ComponentEnum,
-    {
+    fn render_to_string(&self) -> String {
         let RenderData {
             html,
             component_node,
-        } = self.render::<T>(RenderContext::default());
+        } = self.render(RenderContext::default());
         let bytes =
             postcard::to_stdvec(&component_node).expect_internal("serialize `RenderContext`");
         let component_node = base64::encode(bytes);
@@ -99,14 +97,16 @@ pub trait Component: Serialize + DeserializeOwned {
         )
     }
 
-    fn render<T>(&self, context: RenderContext<T>) -> RenderData<T>
-    where
-        T: ComponentEnum;
+    // TODO: gobble gobble gobble
+    fn render(
+        &self,
+        context: RenderContext<Self::ComponentEnum>,
+    ) -> RenderData<Self::ComponentEnum>;
 
-    #[must_use]
-    fn from_bytes(bytes: &[u8]) -> Self {
-        postcard::from_bytes(bytes).expect("couldn't deserialize component (quux internal error)")
-    }
+    // #[must_use]
+    // fn from_bytes(bytes: &[u8]) -> Self {
+    //     postcard::from_bytes(bytes).expect("couldn't deserialize component (quux internal error)")
+    // }
 
     // TODO: doesn't need to be associated with this trait
     #[cfg(target_arch = "wasm32")]
@@ -156,7 +156,7 @@ where
 
 impl<T> SerializePostcard for ClientComponentNode<T> where T: ComponentEnum {}
 
-pub trait ComponentEnum: Serialize + Debug + Clone + From<QUUXInitialise> {
+pub trait ComponentEnum: Serialize + Debug + Clone + From<QUUXInitialise<Self>> {
     fn render(&self, context: RenderContext<Self>) -> RenderData<Self>;
 }
 
@@ -188,6 +188,6 @@ where
 }
 
 pub mod prelude {
-    pub use super::{Component, RenderContext, RenderData, ClientComponentNode, ComponentEnum};
+    pub use super::{ClientComponentNode, Component, ComponentEnum, RenderContext, RenderData};
     pub use quux_macros::view;
 }

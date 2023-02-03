@@ -1,8 +1,8 @@
 #![feature(more_qualified_paths, stmt_expr_attributes)]
 #![warn(clippy::pedantic, clippy::nursery)]
 use components::{flashcard, set};
-use quux::{Component, ComponentEnum, QUUXInitialise, Store};
 use quux::prelude::*;
+use quux::{Component, ComponentEnum, QUUXInitialise, Store};
 use serde::{Deserialize, Serialize};
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
@@ -17,10 +17,12 @@ pub fn init_app() {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-enum QUUXComponentEnum {
+pub enum QUUXComponentEnum {
     App(App),
     Flashcard(flashcard::Flashcard),
-    QUUXInitialise(QUUXInitialise),
+    QUUXInitialise(QUUXInitialise<Self>),
+    Set(set::Set),
+    ConfidenceRating(flashcard::confidence_rating::ConfidenceRating),
 }
 
 impl ComponentEnum for QUUXComponentEnum {
@@ -29,12 +31,14 @@ impl ComponentEnum for QUUXComponentEnum {
             Self::App(component) => component.render(context),
             Self::Flashcard(component) => component.render(context),
             Self::QUUXInitialise(component) => component.render(context),
+            Self::Set(component) => component.render(context),
+            Self::ConfidenceRating(component) => component.render(context),
         }
     }
 }
 
-impl From<QUUXInitialise> for QUUXComponentEnum {
-    fn from(value: QUUXInitialise) -> Self {
+impl From<QUUXInitialise<Self>> for QUUXComponentEnum {
+    fn from(value: QUUXInitialise<Self>) -> Self {
         Self::QUUXInitialise(value)
     }
 }
@@ -51,6 +55,18 @@ impl From<flashcard::Flashcard> for QUUXComponentEnum {
     }
 }
 
+impl From<set::Set> for QUUXComponentEnum {
+    fn from(value: set::Set) -> Self {
+        Self::Set(value)
+    }
+}
+
+impl From<flashcard::confidence_rating::ConfidenceRating> for QUUXComponentEnum {
+    fn from(value: flashcard::confidence_rating::ConfidenceRating) -> Self {
+        Self::ConfidenceRating(value)
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct App {
     count: Store<u32>,
@@ -58,6 +74,7 @@ pub struct App {
 
 impl Component for App {
     type Props = ();
+    type ComponentEnum = QUUXComponentEnum;
 
     fn init(_props: Self::Props) -> Self {
         Self {
@@ -65,7 +82,10 @@ impl Component for App {
         }
     }
 
-    fn render<T: ComponentEnum>(&self, context: quux::RenderContext<T>) -> quux::RenderData<T> {
+    fn render(
+        &self,
+        context: quux::RenderContext<Self::ComponentEnum>,
+    ) -> quux::RenderData<Self::ComponentEnum> {
         view! {
             html(lang="en") {
                 head {
@@ -78,12 +98,10 @@ impl Component for App {
                     title {{ "Document" }}
                 }
                 body {
-                    h1 {
-                        { "Welcome to Quuxlet" }
-                    }
+                    h1 {{ "Welcome to Quuxlet" }}
                     @flashcard::Flashcard(term = "a".to_string(), definition = "b".to_string())
                     @set::Set(terms = vec![set::Term::new("0", "1"), set::Term::new("2", "3")])
-                    @QUUXInitialise(init_script_content = include_str!("../dist/init.js"))
+                    @QUUXInitialise<Self::ComponentEnum>(init_script_content = include_str!("../dist/init.js"))
                 }
             }
         }

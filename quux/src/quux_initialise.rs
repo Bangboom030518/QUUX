@@ -1,6 +1,5 @@
+use crate::{ClientComponentNode, Component, ComponentEnum, RenderContext, RenderData};
 use serde::{Deserialize, Serialize};
-use crate::{Component, RenderContext, RenderData, ClientComponentNode, ComponentEnum};
-
 
 pub struct Props {
     pub init_script_content: &'static str,
@@ -22,13 +21,15 @@ pub struct Props {
 /// }
 /// ```
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
-pub struct QUUXInitialise {
+pub struct QUUXInitialise<T: ComponentEnum> {
     #[serde(skip)]
     init_script_content: &'static str,
+    _phantom: std::marker::PhantomData<T>,
 }
 
-impl Component for QUUXInitialise {
+impl<T: ComponentEnum> Component for QUUXInitialise<T> {
     type Props = Props;
+    type ComponentEnum = T;
 
     fn init(
         Self::Props {
@@ -37,14 +38,12 @@ impl Component for QUUXInitialise {
     ) -> Self {
         Self {
             init_script_content,
+            _phantom: std::marker::PhantomData,
         }
     }
 
     #[cfg(not(target_arch = "wasm32"))]
-    fn render<T>(&self, _: RenderContext<T>) -> RenderData<T>
-    where
-        T: ComponentEnum,
-    {
+    fn render(&self, _: RenderContext<Self::ComponentEnum>) -> RenderData<Self::ComponentEnum> {
         RenderData {
             html: format!(
                 "<script type=\"module\" id=\"__quux_init_script__\" data-quux-tree=\"{}\">{};</script>",
@@ -59,10 +58,7 @@ impl Component for QUUXInitialise {
     }
 
     #[cfg(target_arch = "wasm32")]
-    fn render<T>(&self, _: RenderContext<T>) -> RenderData<T>
-    where
-        T: ComponentEnum,
-    {
+    fn render(&self, _: RenderContext<Self::ComponentEnum>) -> RenderData<Self::ComponentEnum> {
         RenderData::new()
     }
 }

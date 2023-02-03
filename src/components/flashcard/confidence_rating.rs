@@ -1,3 +1,4 @@
+use crate::QUUXComponentEnum;
 use quux::prelude::*;
 use quux::{Component, ComponentEnum, Store};
 use serde::{Deserialize, Serialize};
@@ -35,6 +36,7 @@ impl ConfidenceRating {
 
 impl Component for ConfidenceRating {
     type Props = ();
+    type ComponentEnum = QUUXComponentEnum;
 
     fn init(_: Self::Props) -> Self {
         Self {
@@ -43,7 +45,10 @@ impl Component for ConfidenceRating {
         }
     }
 
-    fn render<T: ComponentEnum>(&self, context: quux::RenderContext<T>) -> quux::RenderData<T> {
+    fn render(
+        &self,
+        context: quux::RenderContext<Self::ComponentEnum>,
+    ) -> quux::RenderData<Self::ComponentEnum> {
         view! {
             div(class = "flashcard-hidden btn-group", class:active-when = (&self.is_visible, |visible: bool| !visible, "flashcard-hidden")) {
                 button(class = "tooltip btn btn-icon btn-terrible", on:click = {

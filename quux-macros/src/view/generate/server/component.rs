@@ -49,7 +49,7 @@ impl Data {
         let rendered_component = &self.rendered_component_ident;
         quote! {
             quux::ClientComponentNode {
-                component: T::from(#component),
+                component: Self::ComponentEnum::from(#component),
                 render_context: quux::RenderContext {
                     id: #render_context.id,
                     children: #rendered_component
