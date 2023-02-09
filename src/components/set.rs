@@ -1,7 +1,7 @@
 use crate::QUUXComponentEnum;
 use super::flashcard::confidence_rating::ConfidenceRating;
 use super::flashcard::Flashcard;
-use quux::{Component, ComponentEnum, Store};
+use quux::{Component};
 use quux::prelude::*;
 use serde::{Deserialize, Serialize};
 

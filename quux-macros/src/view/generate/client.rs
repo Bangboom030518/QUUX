@@ -27,17 +27,15 @@ impl From<Item> for Data {
                 components: {
                     let binding = component.binding.map_or_else(TokenStream::new, |binding| {
                         quote! {
-                            #binding = component
+                            #binding = component.try_into().unwrap()
                         }
                     });
 
                     let component_string = component.name.to_token_stream().to_string();
-                    let name = component.name;
-
                     vec![quote! {
                         {
                             let child = children.next().expect_internal(concat!("retrieve all child data (", #component_string, ") : client and server child lists don't match"));
-                            let mut component: #name = quux::postcard::from_bytes(&child.component).expect("Couldn't deserialize component");
+                            let mut component = child.component;
                             component.render(child.render_context);
                             #binding;
                         }
@@ -173,6 +171,10 @@ pub fn generate(tree: &Element) -> TokenStream {
         let scope_id = Rc::new(context.id);
         #debug_code;
         #(#components);*;
+        for child in children {
+            let mut component = child.component;
+            component.render(child.render_context);
+        }
         #({ #reactivity });*;
         quux::RenderData::new()
     };

@@ -1,3 +1,3 @@
-import init from "./dist/quux.js";
+import init from "./dist/quuxlet.js";
 
-await init("/dist/quux_bg.wasm");
+await init("/dist/quuxlet_bg.wasm");

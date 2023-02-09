@@ -43,9 +43,33 @@ impl From<QUUXInitialise<Self>> for QUUXComponentEnum {
     }
 }
 
+impl TryFrom<QUUXComponentEnum> for QUUXInitialise<QUUXComponentEnum> {
+    type Error = ();
+
+    fn try_from(value: QUUXComponentEnum) -> Result<Self, Self::Error> {
+        if let QUUXComponentEnum::QUUXInitialise(component) = value {
+            Ok(component)
+        } else {
+            Err(())
+        }
+    }
+}
+
 impl From<App> for QUUXComponentEnum {
     fn from(value: App) -> Self {
         Self::App(value)
+    }
+}
+
+impl TryFrom<QUUXComponentEnum> for App {
+    type Error = ();
+
+    fn try_from(value: QUUXComponentEnum) -> Result<Self, Self::Error> {
+        if let QUUXComponentEnum::App(component) = value {
+            Ok(component)
+        } else {
+            Err(())
+        }
     }
 }
 
@@ -55,15 +79,51 @@ impl From<flashcard::Flashcard> for QUUXComponentEnum {
     }
 }
 
+impl TryFrom<QUUXComponentEnum> for flashcard::Flashcard {
+    type Error = ();
+
+    fn try_from(value: QUUXComponentEnum) -> Result<Self, Self::Error> {
+        if let QUUXComponentEnum::Flashcard(value) = value {
+            Ok(value)
+        } else {
+            Err(())
+        }
+    }
+}
+
 impl From<set::Set> for QUUXComponentEnum {
     fn from(value: set::Set) -> Self {
         Self::Set(value)
     }
 }
 
+impl TryFrom<QUUXComponentEnum> for set::Set {
+    type Error = ();
+
+    fn try_from(value: QUUXComponentEnum) -> Result<Self, Self::Error> {
+        if let QUUXComponentEnum::Set(component) = value {
+            Ok(component)
+        } else {
+            Err(())
+        }
+    }
+}
+
 impl From<flashcard::confidence_rating::ConfidenceRating> for QUUXComponentEnum {
     fn from(value: flashcard::confidence_rating::ConfidenceRating) -> Self {
         Self::ConfidenceRating(value)
+    }
+}
+
+impl TryFrom<QUUXComponentEnum> for flashcard::confidence_rating::ConfidenceRating {
+    type Error = ();
+
+    fn try_from(value: QUUXComponentEnum) -> Result<Self, Self::Error> {
+        if let QUUXComponentEnum::ConfidenceRating(component) = value {
+            Ok(component)
+        } else {
+            Err(())
+        }
     }
 }
 

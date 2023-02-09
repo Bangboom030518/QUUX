@@ -20,7 +20,7 @@ async fn wasm() -> (TypedHeader<ContentType>, &'static [u8]) {
             ContentType::decode(&mut [&HeaderValue::from_static("application/wasm")].into_iter())
                 .unwrap(),
         ),
-        include_bytes!("../dist/quux_bg.wasm"),
+        include_bytes!("../dist/quuxlet_bg.wasm"),
     )
 }
 
@@ -28,7 +28,8 @@ async fn wasm() -> (TypedHeader<ContentType>, &'static [u8]) {
 async fn main() {
     let app = Router::new()
         .route("/", get(root))
-        .route("/dist/quux_bg.wasm", get(wasm));
+        // TODO rename
+        .route("/dist/quuxlet_bg.wasm", get(wasm));
 
     let address = SocketAddr::from(([127, 0, 0, 1], 3000));
     println!("listening on http://{address}");
