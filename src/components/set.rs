@@ -1,8 +1,8 @@
-use crate::QUUXComponentEnum;
 use super::flashcard::confidence_rating::ConfidenceRating;
 use super::flashcard::Flashcard;
-use quux::{Component};
+use crate::QUUXComponentEnum;
 use quux::prelude::*;
+use quux::Component;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -37,13 +37,32 @@ impl Component for Set {
         Self { terms }
     }
 
-    fn render(&self, context: quux::RenderContext<Self::ComponentEnum>) -> quux::RenderData<Self::ComponentEnum> {
+    fn render(
+        &self,
+        context: quux::RenderContext<Self::ComponentEnum>,
+    ) -> quux::RenderData<Self::ComponentEnum> {
+        let mut flashcards: Vec<Flashcard> = Vec::new();
         view! {
             div(magic = true) {
-                for Term { term, definition } in self.terms.clone().into_iter() {
-                    @Flashcard(term = term, definition = definition)
+                div {
+                    for Term { term, definition } in self.terms.clone().into_iter() {
+                        @Flashcard(term = term, definition = definition): flashcards
+                    }
                 }
+                button(class = "btn", on:click = {
+                    let side = self.side.clone();
+                    let flipped = self.flipped.clone();
+                    move || {
+                        let previous = *side.get();
+                        side.set(previous.flip());
+                        if !*flipped.get() {
+                            flipped.set(true);
+                            confidence_rating.show();
+                        }
+                    }
+                }) {{"flip"}}
+                @ConfidenceRating: confidence_rating
             }
-        }  
+        }
     }
 }

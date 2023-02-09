@@ -27,7 +27,7 @@ enum Side {
 
 impl Side {
     #[cfg(target_arch = "wasm32")]
-    fn flip(self) -> Self {
+    const fn flip(self) -> Self {
         match self {
             Self::Term => Self::Definition,
             Self::Definition => Self::Term,
@@ -85,19 +85,6 @@ impl Component for Flashcard {
                         }
                     }
                 }
-                button(class = "btn", on:click = {
-                    let side = self.side.clone();
-                    let flipped = self.flipped.clone();
-                    move || {
-                        let previous = *side.get();
-                        side.set(previous.flip());
-                        if !*flipped.get() {
-                            flipped.set(true);
-                            confidence_rating.show();
-                        }
-                    }
-                }) {{"flip"}}
-                @ConfidenceRating: confidence_rating
             }
         }
     }
