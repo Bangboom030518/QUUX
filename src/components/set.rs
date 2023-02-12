@@ -49,19 +49,19 @@ impl Component for Set {
                         @Flashcard(term = term, definition = definition): flashcards
                     }
                 }
-                button(class = "btn", on:click = {
-                    let side = self.side.clone();
-                    let flipped = self.flipped.clone();
-                    move || {
-                        let previous = *side.get();
-                        side.set(previous.flip());
-                        if !*flipped.get() {
-                            flipped.set(true);
-                            confidence_rating.show();
-                        }
-                    }
-                }) {{"flip"}}
-                @ConfidenceRating: confidence_rating
+                // button(class = "btn", on:click = {
+                //     let side = self.side.clone();
+                //     let flipped = self.flipped.clone();
+                //     move || {
+                //         let previous = *side.get();
+                //         side.set(previous.flip());
+                //         if !*flipped.get() {
+                //             flipped.set(true);
+                //             confidence_rating.show();
+                //         }
+                //     }
+                // }) {{"flip"}}
+                // @ConfidenceRating: confidence_rating
             }
         }
     }

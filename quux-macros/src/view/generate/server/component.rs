@@ -49,13 +49,16 @@ impl Data {
         let rendered_component = &self.rendered_component_ident;
         quote! {
             quux::ClientComponentNode {
-                component: Self::ComponentEnum::from(#component),
-                render_context: quux::RenderContext {
-                    id: #render_context.id,
-                    children: #rendered_component
+                component: Self::ComponentEnum::from(#component.clone()),
+                render_context: {
+                    let render_context = #rendered_component
                         .component_node
                         .render_context
-                        .children,
+                        .clone();
+                    quux::RenderContext {
+                        id: #render_context.id.clone(),
+                        ..render_context
+                    }
                 },
             }
         }
@@ -91,7 +94,8 @@ impl Data {
             let #component_ident = <#name as quux::Component>::init(#props);
             let #component_context_ident = quux::RenderContext {
                 id: quux::generate_id(),
-                children: Vec::new()
+                children: Vec::new(),
+                for_loop_children: Vec::new()
             };
             let #rendered_component_ident = #component_ident.render(std::clone::Clone::clone(&#component_context_ident));
         }

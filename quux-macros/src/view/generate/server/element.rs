@@ -15,6 +15,7 @@ struct Data {
     id: String,
     component_nodes: Vec<TokenStream>,
     component_constructors: Vec<TokenStream>,
+    /// The string of html sent to the client
     html: TokenStream,
 }
 
@@ -85,13 +86,18 @@ impl Data {
             html,
             component_constructors,
         } = (*item).into();
-        let html = quote! {{
-            #(#component_constructors);*;
-            #(dynamic_component_nodes.push(#component_nodes));*;
-            #html
-        }};
         self.html = quote! {
-            (#iterable).map(|#pattern| String::from(#html)).collect::<String>()
+            {
+                let mut currrent_component_nodes: Vec<_> = Vec::new();
+                let html = (#iterable).map(|#pattern| String::from({
+                    #(#component_constructors);*;
+                    #(currrent_component_nodes.push(#component_nodes.clone()));*;
+                    #(dynamic_component_nodes.push(#component_nodes.clone()));*;
+                    #html
+                })).collect::<String>();
+                for_loop_children.push(currrent_component_nodes);
+                html
+            }
         };
     }
 

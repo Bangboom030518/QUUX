@@ -63,13 +63,14 @@ where
 }
 
 #[cfg(target_arch = "wasm32")]
+#[derive(Default)]
 pub struct RenderData<T> {
     _phantom: std::marker::PhantomData<T>,
 }
 
 #[cfg(target_arch = "wasm32")]
 impl<T> RenderData<T> {
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {
             _phantom: std::marker::PhantomData,
         }
@@ -172,6 +173,7 @@ where
     T: ComponentEnum,
 {
     pub children: Vec<ClientComponentNode<T>>,
+    pub for_loop_children: Vec<Vec<ClientComponentNode<T>>>,
     pub id: String,
 }
 
@@ -182,6 +184,7 @@ where
     fn default() -> Self {
         Self {
             children: Vec::new(),
+            for_loop_children: Vec::new(),
             id: generate_id(),
         }
     }
