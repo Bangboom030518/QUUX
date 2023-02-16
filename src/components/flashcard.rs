@@ -1,8 +1,8 @@
-use confidence_rating::ConfidenceRating;
-use quux::{Component, ComponentEnum, Store};
-use serde::{Deserialize, Serialize};
-use quux::prelude::*;
 use crate::QUUXComponentEnum;
+use confidence_rating::ConfidenceRating;
+use quux::prelude::*;
+use quux::{Component, Store};
+use serde::{Deserialize, Serialize};
 
 pub mod confidence_rating;
 
@@ -56,15 +56,18 @@ impl Component for Flashcard {
     fn init(props: Self::Props) -> Self {
         let Props { term, definition } = props;
         Self {
-            term: term.to_string(),
-            definition: definition.to_string(),
+            term,
+            definition,
             side: Store::new(Side::Term),
             flipped: Store::new(false),
         }
     }
 
-    fn render(&self, context: quux::RenderContext<Self::ComponentEnum>) -> quux::RenderData<Self::ComponentEnum> {
-        let confidence_rating: ConfidenceRating;
+    fn render(
+        &self,
+        context: quux::RenderContext<Self::ComponentEnum>,
+    ) -> quux::RenderData<Self::ComponentEnum> {
+        // let confidence_rating: ConfidenceRating;
         view! {
             article(class = "grid place-items-center gap-4 text-center") {
                 div(class = "relative min-w-[60ch] min-h-[40ch]") {

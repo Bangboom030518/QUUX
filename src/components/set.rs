@@ -50,6 +50,7 @@ impl Component for Set {
                     }
                 }
                 // button(class = "btn", on:click = {
+                //     let flashcard = flashcards.last()
                 //     let side = self.side.clone();
                 //     let flipped = self.flipped.clone();
                 //     move || {

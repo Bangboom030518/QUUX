@@ -1,6 +1,6 @@
 use super::GLOBAL_ID;
 use crate::view::parse::prelude::*;
-use element::{attribute, Attribute, Children};
+use element::{attribute, children::ForLoop, Attribute, Children};
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
 use std::sync::atomic::Ordering::Relaxed;
@@ -66,7 +66,22 @@ impl From<Element> for Data {
         match children {
             Children::Children(children) => data.add_child_data(children),
             Children::ReactiveStore(store) => data.add_store_data(&store),
-            Children::ForLoop(_) => {} // TODO: reactive for????
+            Children::ForLoop(ForLoop {
+                item,
+                ..
+            }) => 'a: {
+                let Item::Component(Component { binding, .. }) = *item else {
+                    break 'a;
+                };
+                let Some(binding) = binding else {
+                    break 'a;
+                };
+                data.reactivity.push(quote! {
+                    for child in for_loop_children.next().expect_internal("retrieve for loop children: client and server for loop lists don't match") {
+                        #binding.push(child.component.try_into().expect_internal("retrieve for loop children: client and server for loop lists don't match"))
+                    }
+                });
+            } // TODO: reactive for????
         };
         data
     }
@@ -168,9 +183,11 @@ pub fn generate(tree: &Element) -> TokenStream {
         use wasm_bindgen::JsCast;
         use quux::errors::MapInternal;
         let mut children = context.children.into_iter();
+        let mut for_loop_children = context.for_loop_children.into_iter();
         let scope_id = Rc::new(context.id);
         #debug_code;
         #(#components);*;
+        // TODO: what about non-for-loop components?
         for child in children {
             let mut component = child.component;
             component.render(child.render_context);

@@ -42,11 +42,6 @@ impl From<Expr> for Data {
 }
 
 pub fn generate(tree: &Element) -> TokenStream {
-    // let mut tree = tree.clone();
-    // tree.attributes.push(Attribute {
-    //     key: "data-quux-scope-id".to_string(),
-    //     value: AttributeValue::Static(parse(quote! { scope_id })),
-    // });
     let Data {
         html,
         component_nodes,
