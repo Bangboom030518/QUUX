@@ -1,3 +1,4 @@
+use super::flashcard::confidence_rating;
 use super::flashcard::confidence_rating::ConfidenceRating;
 use super::flashcard::Flashcard;
 use crate::QUUXComponentEnum;
@@ -41,7 +42,9 @@ impl Component for Set {
         &self,
         context: quux::RenderContext<Self::ComponentEnum>,
     ) -> quux::RenderData<Self::ComponentEnum> {
-        let mut flashcards: Vec<Flashcard> = Vec::new();
+        // let confidence_rating: ConfidenceRating;
+        let flashcards: Vec<Flashcard>;
+
         view! {
             div(magic = true) {
                 div {
@@ -49,20 +52,13 @@ impl Component for Set {
                         @Flashcard(term = term, definition = definition): flashcards
                     }
                 }
-                // button(class = "btn", on:click = {
-                //     let flashcard = flashcards.last()
-                //     let side = self.side.clone();
-                //     let flipped = self.flipped.clone();
-                //     move || {
-                //         let previous = *side.get();
-                //         side.set(previous.flip());
-                //         if !*flipped.get() {
-                //             flipped.set(true);
-                //             confidence_rating.show();
-                //         }
-                //     }
-                // }) {{"flip"}}
-                // @ConfidenceRating: confidence_rating
+                button(class = "btn", on:click = {
+                    move || {
+                        flashcards.last().unwrap().flip();
+                        quux::console_log!("I WOZ CORRRRL'D");
+                    }
+                }) {{"flip"}}
+                @ConfidenceRating
             }
         }
     }

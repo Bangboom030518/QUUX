@@ -74,7 +74,6 @@ pub fn generate(tree: &Element) -> TokenStream {
     let tokens = quote! {
         let scope_id = context.id;
         let mut for_loop_children: Vec<Vec<quux::ClientComponentNode<Self::ComponentEnum>>> = Vec::new();
-        let mut dynamic_component_nodes: Vec<quux::ClientComponentNode<Self::ComponentEnum>> = Vec::new();
         #(#component_constructors)*
         quux::RenderData {
             html: #html,
@@ -82,7 +81,7 @@ pub fn generate(tree: &Element) -> TokenStream {
                 component: Self::ComponentEnum::from(self.clone()),
                 render_context: quux::RenderContext {
                     id: scope_id,
-                    children: vec![vec![#(#component_nodes),*], dynamic_component_nodes].concat(),
+                    children: vec![#(#component_nodes),*],
                     for_loop_children,
                 }
             }

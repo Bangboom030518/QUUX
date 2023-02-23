@@ -89,12 +89,11 @@ impl Data {
         self.html = quote! {
             {
                 let mut currrent_component_nodes: Vec<_> = Vec::new();
-                let html = (#iterable).map(|#pattern| String::from({
+                let html = (#iterable).map(|#pattern| {
                     #(#component_constructors);*;
                     #(currrent_component_nodes.push(#component_nodes.clone()));*;
-                    #(dynamic_component_nodes.push(#component_nodes.clone()));*;
-                    #html
-                })).collect::<String>();
+                    String::from(#html)
+                }).collect::<String>();
                 for_loop_children.push(currrent_component_nodes);
                 html
             }

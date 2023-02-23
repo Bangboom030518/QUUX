@@ -77,8 +77,14 @@ impl From<Element> for Data {
                     break 'a;
                 };
                 data.reactivity.push(quote! {
-                    for child in for_loop_children.next().expect_internal("retrieve for loop children: client and server for loop lists don't match") {
-                        #binding.push(child.component.try_into().expect_internal("retrieve for loop children: client and server for loop lists don't match"))
+                    {
+                        let mut internal: Vec<_> = Vec::new();
+                        for child in for_loop_children.next().expect_internal("retrieve for loop children: client and server for loop lists don't match") {
+                            let mut component = child.component;
+                            component.render(child.render_context);
+                            internal.push(component.try_into().expect_internal("retrieve for loop children: client and server for loop lists don't match"))
+                        }
+                        #binding = internal;
                     }
                 });
             } // TODO: reactive for????
