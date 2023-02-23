@@ -159,7 +159,6 @@ impl Component for App {
                 }
                 body {
                     h1 {{ "Welcome to Quuxlet" }}
-                    @flashcard::Flashcard(term = "a".to_string(), definition = "b".to_string())
                     @set::Set(terms = vec![set::Term::new("0", "1"), set::Term::new("2", "3")])
                     @QUUXInitialise<Self::ComponentEnum>(init_script_content = include_str!("../dist/init.js"))
                 }

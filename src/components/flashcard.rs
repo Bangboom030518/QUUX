@@ -46,7 +46,6 @@ impl Flashcard {
     pub fn flip(&self) {
         let previous = *self.side.get();
         self.side.set(previous.flip());
-        quux::console_log!("flip WOZ FLIP'D");
     }
 }
 
@@ -74,10 +73,7 @@ impl Component for Flashcard {
                 div(class = "relative min-w-[60ch] min-h-[40ch]") {
                     div(
                         class = "card bg-base-200 shadow term absolute top-0 left-0 w-full h-full grid place-items-center transition-[opacity,transform] duration-300",
-                        class:active-when = (&self.side, |side| {
-                            quux::console_log!("{:?}", side);
-                            side != Side::Term
-                        }, "flashcard-hidden")
+                        class:active-when = (&self.side, |side| side != Side::Term, "flashcard-hidden")
                     ) {
                         div(class = "card-body") {
                             p {{ self.term }}
