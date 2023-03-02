@@ -49,6 +49,7 @@ impl Component for ConfidenceRating {
         &self,
         context: quux::RenderContext<Self::ComponentEnum>,
     ) -> quux::RenderData<Self::ComponentEnum> {
+        
         view! {
             div(class = "flashcard-hidden btn-group", class:active-when = (&self.is_visible, |visible: bool| !visible, "flashcard-hidden")) {
                 button(class = "tooltip btn btn-icon btn-terrible", on:click = {

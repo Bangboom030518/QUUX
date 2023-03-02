@@ -49,7 +49,7 @@ impl Component for Set {
     ) -> quux::RenderData<Self::ComponentEnum> {
         let confidence_rating: ConfidenceRating;
         let flashcards: Vec<Flashcard>;
-
+        // TODO: accept props expr instead of weird attributes
         view! {
             div(magic = true, class = "grid place-items-center gap-4") {
                 div(class = "stack") {
@@ -59,6 +59,22 @@ impl Component for Set {
                 }
                 button(class = "btn", on:click = {
                     let current_index = self.current_index.clone();
+                    let rating = confidence_rating.get_rating_store();
+
+                    let flashcards = Rc::new(flashcards);
+
+                    rating.on_change({
+                        let current_index = self.current_index.clone();
+
+                        let flashcards = Rc::clone(&flashcards);
+
+                        move |_, new_rating| {
+                            let old_index = *current_index.get();
+                            flashcards.get(old_index).unwrap().hide();
+                            current_index.set(old_index + 1);
+                        }
+                    });
+                    let flashcards = Rc::clone(&flashcards);
                     move || {
                         flashcards.get(*current_index.get()).unwrap().flip();
                         confidence_rating.show();

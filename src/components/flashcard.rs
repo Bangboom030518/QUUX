@@ -6,19 +6,6 @@ use serde::{Deserialize, Serialize};
 
 pub mod confidence_rating;
 
-pub struct Props {
-    pub term: String,
-    pub definition: String,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct Flashcard {
-    term: String,
-    definition: String,
-    side: Store<Side>,
-    flipped: Store<bool>,
-}
-
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 enum Side {
     Term,
@@ -41,11 +28,33 @@ impl Default for Side {
     }
 }
 
+pub struct Props {
+    pub term: String,
+    pub definition: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct Flashcard {
+    term: String,
+    definition: String,
+    side: Store<Side>,
+    flipped: Store<bool>,
+    is_visible: Store<bool>,
+}
+
 impl Flashcard {
     #[cfg(target_arch = "wasm32")]
     pub fn flip(&self) {
         let previous = *self.side.get();
         self.side.set(previous.flip());
+    }
+
+    pub fn show(&self) {
+        self.is_visible.set(true);
+    }
+
+    pub fn hide(&self) {
+        self.is_visible.set(false);
     }
 }
 
@@ -60,6 +69,7 @@ impl Component for Flashcard {
             definition,
             side: Store::new(Side::Term),
             flipped: Store::new(false),
+            is_visible: Store::new(true),
         }
     }
 
@@ -69,7 +79,7 @@ impl Component for Flashcard {
     ) -> quux::RenderData<Self::ComponentEnum> {
         // let confidence_rating: ConfidenceRating;
         view! {
-            article(class = "grid place-items-center gap-4 text-center") {
+            article(class = "grid place-items-center gap-4 text-center", class:active-when = (&self.is_visible, |visible: bool| !visible, "hidden")) {
                 div(class = "relative min-w-[60ch] min-h-[40ch]") {
                     div(
                         class = "card bg-base-200 shadow term absolute top-0 left-0 w-full h-full grid place-items-center transition-[opacity,transform] duration-300",
