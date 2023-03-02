@@ -6,6 +6,8 @@ use quote::{quote, ToTokens};
 use std::sync::atomic::Ordering::Relaxed;
 use syn::Expr;
 
+mod for_loop;
+
 #[derive(Default)]
 struct Data {
     components: Vec<TokenStream>,
@@ -66,25 +68,9 @@ impl From<Element> for Data {
         match children {
             Children::Items(children) => data.add_child_data(children),
             Children::ReactiveStore(store) => data.add_store_data(&store),
-            Children::ForLoop(ForLoop { item, .. }) => 'a: {
-                let Item::Component(Component { binding, .. }) = *item else {
-                    break 'a;
-                };
-                let Some(binding) = binding else {
-                    break 'a;
-                };
-                data.reactivity.push(quote! {
-                    {
-                        let mut internal: Vec<_> = Vec::new();
-                        for child in for_loop_children.next().expect_internal("retrieve for loop children: client and server for loop lists don't match") {
-                            let mut component = child.component;
-                            component.render(child.render_context);
-                            internal.push(component.try_into().expect_internal("retrieve for loop children: client and server for loop lists don't match"))
-                        }
-                        #binding = internal;
-                    }
-                });
-            } // TODO: reactive for????
+            Children::ForLoop(for_loop) => {
+                data.reactivity.push(for_loop.get_binding_code());
+            }
         };
         data
     }
