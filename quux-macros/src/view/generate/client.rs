@@ -64,12 +64,9 @@ impl From<Element> for Data {
         };
         data.add_event_data(attributes);
         match children {
-            Children::Children(children) => data.add_child_data(children),
+            Children::Items(children) => data.add_child_data(children),
             Children::ReactiveStore(store) => data.add_store_data(&store),
-            Children::ForLoop(ForLoop {
-                item,
-                ..
-            }) => 'a: {
+            Children::ForLoop(ForLoop { item, .. }) => 'a: {
                 let Item::Component(Component { binding, .. }) = *item else {
                     break 'a;
                 };

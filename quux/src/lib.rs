@@ -11,11 +11,11 @@ use std::{
     str::FromStr,
     sync::atomic::{AtomicU64, Ordering},
 };
-pub use stores::Store;
+pub use store::Store;
 
 pub mod errors;
 pub mod quux_initialise;
-pub mod stores;
+pub mod store;
 pub use quux_initialise::QUUXInitialise;
 
 #[cfg(target_arch = "wasm32")]
@@ -70,6 +70,7 @@ pub struct RenderData<T> {
 
 #[cfg(target_arch = "wasm32")]
 impl<T> RenderData<T> {
+    #[must_use]
     pub const fn new() -> Self {
         Self {
             _phantom: std::marker::PhantomData,
@@ -191,6 +192,7 @@ where
 }
 
 pub mod prelude {
+    pub use super::store::{self, Store};
     pub use super::{ClientComponentNode, Component, ComponentEnum, RenderContext, RenderData};
     pub use quux_macros::view;
 }

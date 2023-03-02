@@ -2,7 +2,7 @@ use super::super::internal::prelude::*;
 
 #[derive(Clone)]
 pub enum Children {
-    Children(Vec<Item>),
+    Items(Vec<Item>),
     ReactiveStore(Box<Expr>),
     ForLoop(ForLoop),
 }
@@ -19,21 +19,27 @@ impl Parse for Children {
             while !input.is_empty() {
                 items.push(input.parse()?);
             }
-            Ok(Self::Children(items))
+            Ok(Self::Items(items))
         }
     }
 }
 
 impl Default for Children {
     fn default() -> Self {
-        Self::Children(Vec::new())
+        Self::Items(Vec::new())
     }
+}
+
+#[derive(Clone)]
+pub enum ForLoopIterable {
+    Reactive(Expr),
+    Static(Expr),
 }
 
 #[derive(Clone)]
 pub struct ForLoop {
     pub pattern: Pat,
-    pub iterable: Expr,
+    pub iterable: ForLoopIterable,
     pub item: Box<Item>,
 }
 
@@ -42,7 +48,12 @@ impl Parse for ForLoop {
         input.parse::<Token![for]>()?;
         let pattern = input.parse()?;
         input.parse::<Token![in]>()?;
-        let iterable = input.call(Expr::parse_without_eager_brace)?;
+        let iterable = if input.peek(Token![$]) {
+            input.parse::<Token![$]>()?;
+            ForLoopIterable::Reactive
+        } else {
+            ForLoopIterable::Static
+        }(input.call(Expr::parse_without_eager_brace)?);
         let item;
         braced!(item in input);
         Ok(Self {

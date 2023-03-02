@@ -1,5 +1,4 @@
 use crate::QUUXComponentEnum;
-use confidence_rating::ConfidenceRating;
 use quux::prelude::*;
 use quux::{Component, Store};
 use serde::{Deserialize, Serialize};

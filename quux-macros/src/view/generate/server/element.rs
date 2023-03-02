@@ -1,11 +1,10 @@
 use std::sync::atomic::Ordering::Relaxed;
-
 use super::{super::GLOBAL_ID, Attributes};
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::Expr;
 
-use crate::view::parse::prelude::*;
+use crate::view::parse::{prelude::*, element::children::ForLoopIterable};
 use element::{Children, ForLoop};
 
 #[derive(Default)]
@@ -66,7 +65,7 @@ impl Data {
 
     fn add_children_data(&mut self, children: Children) {
         match children {
-            Children::Children(children) => self.add_element_children_data(children),
+            Children::Items(children) => self.add_element_children_data(children),
             Children::ReactiveStore(store) => self.add_store_data(&store),
             Children::ForLoop(for_loop) => self.add_for_loop_data(for_loop),
         };
@@ -86,6 +85,14 @@ impl Data {
             html,
             component_constructors,
         } = (*item).into();
+        let iterable = match iterable {
+            ForLoopIterable::Static(iterable) => quote! {
+                #iterable
+            },
+            ForLoopIterable::Reactive(iterable) => quote! {
+                (std::cell::Ref::<Vec<_>>::from(&#iterable)).iter().cloned()
+            }
+        };
         self.html = quote! {
             {
                 let mut currrent_component_nodes: Vec<_> = Vec::new();

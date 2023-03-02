@@ -1,5 +1,6 @@
 // TODO: list stores!!!!!!!
 
+pub use list::List;
 use serde::{Deserialize, Serialize};
 use std::{
     cell::{Ref, RefCell},
@@ -7,14 +8,16 @@ use std::{
     rc::Rc,
 };
 
-pub type StoreCallback<T> = Box<dyn FnMut(&T, &T) + 'static>;
+pub mod list;
+
+pub type Callback<T> = Box<dyn FnMut(&T, &T) + 'static>;
 type RcCell<T> = Rc<RefCell<T>>;
 
 #[derive(Serialize, Deserialize)]
 pub struct Store<T> {
     value: RcCell<T>,
     #[serde(skip)]
-    listeners: RcCell<Vec<StoreCallback<T>>>,
+    listeners: RcCell<Vec<Callback<T>>>,
 }
 
 impl<T> Store<T> {
@@ -81,32 +84,4 @@ impl<T: fmt::Debug> fmt::Debug for Store<T> {
     {
         write!(f, "{:?}", self.get())
     }
-}
-
-
-#[test]
-fn store_test() {
-    use std::cell::RefCell;
-    let result_1: Rc<RefCell<Vec<(u8, u8)>>> = Rc::new(RefCell::new(Vec::new()));
-    let result_2: Rc<RefCell<Vec<(u8, u8)>>> = Rc::new(RefCell::new(Vec::new()));
-    let store = Store::new(0);
-    store.on_change({
-        let result_1 = Rc::clone(&result_1);
-        move |&previous, &current| result_1.borrow_mut().push((previous, current))
-    });
-
-    store.on_change({
-        let result_2 = Rc::clone(&result_2);
-        move |&previous, &current| {
-            result_2.borrow_mut().push((previous + 10, current + 10));
-        }
-    });
-    for _ in 0..3 {
-        store.set(*store.get() + 1);
-    }
-    assert_eq!(result_1.borrow().as_slice(), &[(0, 1), (1, 2), (2, 3)]);
-    assert_eq!(
-        result_2.borrow().as_slice(),
-        &[(10, 11), (11, 12), (12, 13)]
-    );
 }

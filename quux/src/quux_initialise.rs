@@ -1,4 +1,4 @@
-use crate::{ClientComponentNode, Component, ComponentEnum, RenderContext, RenderData};
+use crate::{Component, ComponentEnum, RenderContext, RenderData};
 use serde::{Deserialize, Serialize};
 
 pub struct Props {
@@ -50,7 +50,7 @@ impl<T: ComponentEnum> Component for QUUXInitialise<T> {
                 *crate::TREE_INTERPOLATION_ID,
                 self.init_script_content,
             ),
-            component_node: ClientComponentNode {
+            component_node: crate::ClientComponentNode {
                 component: self.clone().into(),
                 render_context: RenderContext::default()
             },

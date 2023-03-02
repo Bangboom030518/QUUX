@@ -3,11 +3,11 @@ use wasm_bindgen::prelude::*;
 
 #[cfg(target_arch = "wasm32")]
 #[must_use]
-pub fn get_reactive_element(scope_id: &str, scoped_id: &str) -> web_sys::Element {
+pub fn get_reactive_element(parent_id: &str, child_id: &str) -> web_sys::Element {
     let error_message =
-        format!("get element with selector ([data-quux-scoped-id='{scope_id}.{scoped_id}'])");
+        format!("get element with selector ([data-quux-scoped-id='{parent_id}.{child_id}'])");
     get_document()
-        .query_selector(&format!("[data-quux-scoped-id='{scope_id}.{scoped_id}']"))
+        .query_selector(&format!("[data-quux-scoped-id='{parent_id}.{child_id}']"))
         .expect_internal(&error_message)
         .expect_internal(&error_message)
 }
