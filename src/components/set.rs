@@ -47,36 +47,30 @@ impl Component for Set {
         context: quux::RenderContext<Self::ComponentEnum>,
     ) -> quux::RenderData<Self::ComponentEnum> {
         let confidence_rating: ConfidenceRating;
-        // let flashcards: Vec<Flashcard>;
+        let flashcards: Vec<Flashcard>;
         // TODO: accept props expr instead of weird attributes
         view! {
             div(magic = true, class = "grid place-items-center gap-4") {
                 div(class = "stack") {
                     for Term { term, definition } in $self.terms {
-                        @Flashcard(term = term, definition = definition) //: flashcards
+                        @Flashcard(term = term, definition = definition): flashcards
                     }
                 }
                 button(class = "btn", on:click = {
-                    let current_index = self.current_index.clone();
                     let rating = confidence_rating.get_rating_store();
-
-                    let flashcards = Rc::new(flashcards);
-
-                    rating.on_change({
-                        let current_index = self.current_index.clone();
-
-                        // let flashcards = Rc::clone(&flashcards);
-
-                        move |_, _| {
-                            let old_index = *current_index.get();
-                            
-                            // flashcards.get(old_index).unwrap().hide();
-                            current_index.set(old_index + 1);
-                        }
+                    let current_index = self.current_index.clone();
+                    let terms = self.terms.clone();
+                    rating.on_change(move |_, _| {
+                        let old_index = *current_index.get();
+                        terms.pop();
+                        current_index.set(old_index + 1);
                     });
-                    let flashcards = Rc::clone(&flashcards);
+                    let current_index = self.current_index.clone();
                     move || {
-                        flashcards.get(*current_index.get()).unwrap().flip();
+                        let Some(flashcard) = flashcards.get(*current_index.get()) else {
+                            return
+                        };
+                        flashcard.flip();
                         confidence_rating.show();
                     }
                 }) {{"flip"}}

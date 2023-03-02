@@ -105,11 +105,6 @@ pub trait Component: Serialize + DeserializeOwned {
         context: RenderContext<Self::ComponentEnum>,
     ) -> RenderData<Self::ComponentEnum>;
 
-    // #[must_use]
-    // fn from_bytes(bytes: &[u8]) -> Self {
-    //     postcard::from_bytes(bytes).expect("couldn't deserialize component (quux internal error)")
-    // }
-
     // TODO: doesn't need to be associated with this trait
     #[cfg(target_arch = "wasm32")]
     fn init_as_root<T: ComponentEnum + DeserializeOwned>() {

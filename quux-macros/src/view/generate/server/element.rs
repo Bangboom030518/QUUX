@@ -1,10 +1,10 @@
-use std::sync::atomic::Ordering::Relaxed;
 use super::{super::GLOBAL_ID, Attributes};
 use proc_macro2::TokenStream;
 use quote::quote;
+use std::sync::atomic::Ordering::Relaxed;
 use syn::Expr;
 
-use crate::view::parse::{prelude::*, element::children::ForLoopIterable};
+use crate::view::parse::{element::children::ForLoopIterable, prelude::*};
 use element::{Children, ForLoop};
 
 #[derive(Default)]
@@ -32,21 +32,6 @@ impl From<Element> for Data {
             id: GLOBAL_ID.fetch_add(1, Relaxed).to_string(),
             ..Default::default()
         };
-        // TODO: remove
-        // std::fs::write(
-        //     "id.log",
-        //     format!(
-        //         "{}\n---\n{}\n$tagname = \"{tag_name}\"\n$id = \"{}\"\n\n",
-        //         std::fs::read_to_string("id.log").unwrap(),
-        //         attributes
-        //             .iter()
-        //             .map(|Attribute { key, value }| { format!("{key} = {value}\n") })
-        //             .collect::<String>(),
-        //         &data.id
-        //     ),
-        // )
-        // .unwrap();
-
         data.add_children_data(children);
         data.add_attribute_data();
         data
@@ -80,31 +65,44 @@ impl Data {
         }: ForLoop,
     ) {
         // TODO: components!!!
+        let reactive: bool;
         let super::Data {
             component_nodes,
             html,
             component_constructors,
         } = (*item).into();
         let iterable = match iterable {
-            ForLoopIterable::Static(iterable) => quote! {
-                #iterable
-            },
-            ForLoopIterable::Reactive(iterable) => quote! {
-                (std::cell::Ref::<Vec<_>>::from(&#iterable)).iter().cloned()
+            ForLoopIterable::Static(iterable) => {
+                reactive = false;
+                quote! {
+                    #iterable
+                }
+            }
+            ForLoopIterable::Reactive(iterable) => {
+                reactive = true;
+                quote! {
+                    (std::cell::Ref::<Vec<_>>::from(&#iterable)).iter().cloned()
+                }
             }
         };
-        self.html = quote! {
-            {
-                let mut currrent_component_nodes: Vec<_> = Vec::new();
-                let html = (#iterable).map(|#pattern| {
-                    #(#component_constructors);*;
-                    #(currrent_component_nodes.push(#component_nodes.clone()));*;
-                    String::from(#html)
-                }).collect::<String>();
-                for_loop_children.push(currrent_component_nodes);
-                html
+        let id_addition_code = if reactive {
+            quote! {
+                todo!()
             }
+        } else {
+            TokenStream::new()
         };
+        self.html = quote! {{
+            let mut currrent_component_nodes: Vec<_> = Vec::new();
+            let html = (#iterable).map(|#pattern| {
+                #(#component_constructors);*;
+                #(currrent_component_nodes.push(#component_nodes.clone()));*;
+                #id_addition_code
+                String::from(#html)
+            }).collect::<String>();
+            for_loop_children.push(currrent_component_nodes);
+            html
+        }};
     }
 
     fn get_item_html(&mut self, item: Item) -> TokenStream {
@@ -137,39 +135,38 @@ impl Data {
         };
     }
 
-    fn add_attribute_data(&mut self) {
-        self.attributes.add_scoped_id(&self.id);
-        let html_string = self.get_html_string();
-        let html = &self.html;
-        let values = &self.attributes.values;
-
-        self.html = if self.is_self_closing() {
+    // TODO: move to attribute
+    fn get_attribute_tokens(&self, Attributes { keys, values, .. }: &Attributes) -> TokenStream {
+        let attributes = keys.iter().zip(values).map(|(key, value)| {
             quote! {
-                #html_string.to_string()
+                format!("{}=\"{}\"", #key, #value)
             }
-        } else if values.is_empty() {
-            quote! {
-                format!(#html_string, #html)
-            }
-        } else {
-            quote! {
-                format!(#html_string, #(#values),*, #html)
-            }
-        };
+        });
+        quote! {
+            String::new() + #(&#attributes)+*
+        }
     }
 
-    fn get_html_string(&self) -> String {
-        let attributes = self
-            .attributes
-            .keys
-            .iter()
-            .map(|key| format!("{key}=\"{{}}\""))
-            .collect::<String>();
+    fn add_attribute_data(&mut self) {
+        self.attributes.add_scoped_id(&self.id);
+        // let html_string = self.get_html_tokenstream();
+        // let html = &self.html;
+        // let values = &self.attributes.values;
 
+        self.html = self.get_html_tokenstream();
+    }
+
+    fn get_html_tokenstream(&self) -> TokenStream {
+        let attributes = self.get_attribute_tokens(&self.attributes);
+        let tag_name = &self.tag_name;
         if self.is_self_closing() {
-            format!("<{0} {1} />", self.tag_name, attributes)
+            quote! {
+                format!("<{} {} />", #tag_name, #attributes)
+            }
         } else {
-            format!("<{0} {1}>{{}}</{0}>", self.tag_name, attributes)
+            quote! {
+                format!("<{0} {1}>{{}}</{0}>", #tag_name, #attributes)
+            }
         }
     }
 

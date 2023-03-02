@@ -39,4 +39,4 @@ macro_rules! console_log {
     ($($t:tt)*) => (unsafe { quux::dom::log(&format_args!($($t)*).to_string()) })
 }
 
-pub use console_log;    
+pub use console_log;

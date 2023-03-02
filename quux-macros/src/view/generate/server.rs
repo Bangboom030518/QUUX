@@ -42,6 +42,7 @@ impl From<Expr> for Data {
 }
 
 pub fn generate(tree: &Element) -> TokenStream {
+    // let mut tree = tree.clone();
     let Data {
         html,
         component_nodes,

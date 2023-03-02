@@ -1,6 +1,6 @@
 use super::GLOBAL_ID;
 use crate::view::parse::prelude::*;
-use element::{attribute, children::ForLoop, Attribute, Children};
+use element::{attribute, Attribute, Children};
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
 use std::sync::atomic::Ordering::Relaxed;
@@ -69,7 +69,7 @@ impl From<Element> for Data {
             Children::Items(children) => data.add_child_data(children),
             Children::ReactiveStore(store) => data.add_store_data(&store),
             Children::ForLoop(for_loop) => {
-                data.reactivity.push(for_loop.get_binding_code());
+                data.reactivity.push(for_loop.reactivity_code());
             }
         };
         data

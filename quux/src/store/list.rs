@@ -39,7 +39,7 @@ impl<T> List<T> {
         self.value.borrow_mut().push(value);
     }
 
-    #[must_use]
+    #[allow(clippy::must_use_candidate)]
     pub fn pop(&self) -> Option<T> {
         let mut listeners = self.listeners.borrow_mut();
         let value = self.value.borrow_mut().pop()?;
