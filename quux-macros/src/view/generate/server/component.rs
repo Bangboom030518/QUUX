@@ -1,4 +1,5 @@
 // TODO: Can we remove scope id now ??!1!?
+// TODO: refactor to use direct impls on Component, rather than a Data proxy struct
 
 use std::sync::atomic::{AtomicU64, Ordering::Relaxed};
 use crate::view::parse::prelude::*;
