@@ -1,11 +1,54 @@
 use super::{super::GLOBAL_ID, Attributes};
+use crate::view::parse::{
+    element::{
+        children::{Items, ReactiveStore},
+        ComponentInitialisationCode,
+    },
+    prelude::*,
+};
+use element::Children;
 use proc_macro2::TokenStream;
 use quote::quote;
-use std::sync::atomic::Ordering::Relaxed;
-use syn::Expr;
+use std::{collections::VecDeque, sync::atomic::Ordering::Relaxed};
 
-use crate::view::parse::{element::children::ForLoopIterable, prelude::*};
-use element::{Children, ForLoop};
+impl From<ReactiveStore> for TokenStream {
+    /// Generates the body of an element.
+    fn from(ReactiveStore(store): ReactiveStore) -> Self {
+        quote! { #store.get() }
+    }
+}
+
+impl Items {
+    /// Mutates the initialisation code with the initialisation required by the child elements.
+    fn item_html(&mut self, item: Item) -> TokenStream {
+        let super::Data {
+            mut component_nodes,
+            html,
+            mut component_constructors,
+        } = item.into();
+        self.component_initialisation_code
+            .merge(ComponentInitialisationCode {
+                nodes: component_nodes,
+                constructors: component_constructors,
+            });
+        quote! { &#html }
+    }
+
+    /// Generates the body of an element.
+    /// Mutates the initialisation code with the initialisation required by the child elements.
+    pub fn html_body_tokens(&mut self) -> TokenStream {
+        let mut html: VecDeque<_> = self
+            .items
+            .into_iter()
+            .map(|item| self.item_html(item))
+            .collect();
+        html.push_back(quote! { String::new() });
+        let html = html.into_iter();
+        quote! {
+            #(#html)+*
+        }
+    }
+}
 
 #[derive(Default)]
 struct Data {
@@ -24,6 +67,7 @@ impl From<Element> for Data {
             tag_name,
             attributes,
             children,
+            ..
         }: Element,
     ) -> Self {
         let mut data = Self {
@@ -43,124 +87,14 @@ impl Element {
         "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "source", "source",
         "track", "wbr",
     ];
-}
 
-impl Data {
     fn is_self_closing(&self) -> bool {
         Element::SELF_CLOSING_ELEMENTS.contains(&self.tag_name.to_lowercase().as_str())
     }
 
-    fn add_children_data(&mut self, children: Children) {
-        match children {
-            Children::Items(children) => self.add_element_children_data(children),
-            Children::ReactiveStore(store) => self.add_store_data(&store),
-            Children::ForLoop(for_loop) => self.add_for_loop_data(for_loop),
-        };
-    }
-
-    fn add_for_loop_data(
-        &mut self,
-        ForLoop {
-            pattern,
-            iterable,
-            item,
-        }: ForLoop,
-    ) {
-        // TODO: components!!!
-        let reactive: bool;
-        let super::Data {
-            component_nodes,
-            html,
-            component_constructors,
-        } = (*item).into();
-        let iterable = match iterable {
-            ForLoopIterable::Static(iterable) => {
-                reactive = false;
-                quote! {
-                    #iterable
-                }
-            }
-            ForLoopIterable::Reactive(iterable) => {
-                reactive = true;
-                quote! {
-                    (std::cell::Ref::<Vec<_>>::from(&#iterable)).iter().cloned()
-                }
-            }
-        };
-        let id_addition_code = if reactive {
-            quote! {
-                todo!()
-            }
-        } else {
-            TokenStream::new()
-        };
-        // id = for#(for-id).(index)
-        self.html = quote! {{
-            let mut currrent_component_nodes: Vec<_> = Vec::new();
-            let html = (#iterable).map(|#pattern| {
-                #(#component_constructors);*;
-                #(currrent_component_nodes.push(#component_nodes.clone()));*;
-                #id_addition_code
-                String::from(#html)
-            }).collect::<String>();
-            for_loop_children.push(currrent_component_nodes);
-            html
-        }};
-    }
-
-    fn get_item_html(&mut self, item: Item) -> TokenStream {
-        let super::Data {
-            mut component_nodes,
-            html,
-            mut component_constructors,
-        } = item.into();
-        self.component_nodes.append(&mut component_nodes);
-        self.component_constructors
-            .append(&mut component_constructors);
-        quote! { &#html }
-    }
-
-    fn add_element_children_data(&mut self, children: Vec<Item>) {
-        if self.is_self_closing() {
-            assert!(
-                children.is_empty(),
-                "Self-closing element '{}' cannot have children",
-                self.tag_name
-            );
-        }
-        let mut html: Vec<_> = children
-            .into_iter()
-            .map(|item| self.get_item_html(item))
-            .collect();
-        html.insert(0, quote! { String::new() });
-        self.html = quote! {
-            #(#html)+*
-        };
-    }
-
-    // TODO: move to attribute
-    fn get_attribute_tokens(&self, Attributes { keys, values, .. }: &Attributes) -> TokenStream {
-        let attributes = keys.iter().zip(values).map(|(key, value)| {
-            quote! {
-                format!("{}=\"{}\"", #key, #value)
-            }
-        });
-        quote! {
-            String::new() + #(&#attributes)+*
-        }
-    }
-
-    fn add_attribute_data(&mut self) {
-        self.attributes.add_scoped_id(&self.id);
-        // let html_string = self.get_html_tokenstream();
-        // let html = &self.html;
-        // let values = &self.attributes.values;
-
-        self.html = self.get_html_tokenstream();
-    }
-
-    fn get_html_tokenstream(&self) -> TokenStream {
-        let attributes = self.get_attribute_tokens(&self.attributes);
+    /// Generates the html opening and closing tags
+    fn html_tag_tokens(&self) -> TokenStream {
+        let attributes = TokenStream::from(self.attributes.clone());
         let tag_name = &self.tag_name;
         if self.is_self_closing() {
             quote! {
@@ -173,15 +107,47 @@ impl Data {
         }
     }
 
-    fn add_store_data(&mut self, store: &Expr) {
-        assert!(
-            self.is_self_closing(),
-            "Self closing element {} cannot have store children",
-            self.tag_name
-        );
+    /// Generates the html body for an element
+    fn html_body_tokens(&mut self) -> TokenStream {
+        if !matches!(&self.children, Children::Items(items) if children.items.is_empty()) {
+            assert!(
+                !self.is_self_closing(),
+                "Self-closing elements cannot contain children"
+            );
+        }
+        match self.children {
+            Children::Items(items) => {
+                let tokens = items.html_body_tokens();
+                self.component_initialisation_code
+                    .merge(items.component_initialisation_code);
+                tokens
+            }
+            Children::ReactiveStore(store) => {
+                self.attributes.element_needs_id = true;
+                store.into()
+            }
+            Children::ForLoop(for_loop) => for_loop.into(),
+        }
+    }
+}
 
-        self.attributes.reactive = true;
-        self.html = quote! { #store.get() };
+impl Data {
+    fn get_item_html(&mut self, item: Item) -> TokenStream {
+        let super::Data {
+            mut component_nodes,
+            html,
+            mut component_constructors,
+        } = item.into();
+        self.component_nodes.append(&mut component_nodes);
+        self.component_constructors
+            .append(&mut component_constructors);
+        quote! { &#html }
+    }
+
+    fn add_attribute_data(&mut self) {
+        self.attributes.add_scoped_id(&self.id);
+
+        self.html = self.get_html_tokenstream();
     }
 }
 
@@ -197,6 +163,10 @@ impl From<Data> for super::Data {
 
 impl From<Element> for super::Data {
     fn from(element: Element) -> Self {
-        Data::from(element).into()
+        Self {
+            component_constructors: element,
+            component_nodes: data.component_nodes,
+            html: element.html_tag_tokens(),
+        }
     }
 }

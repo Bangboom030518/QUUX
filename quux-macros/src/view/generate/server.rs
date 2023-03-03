@@ -8,6 +8,7 @@ use syn::Expr;
 mod attributes;
 mod component;
 mod element;
+mod for_loop;
 
 #[derive(Default)]
 struct Data {
@@ -20,14 +21,10 @@ struct Data {
 }
 
 impl Data {
-    fn element_for_loop_inner(element: Element) -> Self {
-        as.Data { html: (), component_nodes: (), component_constructors: () }
-    }
-
     fn from_for_loop_inner(item: Item) -> Self {
         match item {
-            Item::Element(element) => Self::element_for_loop_inner(element),
-            Item::Component(component) => component.into(),
+            Item::Element(element) => todo!(),
+            Item::Component(component) => todo!(),
             Item::Expression(expression) => {
                 panic!("Reactive for loops must contain elements or components. Found expression.")
             }

@@ -1,15 +1,73 @@
 use super::internal::prelude::*;
-pub use attribute::Attribute;
+use crate::parse;
+use attribute::Attribute;
 pub use children::{Children, ForLoop};
+use proc_macro2::TokenStream;
+use quote::quote;
+use std::collections::HashMap;
 
 pub mod attribute;
 pub mod children;
 
-#[derive(Clone)]
+#[derive(Default, Clone)]
+pub struct Attributes {
+    pub attributes: HashMap<String, Expr>,
+    pub element_needs_id: bool,
+    pub reactive_attributes: HashMap<String, Expr>,
+}
+
+impl Attributes {
+    /// Adds a static attribute.
+    /// If it's an event listener, the attribute will be ignored and  reactive will be set to true
+    pub fn insert_static(&mut self, key: String, value: Expr) -> Option<Expr> {
+        if key.starts_with("on:") || key == "class:active-when" {
+            self.element_needs_id = true;
+            None
+        } else {
+            self.attributes.insert(key, value)
+        }
+    }
+
+    /// Adds a reactive attribute, setting it to the initial value of the store.
+    pub fn insert_reactive(&mut self, key: String, value: &Expr) -> Option<Expr> {
+        self.reactive_attributes.insert(key.clone(), value.clone());
+        self.attributes.insert(
+            key,
+            parse(quote! {
+                #value.get()
+            }),
+        )
+    }
+
+    /// Adds an `Attribute` to the list
+    fn add_attribute(&mut self, Attribute { key, value }: Attribute) {
+        match value {
+            attribute::Value::Static(value) => self
+                .insert_static(key, value)
+                .expect("Duplicate attributes found!"),
+            attribute::Value::Reactive(value) => self
+                .insert_reactive(key, &value)
+                .expect("Duplicate attributes found!"),
+        };
+    }
+}
+
+impl From<Vec<Attribute>> for Attributes {
+    fn from(attributes: Vec<Attribute>) -> Self {
+        let mut result = Self::default();
+        for attribute in attributes {
+            result.add_attribute(attribute);
+        }
+        result
+    }
+}
+
+#[derive(Clone, Default)]
 pub struct Element {
     pub tag_name: String,
-    pub attributes: Vec<Attribute>,
+    pub attributes: Attributes,
     pub children: Children,
+    pub component_initialisation_code: ComponentInitialisationCode,
 }
 
 impl Parse for Element {
@@ -36,8 +94,30 @@ impl Parse for Element {
         braced!(children in input);
         Ok(Self {
             tag_name,
-            attributes,
+            attributes: attributes.into(),
             children: children.parse()?,
+            ..Default::default()
         })
+    }
+}
+
+// TODO: rename?
+#[derive(Clone, Default)]
+pub struct ComponentInitialisationCode {
+    /// Constructors for components
+    pub nodes: Vec<TokenStream>,
+    /// Variable declarations that will be put at the start of the view
+    pub constructors: Vec<TokenStream>,
+}
+
+impl ComponentInitialisationCode {
+    pub fn push_initialiser(&mut self, node: TokenStream, constructor: TokenStream) {
+        self.nodes.push(node);
+        self.constructors.push(constructor);
+    }
+
+    pub fn merge(&mut self, other: Self) {
+        self.nodes.append(&mut other.nodes);
+        self.constructors.append(&mut other.constructors);
     }
 }

@@ -1,32 +1,60 @@
+use std::collections::VecDeque;
+
 use super::super::internal::prelude::*;
 
 #[derive(Clone)]
+pub struct ReactiveStore(pub Box<Expr>);
+
+impl Parse for ReactiveStore {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        input.parse::<Token![$]>()?;
+        Ok(Self(Box::new(input.parse()?)))
+    }
+}
+
+#[derive(Clone, Default)]
+pub struct Items {
+    pub items: Vec<Item>,
+    pub component_initialisation_code: super::ComponentInitialisationCode,
+}
+
+impl Parse for Items {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let mut items = Vec::new();
+        while !input.is_empty() {
+            items.push(input.parse()?);
+        }
+        Ok(Self {
+            items,
+            ..Default::default()
+        })
+    }
+}
+
+#[derive(Clone)]
 pub enum Children {
-    Items(Vec<Item>),
-    ReactiveStore(Box<Expr>),
+    Items(Items),
+    ReactiveStore(ReactiveStore),
     ForLoop(ForLoop),
 }
 
 impl Parse for Children {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         if input.peek(Token![$]) {
-            input.parse::<Token![$]>()?;
-            Ok(Self::ReactiveStore(input.parse()?))
-        } else if input.peek(Token![for]) {
-            Ok(Self::ForLoop(input.parse()?))
-        } else {
-            let mut items = Vec::new();
-            while !input.is_empty() {
-                items.push(input.parse()?);
-            }
-            Ok(Self::Items(items))
+            return Ok(Self::ReactiveStore(input.parse()?));
         }
+
+        if input.peek(Token![for]) {
+            return Ok(Self::ForLoop(input.parse()?));
+        }
+
+        Ok(Self::Items(input.parse()?))
     }
 }
 
 impl Default for Children {
     fn default() -> Self {
-        Self::Items(Vec::new())
+        Self::Items(Default::default())
     }
 }
 

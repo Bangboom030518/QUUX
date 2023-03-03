@@ -1,72 +1,34 @@
-use std::collections::HashMap;
-
 use super::parse;
 use crate::view::parse::prelude::*;
-use element::{attribute::Value, Attribute};
+use element::Attributes;
+use proc_macro2::TokenStream;
 use quote::quote;
 use syn::Expr;
 
-// TODO: HashMap instead of two Vecs
-#[derive(Default)]
-pub struct Attributes {
-    pub keys: Vec<String>,
-    pub values: Vec<Expr>,
-    pub reactive: bool,
-    pub reactive_attributes: HashMap<String, Expr>,
-}
-
 impl Attributes {
-    /// Adds the scoped id attribute with the value of `id`, if `attributes.reactive` is true. If the element is not reactive, nothing is added.
-    pub fn add_scoped_id(&mut self, id: &str) {
-        if self.reactive {
-            self.keys.push("data-quux-scoped-id".to_string());
-            self.values
-                .push(parse(quote! { format!("{}.{}", scope_id, #id) }));
-        }
-    }
-
-    /// Adds an attribute with a key of `key` and a value of `value`
-    pub fn add_entry(&mut self, key: String, value: Expr) {
-        self.keys.push(key);
-        self.values.push(value);
-    }
-
-    /// Adds a static attribute.
-    /// If it's an event listener, the attribute will be ignored and  reactive will be set to true
-    pub fn add_static_value(&mut self, key: String, value: Expr) {
-        if key.starts_with("on:") || key == "class:active-when" {
-            self.reactive = true;
+    /// Adds the scoped id attribute with the value of `id` if the containing element needs an id because it is reactive.
+    /// If the element is not reactive, nothing is added.
+    pub fn insert_scoped_id(&mut self, id: &str) -> Option<Expr> {
+        if self.element_needs_id {
+            self.attributes.insert(
+                "data-quux-scoped-id".to_string(),
+                parse(quote! { format!("{}.{}", scope_id, #id) }),
+            )
         } else {
-            self.add_entry(key, value);
-        }
-    }
-
-    /// Adds a reactive attribute, setting it to the initial value of the store.
-    pub fn add_reactive_value(&mut self, key: String, value: &Expr) {
-        self.reactive_attributes.insert(key.clone(), value.clone());
-        self.add_entry(
-            key,
-            parse(quote! {
-                #value.get()
-            }),
-        );
-    }
-
-    /// Adds an `Attribute`
-    fn add_attribute(&mut self, Attribute { key, value }: Attribute) {
-        match value {
-            Value::Static(value) => self.add_static_value(key, value),
-            Value::Reactive(value) => self.add_reactive_value(key, &value),
+            None
         }
     }
 }
 
-impl From<Vec<Attribute>> for Attributes {
-    fn from(attributes: Vec<Attribute>) -> Self {
-        let mut result = Self::default();
-        for attribute in attributes {
-            result.add_attribute(attribute);
+impl From<Attributes> for TokenStream {
+    fn from(Attributes { attributes, .. }: Attributes) -> TokenStream {
+        let attributes = attributes.into_iter().map(|(key, value)| {
+            quote! {
+                format!("{}=\"{}\"", #key, #value)
+            }
+        });
+        quote! {
+            String::new() + #(&#attributes)+*
         }
-        result
     }
 }
