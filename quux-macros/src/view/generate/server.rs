@@ -19,6 +19,22 @@ struct Data {
     component_constructors: Vec<TokenStream>,
 }
 
+impl Data {
+    fn element_for_loop_inner(element: Element) -> Self {
+        as.Data { html: (), component_nodes: (), component_constructors: () }
+    }
+
+    fn from_for_loop_inner(item: Item) -> Self {
+        match item {
+            Item::Element(element) => Self::element_for_loop_inner(element),
+            Item::Component(component) => component.into(),
+            Item::Expression(expression) => {
+                panic!("Reactive for loops must contain elements or components. Found expression.")
+            }
+        }
+    }
+}
+
 impl From<Item> for Data {
     /// Generates data for a single item in a view
     fn from(item: Item) -> Self {

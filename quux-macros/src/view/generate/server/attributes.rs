@@ -1,11 +1,12 @@
 use std::collections::HashMap;
 
 use super::parse;
-use quote::quote;
-use syn::Expr;
 use crate::view::parse::prelude::*;
 use element::{attribute::Value, Attribute};
+use quote::quote;
+use syn::Expr;
 
+// TODO: HashMap instead of two Vecs
 #[derive(Default)]
 pub struct Attributes {
     pub keys: Vec<String>,

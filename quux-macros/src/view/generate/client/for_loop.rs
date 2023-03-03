@@ -34,13 +34,12 @@ impl ForLoop {
         quote! {
             let mut currrent_component_nodes: Vec<_> = Vec::new();
             for_loop_children.push(currrent_component_nodes);
-
+            
             quux::store::List::on_change(&#store, |event| {
                 match event {
                     quux::store::list::Event::Push(_) => todo!("handle push"),
                     quux::store::list::Event::Pop(_) => {
-                        let element = quux::dom::get_reactive_element(context.id)
-                        // quux::dom::get_reactive_element(&*scope_id, #scoped_id)
+                        let element = quux::dom::get_reactive_element(&context.id, todo!("scoped id for for loops!"));
                     }
                 }
             })

@@ -38,14 +38,16 @@ impl From<Element> for Data {
     }
 }
 
-impl Data {
+impl Element {
     const SELF_CLOSING_ELEMENTS: &'static [&'static str] = &[
         "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "source", "source",
         "track", "wbr",
     ];
+}
 
+impl Data {
     fn is_self_closing(&self) -> bool {
-        Self::SELF_CLOSING_ELEMENTS.contains(&self.tag_name.to_lowercase().as_str())
+        Element::SELF_CLOSING_ELEMENTS.contains(&self.tag_name.to_lowercase().as_str())
     }
 
     fn add_children_data(&mut self, children: Children) {
@@ -92,6 +94,7 @@ impl Data {
         } else {
             TokenStream::new()
         };
+        // id = for#(for-id).(index)
         self.html = quote! {{
             let mut currrent_component_nodes: Vec<_> = Vec::new();
             let html = (#iterable).map(|#pattern| {
