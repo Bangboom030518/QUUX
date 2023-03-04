@@ -15,7 +15,7 @@ impl Parse for ReactiveStore {
 #[derive(Clone, Default)]
 pub struct Items {
     pub items: Vec<Item>,
-    pub component_initialisation_code: super::ComponentInitialisationCode,
+    pub component_initialisation_code: super::GenerationData,
 }
 
 impl Parse for Items {

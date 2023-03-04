@@ -1,10 +1,10 @@
 // TODO: Can we remove scope id now ??!1!?
 
-use std::sync::atomic::{AtomicU64, Ordering::Relaxed};
-use crate::view::parse::prelude::*;
+use crate::view::parse::prelude::{element::GenerationData, *};
 use component::Prop;
 use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote};
+use std::sync::atomic::{AtomicU64, Ordering::Relaxed};
 use syn::Path;
 
 static ID: AtomicU64 = AtomicU64::new(0);
@@ -15,28 +15,38 @@ impl From<Prop> for TokenStream {
     }
 }
 
-pub struct Data {
-    name: Path,
-    props: Vec<Prop>,
-    component_ident: Ident,
-    rendered_component_ident: Ident,
-    component_context_ident: Ident,
-}
-
-impl Data {
-    pub fn new(Component { name, props, .. }: Component) -> Self {
-        let id = ID.fetch_add(1, Relaxed);
-        let component_ident = format_ident!("component_{id}");
-        let rendered_component_ident = format_ident!("rendered_component_{id}");
-        let component_context_ident = format_ident!("component_context_{id}");
+impl From<Component> for GenerationData {
+    fn from(value: Component) -> Self {
         Self {
-            name,
-            props,
-            component_ident,
-            rendered_component_ident,
-            component_context_ident,
+            html: value.generate_html(),
+            component_nodes: vec![value.generate_node()],
+            component_constructors: vec![value.generate_constructor()],
         }
     }
+}
+
+// pub struct Data {
+//     name: Path,
+//     props: Vec<Prop>,
+//     component_ident: Ident,
+//     rendered_component_ident: Ident,
+//     component_context_ident: Ident,
+// }
+
+impl Component {
+    // pub fn new(Component { name, props, .. }: Component) -> Self {
+    //     let id = ID.fetch_add(1, Relaxed);
+    //     let component_ident = format_ident!("component_{id}");
+    //     let rendered_component_ident = format_ident!("rendered_component_{id}");
+    //     let component_context_ident = format_ident!("component_context_{id}");
+    //     Self {
+    //         name,
+    //         props,
+    //         component_ident,
+    //         rendered_component_ident,
+    //         component_context_ident,
+    //     }
+    // }
 
     fn generate_html(&self) -> TokenStream {
         let component = &self.rendered_component_ident;

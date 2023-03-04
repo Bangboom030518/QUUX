@@ -67,7 +67,7 @@ pub struct Element {
     pub tag_name: String,
     pub attributes: Attributes,
     pub children: Children,
-    pub component_initialisation_code: ComponentInitialisationCode,
+    pub component_initialisation_code: GenerationData,
 }
 
 impl Parse for Element {
@@ -102,22 +102,27 @@ impl Parse for Element {
 }
 
 // TODO: rename?
+/// The generation code for an item
 #[derive(Clone, Default)]
-pub struct ComponentInitialisationCode {
+pub struct GenerationData {
     /// Constructors for components
-    pub nodes: Vec<TokenStream>,
+    pub component_nodes: Vec<TokenStream>,
     /// Variable declarations that will be put at the start of the view
-    pub constructors: Vec<TokenStream>,
+    pub component_constructors: Vec<TokenStream>,
+    /// html SSR string
+    pub html: TokenStream,
 }
 
-impl ComponentInitialisationCode {
+impl GenerationData {
     pub fn push_initialiser(&mut self, node: TokenStream, constructor: TokenStream) {
-        self.nodes.push(node);
-        self.constructors.push(constructor);
+        self.component_nodes.push(node);
+        self.component_constructors.push(constructor);
     }
 
+    // TODO: html???
     pub fn merge(&mut self, other: Self) {
-        self.nodes.append(&mut other.nodes);
-        self.constructors.append(&mut other.constructors);
+        self.component_nodes.append(&mut other.component_nodes);
+        self.component_constructors
+            .append(&mut other.component_constructors);
     }
 }

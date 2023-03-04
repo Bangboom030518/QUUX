@@ -83,13 +83,13 @@ pub mod prelude {
 
 mod internal {
     pub mod prelude {
-        pub use super::super::{prelude::*, parse_html_ident};
+        pub use super::super::{parse_html_ident, prelude::*};
         pub use quote::ToTokens;
         pub use syn::{
             braced, parenthesized,
             parse::{Parse, ParseStream},
             token::{Brace, Paren},
-            Expr, Ident, LitInt, Path, Token, Pat
+            Expr, Ident, LitInt, Pat, Path, Token,
         };
     }
 }

@@ -1,6 +1,8 @@
 use super::parse;
-use crate::view::parse::prelude::{element::Attribute, *};
-use attributes::Attributes;
+use crate::view::parse::prelude::{
+    element::{Attributes, GenerationData},
+    *,
+};
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::Expr;
@@ -10,30 +12,36 @@ mod component;
 mod element;
 mod for_loop;
 
-#[derive(Default)]
-struct Data {
-    /// tokens generating static SSR'd html
-    html: TokenStream,
-    /// tokens generating a `RenderContext` struct
-    component_nodes: Vec<TokenStream>,
-    /// the component which must be inserted into the view
-    component_constructors: Vec<TokenStream>,
-}
-
-impl Data {
-    fn from_for_loop_inner(item: Item) -> Self {
-        match item {
-            Item::Element(element) => todo!(),
-            Item::Component(component) => todo!(),
-            Item::Expression(expression) => {
-                panic!("Reactive for loops must contain elements or components. Found expression.")
-            }
+impl Item {
+    fn component_initialisation_code(&self) -> GenerationData {
+        match self {
+            Self::Component(component) => todo!(),
+            Self::Element(element) => element.component_initialisation_code,
+            Self::Expression(_) => Default::default(),
         }
     }
 }
 
-impl From<Item> for Data {
-    /// Generates data for a single item in a view
+// #[derive(Default)]
+// struct Data {
+//     /// tokens generating static SSR'd html
+//     html: TokenStream,
+//     component_initialisation_code: GenerationData,
+// }
+
+// impl Data {
+//     fn from_for_loop_inner(item: Item) -> Self {
+//         match item {
+//             Item::Element(element) => todo!(),
+//             Item::Component(component) => todo!(),
+//             Item::Expression(expression) => {
+//                 panic!("Reactive for loops must contain elements or components. Found expression.")
+//             }
+//         }
+//     }
+// }
+
+impl From<Item> for GenerationData {
     fn from(item: Item) -> Self {
         match item {
             Item::Element(element) => element.into(),
@@ -43,7 +51,7 @@ impl From<Item> for Data {
     }
 }
 
-impl From<Expr> for Data {
+impl From<Expr> for GenerationData {
     fn from(expression: Expr) -> Self {
         Self {
             html: quote! {
@@ -56,7 +64,7 @@ impl From<Expr> for Data {
 
 pub fn generate(tree: &Element) -> TokenStream {
     // let mut tree = tree.clone();
-    let Data {
+    let GenerationData {
         html,
         component_nodes,
         component_constructors,

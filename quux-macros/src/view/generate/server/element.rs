@@ -1,8 +1,8 @@
-use super::{super::GLOBAL_ID, Attributes};
+use super::super::GLOBAL_ID;
 use crate::view::parse::{
     element::{
         children::{Items, ReactiveStore},
-        ComponentInitialisationCode,
+        GenerationData,
     },
     prelude::*,
 };
@@ -21,16 +21,16 @@ impl From<ReactiveStore> for TokenStream {
 impl Items {
     /// Mutates the initialisation code with the initialisation required by the child elements.
     fn item_html(&mut self, item: Item) -> TokenStream {
-        let super::Data {
+        let GenerationData {
             mut component_nodes,
             html,
             mut component_constructors,
         } = item.into();
-        self.component_initialisation_code
-            .merge(ComponentInitialisationCode {
-                nodes: component_nodes,
-                constructors: component_constructors,
-            });
+        self.component_initialisation_code.merge(GenerationData {
+            component_nodes,
+            component_constructors,
+            ..Default::default()
+        });
         quote! { &#html }
     }
 
@@ -50,38 +50,6 @@ impl Items {
     }
 }
 
-#[derive(Default)]
-struct Data {
-    tag_name: String,
-    attributes: Attributes,
-    id: String,
-    component_nodes: Vec<TokenStream>,
-    component_constructors: Vec<TokenStream>,
-    /// The string of html sent to the client
-    html: TokenStream,
-}
-
-impl From<Element> for Data {
-    fn from(
-        Element {
-            tag_name,
-            attributes,
-            children,
-            ..
-        }: Element,
-    ) -> Self {
-        let mut data = Self {
-            tag_name,
-            attributes: attributes.into(),
-            id: GLOBAL_ID.fetch_add(1, Relaxed).to_string(),
-            ..Default::default()
-        };
-        data.add_children_data(children);
-        data.add_attribute_data();
-        data
-    }
-}
-
 impl Element {
     const SELF_CLOSING_ELEMENTS: &'static [&'static str] = &[
         "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "source", "source",
@@ -89,27 +57,13 @@ impl Element {
     ];
 
     fn is_self_closing(&self) -> bool {
-        Element::SELF_CLOSING_ELEMENTS.contains(&self.tag_name.to_lowercase().as_str())
+        Self::SELF_CLOSING_ELEMENTS.contains(&self.tag_name.to_lowercase().as_str())
     }
 
-    /// Generates the html opening and closing tags
-    fn html_tag_tokens(&self) -> TokenStream {
-        let attributes = TokenStream::from(self.attributes.clone());
-        let tag_name = &self.tag_name;
-        if self.is_self_closing() {
-            quote! {
-                format!("<{} {} />", #tag_name, #attributes)
-            }
-        } else {
-            quote! {
-                format!("<{0} {1}>{{}}</{0}>", #tag_name, #attributes)
-            }
-        }
-    }
-
-    /// Generates the html body for an element
+    /// Generates the html body for an element.
+    /// Muatates the element to include any component initialisation logic needed by the body.
     fn html_body_tokens(&mut self) -> TokenStream {
-        if !matches!(&self.children, Children::Items(items) if children.items.is_empty()) {
+        if !matches!(&self.children, Children::Items(items) if items.items.is_empty()) {
             assert!(
                 !self.is_self_closing(),
                 "Self-closing elements cannot contain children"
@@ -131,42 +85,28 @@ impl Element {
     }
 }
 
-impl Data {
-    fn get_item_html(&mut self, item: Item) -> TokenStream {
-        let super::Data {
-            mut component_nodes,
-            html,
-            mut component_constructors,
-        } = item.into();
-        self.component_nodes.append(&mut component_nodes);
-        self.component_constructors
-            .append(&mut component_constructors);
-        quote! { &#html }
-    }
-
-    fn add_attribute_data(&mut self) {
-        self.attributes.add_scoped_id(&self.id);
-
-        self.html = self.get_html_tokenstream();
-    }
-}
-
-impl From<Data> for super::Data {
-    fn from(data: Data) -> Self {
-        Self {
-            component_constructors: data.component_constructors,
-            component_nodes: data.component_nodes,
-            html: data.html,
-        }
-    }
-}
-
-impl From<Element> for super::Data {
-    fn from(element: Element) -> Self {
-        Self {
-            component_constructors: element,
-            component_nodes: data.component_nodes,
-            html: element.html_tag_tokens(),
+impl From<Element> for GenerationData {
+    fn from(value: Element) -> Self {
+        let attributes = TokenStream::from(value.attributes.clone());
+        let tag_name = &value.tag_name;
+        if value.is_self_closing() {
+            Self {
+                html: quote! {
+                    format!("<{} {} />", #tag_name, #attributes)
+                },
+                ..value.component_initialisation_code
+            }
+        } else {
+            value
+                .attributes
+                .insert_scoped_id(&GLOBAL_ID.fetch_add(1, Relaxed).to_string());
+            let body = value.html_body_tokens();
+            Self {
+                html: quote! {
+                    format!("<{0} {1}>{2}</{0}>", #tag_name, #attributes, #body)
+                },
+                ..value.component_initialisation_code
+            }
         }
     }
 }
