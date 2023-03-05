@@ -8,8 +8,8 @@ use quote::{quote, ToTokens};
 
 impl ToTokens for Prop {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        let Prop { key, value } = &self;
-        tokens.extend(quote! { #key: #value })
+        let Self { key, value } = &self;
+        tokens.extend(quote! { #key: #value });
     }
 }
 

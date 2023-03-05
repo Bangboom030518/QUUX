@@ -2,8 +2,7 @@ use super::internal::prelude::*;
 use crate::{parse, view::generate::server::Html};
 use attribute::Attribute;
 pub use children::{Children, ForLoop};
-use proc_macro2::TokenStream;
-use quote::{quote, ToTokens};
+use quote::quote;
 use std::collections::HashMap;
 
 pub mod attribute;
@@ -73,7 +72,7 @@ pub struct Element {
     pub tag_name: String,
     pub attributes: Attributes,
     pub children: Children,
-    pub component_initialisation_code: Html,
+    pub html: Html,
 }
 
 impl Parse for Element {
