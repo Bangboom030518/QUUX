@@ -42,12 +42,18 @@ impl Attributes {
     /// Adds an `Attribute` to the list
     fn add_attribute(&mut self, Attribute { key, value }: Attribute) {
         match value {
-            attribute::Value::Static(value) => self
-                .insert_static(key, value)
-                .expect("Duplicate attributes found!"),
-            attribute::Value::Reactive(value) => self
-                .insert_reactive(key, &value)
-                .expect("Duplicate attributes found!"),
+            attribute::Value::Static(value) => {
+                assert!(
+                    self.insert_static(key, value).is_none(),
+                    "Duplicate attributes found!"
+                );
+            }
+            attribute::Value::Reactive(value) => {
+                assert!(
+                    self.insert_reactive(key, &value).is_none(),
+                    "Duplicate attributes found!"
+                );
+            }
         };
     }
 }
@@ -105,24 +111,5 @@ impl Parse for Element {
 /// The generation code for an item
 #[derive(Clone, Default)]
 pub struct GenerationData {
-    /// Constructors for components
-    pub component_nodes: Vec<TokenStream>,
-    /// Variable declarations that will be put at the start of the view
-    pub component_constructors: Vec<TokenStream>,
-    /// html SSR string
     pub html: TokenStream,
-}
-
-impl GenerationData {
-    pub fn push_initialiser(&mut self, node: TokenStream, constructor: TokenStream) {
-        self.component_nodes.push(node);
-        self.component_constructors.push(constructor);
-    }
-
-    // TODO: html???
-    pub fn merge(&mut self, other: Self) {
-        self.component_nodes.append(&mut other.component_nodes);
-        self.component_constructors
-            .append(&mut other.component_constructors);
-    }
 }

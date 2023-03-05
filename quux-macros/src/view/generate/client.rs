@@ -1,6 +1,6 @@
 use super::GLOBAL_ID;
 use crate::view::parse::prelude::*;
-use element::{attribute, Attribute, Children};
+use element::{children::Items, children::ReactiveStore, Attributes, Children};
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
 use std::sync::atomic::Ordering::Relaxed;
@@ -77,10 +77,10 @@ impl From<Element> for Data {
 }
 
 impl Data {
-    fn add_attribute_data(&mut self, Attribute { key, value }: Attribute) {
-        let attribute::Value::Static(value) = value else {
-            return
-        };
+    fn add_attribute_data(&mut self, key: String, value: Expr) {
+        // let attribute::Value::Static(value) = value else {
+        //     return
+        // };
 
         if let Some(event_name) = key.strip_prefix("on:") {
             let scoped_id = self.id.as_str();
@@ -110,14 +110,14 @@ impl Data {
         }
     }
 
-    fn add_event_data(&mut self, attributes: Vec<Attribute>) {
-        for attribute in attributes {
-            self.add_attribute_data(attribute);
+    fn add_event_data(&mut self, attributes: Attributes) {
+        for (key, value) in attributes.attributes {
+            self.add_attribute_data(key, value);
         }
     }
 
-    fn add_child_data(&mut self, children: Vec<Item>) {
-        for child in children {
+    fn add_child_data(&mut self, children: Items) {
+        for child in children.items {
             let Self {
                 mut components,
                 mut reactivity,
@@ -128,7 +128,7 @@ impl Data {
         }
     }
 
-    fn add_store_data(&mut self, store: &Expr) {
+    fn add_store_data(&mut self, ReactiveStore(store): &ReactiveStore) {
         // TODO: Consider initializing store only once
         // TODO: Consider initializing the document only once
         let scoped_id = self.id.as_str();
@@ -156,17 +156,6 @@ pub fn generate(tree: &Element) -> TokenStream {
     } = tree.clone().into();
 
     // TODO: remove
-    let debug_code = if let Some(Attribute { key, .. }) = tree.attributes.first() {
-        if key == "magic" {
-            quote! {
-                // panic!("{:?}", children.map(|child| format!("{:?}", child)).collect::<Vec<_>>())
-            }
-        } else {
-            TokenStream::new()
-        }
-    } else {
-        TokenStream::new()
-    };
     let tokens = quote! {
         use std::rc::Rc;
         use wasm_bindgen::JsCast;
@@ -174,7 +163,6 @@ pub fn generate(tree: &Element) -> TokenStream {
         let mut children = context.children.into_iter();
         let mut for_loop_children = context.for_loop_children.into_iter();
         let scope_id = Rc::new(context.id);
-        #debug_code;
         #(#components);*;
         // TODO: what about non-for-loop components?
         for child in children {
@@ -184,14 +172,12 @@ pub fn generate(tree: &Element) -> TokenStream {
         #({ #reactivity });*;
         quux::RenderData::new()
     };
-    if let Some(Attribute { key, .. }) = tree.attributes.first() {
-        if key == "magic" {
-            std::fs::write(
-                "expansion-client.rs",
-                quote! {fn main() {#tokens}}.to_string(),
-            )
-            .unwrap();
-        }
+    if tree.attributes.attributes.contains_key("magic") {
+        std::fs::write(
+            "expansion-client.rs",
+            quote! {fn main() {#tokens}}.to_string(),
+        )
+        .unwrap();
     }
     tokens
 }

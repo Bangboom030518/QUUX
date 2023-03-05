@@ -8,8 +8,8 @@ use crate::view::parse::{
 };
 use element::Children;
 use proc_macro2::TokenStream;
-use quote::quote;
-use std::{collections::VecDeque, sync::atomic::Ordering::Relaxed};
+use quote::{quote, ToTokens};
+use std::sync::atomic::Ordering::Relaxed;
 
 impl From<ReactiveStore> for TokenStream {
     /// Generates the body of an element.
@@ -18,34 +18,24 @@ impl From<ReactiveStore> for TokenStream {
     }
 }
 
-impl Items {
-    /// Mutates the initialisation code with the initialisation required by the child elements.
-    fn item_html(&mut self, item: Item) -> TokenStream {
-        let GenerationData {
-            mut component_nodes,
-            html,
-            mut component_constructors,
-        } = item.into();
-        self.component_initialisation_code.merge(GenerationData {
-            component_nodes,
-            component_constructors,
-            ..Default::default()
-        });
-        quote! { &#html }
+impl ToTokens for Item {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let GenerationData { html } = self.clone().into();
+        tokens.extend(quote! { &#html });
     }
+}
 
+impl Items {
     /// Generates the body of an element.
-    /// Mutates the initialisation code with the initialisation required by the child elements.
-    pub fn html_body_tokens(&mut self) -> TokenStream {
-        let mut html: VecDeque<_> = self
-            .items
-            .into_iter()
-            .map(|item| self.item_html(item))
-            .collect();
-        html.push_back(quote! { String::new() });
-        let html = html.into_iter();
+    pub fn html_body_tokens(&self) -> TokenStream {
+        if self.items.is_empty() {
+            return quote! {
+                String::new()
+            };
+        }
+        let html = &self.items;
         quote! {
-            #(#html)+*
+            String::new() + #(#html)+*
         }
     }
 }
@@ -61,7 +51,7 @@ impl Element {
     }
 
     /// Generates the html body for an element.
-    /// Muatates the element to include any component initialisation logic needed by the body.
+    /// Sets `self.attributes.element_needs_id` if necessary
     fn html_body_tokens(&mut self) -> TokenStream {
         if !matches!(&self.children, Children::Items(items) if items.items.is_empty()) {
             assert!(
@@ -69,13 +59,8 @@ impl Element {
                 "Self-closing elements cannot contain children"
             );
         }
-        match self.children {
-            Children::Items(items) => {
-                let tokens = items.html_body_tokens();
-                self.component_initialisation_code
-                    .merge(items.component_initialisation_code);
-                tokens
-            }
+        match self.children.clone() {
+            Children::Items(items) => items.html_body_tokens(),
             Children::ReactiveStore(store) => {
                 self.attributes.element_needs_id = true;
                 store.into()
@@ -86,15 +71,15 @@ impl Element {
 }
 
 impl From<Element> for GenerationData {
-    fn from(value: Element) -> Self {
+    fn from(mut value: Element) -> Self {
         let attributes = TokenStream::from(value.attributes.clone());
-        let tag_name = &value.tag_name;
+        let tag_name = value.tag_name.clone();
         if value.is_self_closing() {
             Self {
                 html: quote! {
                     format!("<{} {} />", #tag_name, #attributes)
                 },
-                ..value.component_initialisation_code
+                // ..value.component_initialisation_code
             }
         } else {
             value
@@ -105,7 +90,7 @@ impl From<Element> for GenerationData {
                 html: quote! {
                     format!("<{0} {1}>{2}</{0}>", #tag_name, #attributes, #body)
                 },
-                ..value.component_initialisation_code
+                // ..value.component_initialisation_code
             }
         }
     }

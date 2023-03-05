@@ -50,7 +50,7 @@ impl Component for Set {
         let flashcards: Vec<Flashcard>;
         // TODO: accept props expr instead of weird attributes
         view! {
-            div(magic = true, class = "grid place-items-center gap-4") {
+            div(class = "grid place-items-center gap-4") {
                 div(class = "stack") {
                     for Term { term, definition } in $self.terms {
                         @Flashcard(term = term, definition = definition): flashcards

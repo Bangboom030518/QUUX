@@ -1,10 +1,7 @@
 use super::parse;
-use crate::view::parse::prelude::{
-    element::{Attributes, GenerationData},
-    *,
-};
+use crate::view::parse::prelude::{element::GenerationData, *};
 use proc_macro2::TokenStream;
-use quote::quote;
+use quote::{quote, ToTokens};
 use syn::Expr;
 
 mod attributes;
@@ -13,13 +10,13 @@ mod element;
 mod for_loop;
 
 impl Item {
-    fn component_initialisation_code(&self) -> GenerationData {
-        match self {
-            Self::Component(component) => todo!(),
-            Self::Element(element) => element.component_initialisation_code,
-            Self::Expression(_) => Default::default(),
-        }
-    }
+    // fn component_initialisation_code(&self) -> GenerationData {
+    //     match self {
+    //         Self::Component(component) => component.clone().into(),
+    //         Self::Element(element) => element.component_initialisation_code.clone(),
+    //         Self::Expression(_) => Default::default(),
+    //     }
+    // }
 }
 
 // #[derive(Default)]
@@ -57,67 +54,60 @@ impl From<Expr> for GenerationData {
             html: quote! {
                 #expression.to_string()
             },
-            ..Default::default()
         }
+    }
+}
+
+impl ToTokens for GenerationData {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let html = &self.html;
+        tokens.extend(quote! {
+                let mut components = Vec::<quux::ClientComponentNode<Self::ComponentEnum>>::new();
+
+                quux::RenderData {
+                    html: #html,
+                    component_node: quux::ClientComponentNode {
+                        component: Self::ComponentEnum::from(self.clone()),
+                        render_context: quux::RenderContext {
+                            id: scope_id,
+                            children: components,
+                            for_loop_children,
+                        }
+                    }
+                }
+        });
+        // let component_nodes = &value.component_nodes;
     }
 }
 
 pub fn generate(tree: &Element) -> TokenStream {
     // let mut tree = tree.clone();
-    let GenerationData {
-        html,
-        component_nodes,
-        component_constructors,
-    } = tree.clone().into();
-
-    // TODO: remove
-    if let Some(Attribute { key, .. }) = tree.attributes.first() {
-        if key == "magic" {
-            std::fs::write(
-                "nuclear-waste-facility.txt",
-                format!(
-                    "{}\n\n\n{}",
-                    component_nodes
-                        .iter()
-                        .map(ToString::to_string)
-                        .intersperse("\n".to_string())
-                        .collect::<String>(),
-                    component_constructors
-                        .iter()
-                        .map(ToString::to_string)
-                        .intersperse("\n".to_string())
-                        .collect::<String>(),
-                ),
-            )
-            .unwrap();
-        }
-    }
+    let render_data = GenerationData::from(tree.clone());
 
     let tokens = quote! {
         let scope_id = context.id;
         let mut for_loop_children: Vec<Vec<quux::ClientComponentNode<Self::ComponentEnum>>> = Vec::new();
-        #(#component_constructors)*
-        quux::RenderData {
-            html: #html,
-            component_node: quux::ClientComponentNode {
-                component: Self::ComponentEnum::from(self.clone()),
-                render_context: quux::RenderContext {
-                    id: scope_id,
-                    children: vec![#(#component_nodes),*],
-                    for_loop_children,
-                }
-            }
-        }
+        // #(#component_constructors)*
+        // quux::RenderData {
+        //     html: #html,
+        //     component_node: quux::ClientComponentNode {
+        //         component: Self::ComponentEnum::from(self.clone()),
+        //         render_context: quux::RenderContext {
+        //             id: scope_id,
+        //             children: vec![#(#component_nodes),*],
+        //             for_loop_children,
+        //         }
+        //     }
+        // }
+        #render_data
     };
     // TODO: remove
-    if let Some(attribute) = tree.attributes.first() {
-        if attribute.key == "magic" {
-            std::fs::write(
-                "expansion-server.rs",
-                quote! {fn main() {#tokens}}.to_string(),
-            )
-            .unwrap();
-        }
+    if tree.attributes.attributes.contains_key("magic") {
+        std::fs::write(
+            "expansion-server.rs",
+            quote! {fn main() {#tokens}}.to_string(),
+        )
+        .unwrap();
     }
     tokens
 }

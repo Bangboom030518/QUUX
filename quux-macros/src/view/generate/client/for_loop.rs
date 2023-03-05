@@ -32,14 +32,17 @@ impl ForLoop {
             return TokenStream::new()
         };
         quote! {
-            let mut currrent_component_nodes: Vec<_> = Vec::new();
-            for_loop_children.push(currrent_component_nodes);
-            
-            quux::store::List::on_change(&#store, |event| {
-                match event {
-                    quux::store::list::Event::Push(_) => todo!("handle push"),
-                    quux::store::list::Event::Pop(_) => {
-                        let element = quux::dom::get_reactive_element(&context.id, todo!("scoped id for for loops!"));
+            // let mut currrent_component_nodes: Vec<_> = Vec::new();
+            // for_loop_children.push(currrent_component_nodes);
+
+            quux::store::List::on_change(&#store, {
+                let scope_id = Rc::clone(&scope_id);
+                move |event| {
+                    match event {
+                        quux::store::list::Event::Push(_) => todo!("handle push"),
+                        quux::store::list::Event::Pop(_) => {
+                            let element = quux::dom::get_reactive_element(&*scope_id, todo!("scoped id for for loops!"));
+                        }
                     }
                 }
             })
