@@ -1,9 +1,6 @@
-use super::super::GLOBAL_ID;
+use super::{super::GLOBAL_ID, Html};
 use crate::view::parse::{
-    element::{
-        children::{Items, ReactiveStore},
-        GenerationData,
-    },
+    element::children::{Items, ReactiveStore},
     prelude::*,
 };
 use element::Children;
@@ -11,16 +8,16 @@ use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
 use std::sync::atomic::Ordering::Relaxed;
 
-impl From<ReactiveStore> for TokenStream {
-    /// Generates the body of an element.
-    fn from(ReactiveStore(store): ReactiveStore) -> Self {
-        quote! { #store.get() }
+impl ToTokens for ReactiveStore {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let Self(store) = self;
+        tokens.extend(quote! { #store.get() });
     }
 }
 
 impl ToTokens for Item {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        let GenerationData { html } = self.clone().into();
+        let Html(html) = self.clone().into();
         tokens.extend(quote! { &#html });
     }
 }
@@ -63,35 +60,29 @@ impl Element {
             Children::Items(items) => items.html_body_tokens(),
             Children::ReactiveStore(store) => {
                 self.attributes.element_needs_id = true;
-                store.into()
+                store.to_token_stream()
             }
             Children::ForLoop(for_loop) => for_loop.into(),
         }
     }
 }
 
-impl From<Element> for GenerationData {
+impl From<Element> for Html {
     fn from(mut value: Element) -> Self {
-        let attributes = TokenStream::from(value.attributes.clone());
+        let attributes = value.attributes.clone();
         let tag_name = value.tag_name.clone();
         if value.is_self_closing() {
-            Self {
-                html: quote! {
-                    format!("<{} {} />", #tag_name, #attributes)
-                },
-                // ..value.component_initialisation_code
-            }
+            Self(quote! {
+                format!("<{} {} />", #tag_name, #attributes)
+            })
         } else {
             value
                 .attributes
                 .insert_scoped_id(&GLOBAL_ID.fetch_add(1, Relaxed).to_string());
             let body = value.html_body_tokens();
-            Self {
-                html: quote! {
-                    format!("<{0} {1}>{2}</{0}>", #tag_name, #attributes, #body)
-                },
-                // ..value.component_initialisation_code
-            }
+            Self(quote! {
+                format!("<{0} {1}>{2}</{0}>", #tag_name, #attributes, #body)
+            })
         }
     }
 }

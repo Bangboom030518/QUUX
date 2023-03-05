@@ -5,8 +5,8 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use std::sync::atomic::{AtomicU64, Ordering::Relaxed};
 
-mod client;
-mod server;
+pub mod client;
+pub mod server;
 
 static GLOBAL_ID: AtomicU64 = AtomicU64::new(0);
 

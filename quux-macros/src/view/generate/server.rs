@@ -1,5 +1,5 @@
 use super::parse;
-use crate::view::parse::prelude::{element::GenerationData, *};
+use crate::view::parse::prelude::*;
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
 use syn::Expr;
@@ -9,36 +9,18 @@ mod component;
 mod element;
 mod for_loop;
 
-impl Item {
-    // fn component_initialisation_code(&self) -> GenerationData {
-    //     match self {
-    //         Self::Component(component) => component.clone().into(),
-    //         Self::Element(element) => element.component_initialisation_code.clone(),
-    //         Self::Expression(_) => Default::default(),
-    //     }
-    // }
+/// The generation code for an item
+#[derive(Clone, Default)]
+pub struct Html(pub TokenStream);
+
+impl ToTokens for Html {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        // TODO: remove clone?
+        tokens.extend(self.0.clone());
+    }
 }
 
-// #[derive(Default)]
-// struct Data {
-//     /// tokens generating static SSR'd html
-//     html: TokenStream,
-//     component_initialisation_code: GenerationData,
-// }
-
-// impl Data {
-//     fn from_for_loop_inner(item: Item) -> Self {
-//         match item {
-//             Item::Element(element) => todo!(),
-//             Item::Component(component) => todo!(),
-//             Item::Expression(expression) => {
-//                 panic!("Reactive for loops must contain elements or components. Found expression.")
-//             }
-//         }
-//     }
-// }
-
-impl From<Item> for GenerationData {
+impl From<Item> for Html {
     fn from(item: Item) -> Self {
         match item {
             Item::Element(element) => element.into(),
@@ -48,58 +30,33 @@ impl From<Item> for GenerationData {
     }
 }
 
-impl From<Expr> for GenerationData {
+impl From<Expr> for Html {
     fn from(expression: Expr) -> Self {
-        Self {
-            html: quote! {
-                #expression.to_string()
-            },
-        }
-    }
-}
-
-impl ToTokens for GenerationData {
-    fn to_tokens(&self, tokens: &mut TokenStream) {
-        let html = &self.html;
-        tokens.extend(quote! {
-                let mut components = Vec::<quux::ClientComponentNode<Self::ComponentEnum>>::new();
-
-                quux::RenderData {
-                    html: #html,
-                    component_node: quux::ClientComponentNode {
-                        component: Self::ComponentEnum::from(self.clone()),
-                        render_context: quux::RenderContext {
-                            id: scope_id,
-                            children: components,
-                            for_loop_children,
-                        }
-                    }
-                }
-        });
-        // let component_nodes = &value.component_nodes;
+        Self(quote! {
+            #expression.to_string()
+        })
     }
 }
 
 pub fn generate(tree: &Element) -> TokenStream {
-    // let mut tree = tree.clone();
-    let render_data = GenerationData::from(tree.clone());
+    let html = Html::from(tree.clone()).0;
 
     let tokens = quote! {
         let scope_id = context.id;
         let mut for_loop_children: Vec<Vec<quux::ClientComponentNode<Self::ComponentEnum>>> = Vec::new();
-        // #(#component_constructors)*
-        // quux::RenderData {
-        //     html: #html,
-        //     component_node: quux::ClientComponentNode {
-        //         component: Self::ComponentEnum::from(self.clone()),
-        //         render_context: quux::RenderContext {
-        //             id: scope_id,
-        //             children: vec![#(#component_nodes),*],
-        //             for_loop_children,
-        //         }
-        //     }
-        // }
-        #render_data
+        let mut components = Vec::<quux::ClientComponentNode<Self::ComponentEnum>>::new();
+
+        quux::RenderData {
+            html: #html,
+            component_node: quux::ClientComponentNode {
+                component: Self::ComponentEnum::from(self.clone()),
+                render_context: quux::RenderContext {
+                    id: scope_id,
+                    children: components,
+                    for_loop_children,
+                }
+            }
+        }
     };
     // TODO: remove
     if tree.attributes.attributes.contains_key("magic") {

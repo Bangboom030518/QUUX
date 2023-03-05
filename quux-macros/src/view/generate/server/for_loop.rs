@@ -1,4 +1,5 @@
-use crate::view::parse::element::{children::ForLoopIterable, ForLoop, GenerationData};
+use super::Html;
+use crate::view::parse::element::{children::ForLoopIterable, ForLoop};
 use proc_macro2::TokenStream;
 use quote::quote;
 
@@ -12,7 +13,7 @@ impl From<ForLoop> for TokenStream {
     ) -> Self {
         // TODO: components!!!
         // let reactive: bool;
-        let GenerationData { html } = (*item).into();
+        let Html(html) = (*item).into();
         let iterable = match iterable {
             ForLoopIterable::Static(iterable) => {
                 // reactive = false;
@@ -49,17 +50,3 @@ impl From<ForLoop> for TokenStream {
         }}
     }
 }
-/*
-        quote! {{
-            let mut currrent_component_nodes: Vec<_> = Vec::new();
-            let html = (#iterable).map(|#pattern| {
-                #(#component_constructors);*;
-                #(currrent_component_nodes.push(#component_nodes.clone()));*;
-                #id_addition_code
-                String::from(#html)
-            }).collect::<String>();
-            for_loop_children.push(currrent_component_nodes);
-            html
-        }}
-(/)
-*/

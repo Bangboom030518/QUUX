@@ -1,9 +1,9 @@
 use super::internal::prelude::*;
-use crate::parse;
+use crate::{parse, view::generate::server::Html};
 use attribute::Attribute;
 pub use children::{Children, ForLoop};
 use proc_macro2::TokenStream;
-use quote::quote;
+use quote::{quote, ToTokens};
 use std::collections::HashMap;
 
 pub mod attribute;
@@ -73,7 +73,7 @@ pub struct Element {
     pub tag_name: String,
     pub attributes: Attributes,
     pub children: Children,
-    pub component_initialisation_code: GenerationData,
+    pub component_initialisation_code: Html,
 }
 
 impl Parse for Element {
@@ -105,11 +105,4 @@ impl Parse for Element {
             ..Default::default()
         })
     }
-}
-
-// TODO: rename?
-/// The generation code for an item
-#[derive(Clone, Default)]
-pub struct GenerationData {
-    pub html: TokenStream,
 }
