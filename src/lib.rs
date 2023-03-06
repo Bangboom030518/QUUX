@@ -147,7 +147,7 @@ impl Component for App {
         context: quux::RenderContext<Self::ComponentEnum>,
     ) -> quux::RenderData<Self::ComponentEnum> {
         view! {
-            html(magic = true, lang="en") {
+            html(lang="en") {
                 head {
                     meta(charset="UTF-8") {}
                     meta(http-equiv="X-UA-Compatible", content="IE=edge") {}
@@ -159,8 +159,8 @@ impl Component for App {
                 }
                 body {
                     h1 {{ "Welcome to Quuxlet" }}
-                    @set::Set(terms = vec![set::Term::new("0", "1"), set::Term::new("2", "3")])
-                    @QUUXInitialise<Self::ComponentEnum>(init_script_content = include_str!("../dist/init.js"))
+                    @set::Set(vec![set::Term::new("0", "1"), set::Term::new("2", "3")])
+                    @QUUXInitialise<Self::ComponentEnum>(include_str!("../dist/init.js"))
                 }
             }
         }

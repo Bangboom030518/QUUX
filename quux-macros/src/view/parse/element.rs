@@ -11,6 +11,7 @@ pub mod children;
 #[derive(Default, Clone)]
 pub struct Attributes {
     pub attributes: HashMap<String, Expr>,
+    pub is_root: bool,
     pub element_needs_id: bool,
     pub reactive_attributes: HashMap<String, Expr>,
 }
@@ -18,20 +19,21 @@ pub struct Attributes {
 impl Attributes {
     /// Adds a static attribute.
     /// If it's an event listener, the attribute will be ignored and  reactive will be set to true
-    pub fn insert_static(&mut self, key: String, value: Expr) -> Option<Expr> {
+    pub fn insert_static(&mut self, key: &str, value: Expr) -> Option<Expr> {
         if key.starts_with("on:") || key == "class:active-when" {
             self.element_needs_id = true;
             None
         } else {
-            self.attributes.insert(key, value)
+            self.attributes.insert(key.to_string(), value)
         }
     }
 
     /// Adds a reactive attribute, setting it to the initial value of the store.
-    pub fn insert_reactive(&mut self, key: String, value: &Expr) -> Option<Expr> {
-        self.reactive_attributes.insert(key.clone(), value.clone());
+    pub fn insert_reactive(&mut self, key: &str, value: Expr) -> Option<Expr> {
+        self.reactive_attributes
+            .insert(key.to_string(), value.clone());
         self.attributes.insert(
-            key,
+            key.to_string(),
             parse(quote! {
                 #value.get()
             }),
@@ -43,13 +45,13 @@ impl Attributes {
         match value {
             attribute::Value::Static(value) => {
                 assert!(
-                    self.insert_static(key, value).is_none(),
+                    self.insert_static(&key, value).is_none(),
                     "Duplicate attributes found!"
                 );
             }
             attribute::Value::Reactive(value) => {
                 assert!(
-                    self.insert_reactive(key, &value).is_none(),
+                    self.insert_reactive(&key, value).is_none(),
                     "Duplicate attributes found!"
                 );
             }

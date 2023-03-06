@@ -171,22 +171,23 @@ where
     pub children: Vec<ClientComponentNode<T>>,
     pub for_loop_children: Vec<Vec<ClientComponentNode<T>>>,
     pub id: String,
+    pub for_loop_id: Option<String>,
 }
 
-impl<T> Default for RenderContext<T>
-where
-    T: ComponentEnum,
-{
+impl<T: ComponentEnum> Default for RenderContext<T> {
     fn default() -> Self {
         Self {
             children: Vec::new(),
             for_loop_children: Vec::new(),
-            id: generate_id(),
+            id: String::new(),
+            for_loop_id: None,
         }
     }
 }
 
 pub mod prelude {
+    #[cfg(target_arch = "wasm32")]
+    pub use super::dom::console_log;
     pub use super::store::{self, Store};
     pub use super::{ClientComponentNode, Component, ComponentEnum, RenderContext, RenderData};
     pub use quux_macros::view;

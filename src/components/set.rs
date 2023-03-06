@@ -2,14 +2,12 @@ use super::flashcard::confidence_rating::ConfidenceRating;
 use super::flashcard::Flashcard;
 use crate::QUUXComponentEnum;
 use quux::prelude::*;
-use quux::Component;
-use quux::Store;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct Term {
-    term: String,
-    definition: String,
+    pub term: String,
+    pub definition: String,
 }
 
 impl Term {
@@ -21,10 +19,6 @@ impl Term {
     }
 }
 
-pub struct Props {
-    pub terms: Vec<Term>,
-}
-
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Set {
     terms: store::List<Term>,
@@ -32,10 +26,10 @@ pub struct Set {
 }
 
 impl Component for Set {
-    type Props = Props;
+    type Props = Vec<Term>;
     type ComponentEnum = QUUXComponentEnum;
 
-    fn init(Props { terms }: Props) -> Self {
+    fn init(terms: Self::Props) -> Self {
         Self {
             terms: store::List::new(terms),
             current_index: Store::new(0),
@@ -48,9 +42,10 @@ impl Component for Set {
     ) -> quux::RenderData<Self::ComponentEnum> {
         let confidence_rating: ConfidenceRating;
         let flashcards: Vec<Flashcard>;
-        // TODO: accept props expr instead of weird attributes
+        #[cfg(target_arch = "wasm32")]
+        console_log!("makka pakka");
         view! {
-            div(class = "grid place-items-center gap-4") {
+            div(magic= true, class = "grid place-items-center gap-4") {
                 div(class = "stack") {
                     for term in $self.terms {
                         @Flashcard(term): flashcards

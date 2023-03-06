@@ -7,6 +7,7 @@ use element::Children;
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
 use std::sync::atomic::Ordering::Relaxed;
+use syn::Expr;
 
 impl ToTokens for ReactiveStore {
     fn to_tokens(&self, tokens: &mut TokenStream) {
@@ -42,7 +43,6 @@ impl Element {
         "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "source", "source",
         "track", "wbr",
     ];
-
     fn is_self_closing(&self) -> bool {
         Self::SELF_CLOSING_ELEMENTS.contains(&self.tag_name.to_lowercase().as_str())
     }
@@ -62,8 +62,12 @@ impl Element {
                 self.attributes.element_needs_id = true;
                 store.to_token_stream()
             }
-            Children::ForLoop(for_loop) => for_loop.into(),
+            Children::ForLoop(for_loop) => for_loop.to_token_stream(),
         }
+    }
+
+    pub fn insert_attribute(&mut self, key: &str, value: Expr) -> Option<Expr> {
+        self.attributes.insert_static(key, value)
     }
 }
 

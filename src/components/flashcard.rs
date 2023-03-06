@@ -1,3 +1,4 @@
+use super::set::Term;
 use crate::QUUXComponentEnum;
 use quux::prelude::*;
 use quux::{Component, Store};
@@ -27,15 +28,9 @@ impl Default for Side {
     }
 }
 
-pub struct Props {
-    pub term: String,
-    pub definition: String,
-}
-
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Flashcard {
-    term: String,
-    definition: String,
+    term: Term,
     side: Store<Side>,
     flipped: Store<bool>,
     is_visible: Store<bool>,
@@ -58,14 +53,12 @@ impl Flashcard {
 }
 
 impl Component for Flashcard {
-    type Props = Props;
+    type Props = Term;
     type ComponentEnum = QUUXComponentEnum;
 
-    fn init(props: Self::Props) -> Self {
-        let Props { term, definition } = props;
+    fn init(term: Term) -> Self {
         Self {
             term,
-            definition,
             side: Store::new(Side::Term),
             flipped: Store::new(false),
             is_visible: Store::new(true),
@@ -85,7 +78,7 @@ impl Component for Flashcard {
                         class:active-when = (&self.side, |side| side != Side::Term, "flashcard-hidden")
                     ) {
                         div(class = "card-body") {
-                            p {{ self.term }}
+                            p {{ self.term.term }}
                         }
                     }
                     div(
@@ -93,23 +86,10 @@ impl Component for Flashcard {
                         class:active-when = (&self.side, |side| side != Side::Definition, "flashcard-hidden")
                     ) {
                         div(class = "card-body") {
-                            p {{ self.definition }}
+                            p {{ self.term.definition }}
                         }
                     }
                 }
-                // button(class = "btn", on:click = {
-                //     let side = self.side.clone();
-                //     let flipped = self.flipped.clone();
-                //     move || {
-                //         let previous = *side.get();
-                //         side.set(previous.flip());
-                //         if !*flipped.get() {
-                //             flipped.set(true);
-                //             confidence_rating.show();
-                //         }
-                //     }
-                // }) {{"flip"}}
-                // @ConfidenceRating: confidence_rating
             }
         }
     }

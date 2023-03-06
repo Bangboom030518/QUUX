@@ -23,21 +23,17 @@ pub struct Props {
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
 pub struct QUUXInitialise<T: ComponentEnum> {
     #[serde(skip)]
-    init_script_content: &'static str,
+    init_script_path: &'static str,
     _phantom: std::marker::PhantomData<T>,
 }
 
 impl<T: ComponentEnum> Component for QUUXInitialise<T> {
-    type Props = Props;
+    type Props = &'static str;
     type ComponentEnum = T;
 
-    fn init(
-        Self::Props {
-            init_script_content,
-        }: Self::Props,
-    ) -> Self {
+    fn init(init_script_path: Self::Props) -> Self {
         Self {
-            init_script_content,
+            init_script_path,
             _phantom: std::marker::PhantomData,
         }
     }
@@ -48,7 +44,7 @@ impl<T: ComponentEnum> Component for QUUXInitialise<T> {
             html: format!(
                 "<script type=\"module\" id=\"__quux_init_script__\" data-quux-tree=\"{}\">{};</script>",
                 *crate::TREE_INTERPOLATION_ID,
-                self.init_script_content,
+                self.init_script_path,
             ),
             component_node: crate::ClientComponentNode {
                 component: self.clone().into(),

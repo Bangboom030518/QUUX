@@ -30,6 +30,25 @@ impl From<Item> for Html {
     }
 }
 
+impl Item {
+    fn insert_for_loop_id(&mut self, value: Expr) {
+        let duplicate_attribute = match self {
+            Self::Element(element) => element
+                .insert_attribute("data-quux-for-id", value)
+                .is_none(),
+            Self::Component(component) => component.insert_for_loop_id(value).is_none(),
+            Self::Expression(_) => {
+                panic!("Reactive for loops must contain either elements or components. Found expression")
+            }
+        };
+        // TODO: remove comment
+        // assert!(
+        //     !duplicate_attribute,
+        //     "duplicate \"data-quux-for-id\" attribute"
+        // );
+    }
+}
+
 impl From<Expr> for Html {
     fn from(expression: Expr) -> Self {
         Self(quote! {
@@ -39,12 +58,15 @@ impl From<Expr> for Html {
 }
 
 pub fn generate(tree: &Element) -> TokenStream {
+    let mut tree = tree.clone();
+    tree.attributes.is_root = true;
     let html = Html::from(tree.clone()).0;
 
     let tokens = quote! {
         let scope_id = context.id;
         let mut for_loop_children: Vec<Vec<quux::ClientComponentNode<Self::ComponentEnum>>> = Vec::new();
         let mut components = Vec::<quux::ClientComponentNode<Self::ComponentEnum>>::new();
+        let for_loop_id = context.for_loop_id;
 
         quux::RenderData {
             html: #html,
@@ -53,6 +75,7 @@ pub fn generate(tree: &Element) -> TokenStream {
                 render_context: quux::RenderContext {
                     id: scope_id,
                     children: components,
+                    for_loop_id: None,
                     for_loop_children,
                 }
             }

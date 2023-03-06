@@ -13,7 +13,7 @@ impl Attributes {
         }
         self.attributes.insert(
             "data-quux-scoped-id".to_string(),
-            parse(quote! { format!("{}.{}", scope_id, #id) }),
+            parse(quote! { format!("{}.{}", &scope_id, #id) }),
         );
     }
 }
@@ -30,8 +30,22 @@ impl ToTokens for Attributes {
                 format!("{}=\"{}\"", #key, #value)
             }
         });
+        let for_loop_id = if self.is_root {
+            quote! {
+                &if let Some(id) = for_loop_id {
+                    format!("data-quux-for-id=\"{}\"", id)
+                } else {
+                    String::new()
+                }
+            }
+        } else {
+            quote! {
+                ""
+            }
+        };
+
         tokens.extend(quote! {
-            String::new() + #(&#attributes)+*
+            String::new() + #(&#attributes)+* + #for_loop_id
         });
     }
 }
