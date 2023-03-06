@@ -53,7 +53,7 @@ impl Parse for Children {
 
 impl Default for Children {
     fn default() -> Self {
-        Self::Items(Default::default())
+        Self::Items(Items::default())
     }
 }
 

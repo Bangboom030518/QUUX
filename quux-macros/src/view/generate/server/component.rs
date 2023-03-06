@@ -2,21 +2,12 @@
 
 use super::Html;
 use crate::view::parse::prelude::*;
-use component::Prop;
-use proc_macro2::TokenStream;
-use quote::{quote, ToTokens};
-
-impl ToTokens for Prop {
-    fn to_tokens(&self, tokens: &mut TokenStream) {
-        let Prop { key, value } = &self;
-        tokens.extend(quote! { #key: #value })
-    }
-}
+use quote::quote;
 
 impl From<Component> for Html {
     fn from(value: Component) -> Self {
         let name = &value.name;
-        let props = value.generate_props();
+        let props = &value.props;
         let html = quote! {
             {
                 let component = <#name as quux::Component>::init(#props);
@@ -39,26 +30,5 @@ impl From<Component> for Html {
             }
         };
         Self(html)
-    }
-}
-
-impl Component {
-    // TODO: take a props, do not construct it
-    fn generate_props(&self) -> TokenStream {
-        // TODO: remove `.cloned()`
-        // let props = self.props.iter().cloned().map::<TokenStream, _>(Prop::into);
-        let name = &self.name;
-        let props = &self.props;
-        if self.props.is_empty() {
-            quote! {
-                ()
-            }
-        } else {
-            quote! {
-                <#name as quux::Component>::Props {
-                    #(#props),*
-                }
-            }
-        }
     }
 }

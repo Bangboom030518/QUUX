@@ -52,8 +52,8 @@ impl Component for Set {
         view! {
             div(class = "grid place-items-center gap-4") {
                 div(class = "stack") {
-                    for Term { term, definition } in $self.terms {
-                        @Flashcard(term = term, definition = definition): flashcards
+                    for term in $self.terms {
+                        @Flashcard(term): flashcards
                     }
                 }
                 button(class = "btn", on:click = {

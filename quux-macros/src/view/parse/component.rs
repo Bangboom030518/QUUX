@@ -1,9 +1,10 @@
 use super::internal::prelude::*;
+use quote::quote;
 
 #[derive(Clone)]
 pub struct Component {
     pub name: Path,
-    pub props: Vec<Prop>,
+    pub props: Props,
     pub binding: Option<Ident>,
 }
 
@@ -11,22 +12,7 @@ impl Parse for Component {
     // TODO: refactor
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let name = input.parse()?;
-        let mut props = Vec::new();
-
-        if input.peek(Paren) {
-            let attributes_buffer;
-            parenthesized!(attributes_buffer in input);
-            while !attributes_buffer.is_empty() {
-                props.push(attributes_buffer.parse()?);
-                if attributes_buffer.peek(Token![,]) {
-                    attributes_buffer.parse::<Token![,]>()?;
-                } else if !attributes_buffer.is_empty() {
-                    return Err(
-                        attributes_buffer.error("Attributes should be seperated by commas, duh!")
-                    );
-                }
-            }
-        }
+        let props = input.parse()?;
 
         let binding = if input.peek(Token![:]) {
             input.parse::<Token![:]>()?;
@@ -44,16 +30,25 @@ impl Parse for Component {
 }
 
 #[derive(Clone)]
-pub struct Prop {
-    pub key: Ident,
-    pub value: Expr,
+pub struct Props(pub Expr);
+
+impl ToTokens for Props {
+    fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
+        self.0.to_tokens(tokens);
+    }
 }
 
-impl Parse for Prop {
+impl Parse for Props {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        let key = input.parse()?;
-        input.parse::<Token![=]>()?;
-        let value = input.parse()?;
-        Ok(Self { key, value })
+        let props = if input.peek(Paren) {
+            let attributes_buffer;
+            parenthesized!(attributes_buffer in input);
+            attributes_buffer.parse()?
+        } else {
+            crate::parse(quote! {
+                ()
+            })
+        };
+        Ok(Self(props))
     }
 }

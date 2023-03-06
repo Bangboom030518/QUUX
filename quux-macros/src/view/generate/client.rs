@@ -77,11 +77,7 @@ impl From<Element> for Data {
 }
 
 impl Data {
-    fn add_attribute_data(&mut self, key: String, value: Expr) {
-        // let attribute::Value::Static(value) = value else {
-        //     return
-        // };
-
+    fn add_attribute_data(&mut self, key: &str, value: &Expr) {
         if let Some(event_name) = key.strip_prefix("on:") {
             let scoped_id = self.id.as_str();
 
@@ -112,7 +108,7 @@ impl Data {
 
     fn add_event_data(&mut self, attributes: Attributes) {
         for (key, value) in attributes.attributes {
-            self.add_attribute_data(key, value);
+            self.add_attribute_data(&key, &value);
         }
     }
 
