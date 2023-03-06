@@ -64,7 +64,7 @@ impl From<Element> for Data {
             id: GLOBAL_ID.fetch_add(1, Relaxed).to_string(),
             ..Default::default()
         };
-        data.add_event_data(attributes);
+        data.add_event_data(&attributes);
         match children {
             Children::Items(children) => data.add_child_data(children),
             Children::ReactiveStore(store) => data.add_store_data(&store),
@@ -106,9 +106,9 @@ impl Data {
         }
     }
 
-    fn add_event_data(&mut self, attributes: Attributes) {
-        for (key, value) in attributes.attributes {
-            self.add_attribute_data(&key, &value);
+    fn add_event_data(&mut self, attributes: &Attributes) {
+        for (key, value) in &attributes.attributes {
+            self.add_attribute_data(key, value);
         }
     }
 

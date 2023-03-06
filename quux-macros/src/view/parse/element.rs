@@ -72,7 +72,7 @@ pub struct Element {
     pub tag_name: String,
     pub attributes: Attributes,
     pub children: Children,
-    pub component_initialisation_code: Html,
+    pub html: Html,
 }
 
 impl Parse for Element {
