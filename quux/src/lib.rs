@@ -110,7 +110,7 @@ pub trait Component: Serialize + DeserializeOwned {
     fn init_as_root<T: ComponentEnum + DeserializeOwned>() {
         std::panic::set_hook(Box::new(console_error_panic_hook::hook));
 
-        let init_script = dom::get_document()
+        let init_script = dom::document()
             .get_element_by_id("__quux_init_script__")
             .expect("`__quux_init_script__` not found");
 

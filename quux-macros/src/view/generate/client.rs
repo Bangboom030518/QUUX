@@ -64,7 +64,7 @@ impl From<Element> for Data {
             id: GLOBAL_ID.fetch_add(1, Relaxed).to_string(),
             ..Default::default()
         };
-        data.add_event_data(&attributes);
+        data.add_event_data(attributes);
         match children {
             Children::Items(children) => data.add_child_data(children),
             Children::ReactiveStore(store) => data.add_store_data(&store),
@@ -77,23 +77,25 @@ impl From<Element> for Data {
 }
 
 impl Data {
-    fn add_attribute_data(&mut self, key: &str, value: &Expr) {
-        if let Some(event_name) = key.strip_prefix("on:") {
-            let scoped_id = self.id.as_str();
+    // fn add_attribute_data(&mut self, key: &str, value: &Expr) {}
 
+    fn add_event_data(&mut self, attributes: Attributes) {
+        for (event, callback) in attributes.events {
+            let scoped_id = self.id.as_str();
             self.reactivity.push(quote! {
                 let scope_id = Rc::clone(&scope_id);
-                let closure = wasm_bindgen::prelude::Closure::<dyn FnMut()>::new(#value);
+                let closure = wasm_bindgen::prelude::Closure::<dyn FnMut()>::new(#callback);
                 quux::dom::get_reactive_element(&*scope_id, #scoped_id)
-                    .add_event_listener_with_callback(#event_name, closure.as_ref().unchecked_ref())
+                    .add_event_listener_with_callback(#event, closure.as_ref().unchecked_ref())
                     .expect_internal("add event");
                 closure.forget();
             });
-        } else if key == "class:active-when" {
+        }
+        for expression in attributes.reactive_classes {
             let scoped_id = self.id.as_str();
 
             self.reactivity.push(quote! {
-                let (store, mapping, class_name) = #value;
+                let (store, mapping, class_name) = #expression;
                 let store = quux::Store::clone(store);
                 let scope_id = Rc::clone(&scope_id);
                 let class_list = quux::dom::get_reactive_element(&*scope_id, #scoped_id).class_list();
@@ -103,12 +105,6 @@ impl Data {
                     class_list.remove_1(class_name).unwrap();
                 })
             });
-        }
-    }
-
-    fn add_event_data(&mut self, attributes: &Attributes) {
-        for (key, value) in &attributes.attributes {
-            self.add_attribute_data(key, value);
         }
     }
 

@@ -28,12 +28,12 @@ impl ToTokens for ForLoop {
                 }
             }
         };
-        let id = GLOBAL_ID.fetch_add(1, Relaxed);
         if reactive {
+            let id = GLOBAL_ID.fetch_add(1, Relaxed);
             item.insert_for_loop_id(
-                // `[scope id].for[for loop id].[for loop index]`
+                // `[scope id].[for loop id].[for loop index]`
                 crate::parse(quote! {
-                    format!("{}.for{}.{}", &scope_id, #id, index)
+                    format!("{}.{}.{}", &scope_id, #id, index)
                 }),
             );
         }

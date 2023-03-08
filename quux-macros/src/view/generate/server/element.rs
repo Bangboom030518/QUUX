@@ -38,21 +38,22 @@ impl Items {
     }
 }
 
-impl Element {
-    const SELF_CLOSING_ELEMENTS: &'static [&'static str] = &[
-        "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "source", "source",
-        "track", "wbr",
-    ];
-    fn is_self_closing(&self) -> bool {
-        Self::SELF_CLOSING_ELEMENTS.contains(&self.tag_name.to_lowercase().as_str())
-    }
+const SELF_CLOSING_ELEMENTS: &[&str] = &[
+    "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "source", "source",
+    "track", "wbr",
+];
 
+fn is_self_closing(tag_name: &str) -> bool {
+    SELF_CLOSING_ELEMENTS.contains(&tag_name.to_lowercase().as_str())
+}
+
+impl Element {
     /// Generates the html body for an element.
     /// Sets `self.attributes.element_needs_id` if necessary
     fn html_body_tokens(&mut self) -> TokenStream {
         if !matches!(&self.children, Children::Items(items) if items.items.is_empty()) {
             assert!(
-                !self.is_self_closing(),
+                !is_self_closing(&self.tag_name),
                 "Self-closing elements cannot contain children"
             );
         }
@@ -73,16 +74,15 @@ impl Element {
 
 impl From<Element> for Html {
     fn from(mut value: Element) -> Self {
-        let attributes = value.attributes.clone();
+        let mut attributes = value.attributes.clone();
         let tag_name = value.tag_name.clone();
-        if value.is_self_closing() {
+        attributes.insert_scoped_id(&GLOBAL_ID.fetch_add(1, Relaxed).to_string());
+
+        if is_self_closing(&tag_name) {
             Self(quote! {
                 format!("<{} {} />", #tag_name, #attributes)
             })
         } else {
-            value
-                .attributes
-                .insert_scoped_id(&GLOBAL_ID.fetch_add(1, Relaxed).to_string());
             let body = value.html_body_tokens();
             Self(quote! {
                 format!("<{0} {1}>{2}</{0}>", #tag_name, #attributes, #body)

@@ -22,7 +22,6 @@ impl Term {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Set {
     terms: store::List<Term>,
-    current_index: Store<usize>,
 }
 
 impl Component for Set {
@@ -32,7 +31,6 @@ impl Component for Set {
     fn init(terms: Self::Props) -> Self {
         Self {
             terms: store::List::new(terms),
-            current_index: Store::new(0),
         }
     }
 
@@ -42,8 +40,6 @@ impl Component for Set {
     ) -> quux::RenderData<Self::ComponentEnum> {
         let confidence_rating: ConfidenceRating;
         let flashcards: Vec<Flashcard>;
-        #[cfg(target_arch = "wasm32")]
-        console_log!("makka pakka");
         view! {
             div(magic= true, class = "grid place-items-center gap-4") {
                 div(class = "stack") {
@@ -53,16 +49,13 @@ impl Component for Set {
                 }
                 button(class = "btn", on:click = {
                     let rating = confidence_rating.get_rating_store();
-                    let current_index = self.current_index.clone();
                     let terms = self.terms.clone();
                     rating.on_change(move |_, _| {
-                        let old_index = *current_index.get();
                         terms.pop();
-                        current_index.set(old_index + 1);
                     });
-                    let current_index = self.current_index.clone();
                     move || {
-                        let Some(flashcard) = flashcards.get(*current_index.get()) else {
+                        let Some(flashcard) = flashcards.first() else {
+                            console_log!("No flashcards found");
                             return
                         };
                         flashcard.flip();

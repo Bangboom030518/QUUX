@@ -1,20 +1,41 @@
 use super::errors::MapInternal;
 use wasm_bindgen::prelude::*;
 
+/// # Panics
+/// If the element does not exist, it will panic.
+/// It is up to the caller to ensure this is not the case.
 #[cfg(target_arch = "wasm32")]
 #[must_use]
 pub fn get_reactive_element(parent_id: &str, child_id: &str) -> web_sys::Element {
     let error_message =
         format!("get element with selector ([data-quux-scoped-id='{parent_id}.{child_id}'])");
-    get_document()
+    document()
         .query_selector(&format!("[data-quux-scoped-id='{parent_id}.{child_id}']"))
+        .expect_internal(&error_message)
+        .expect_internal(&error_message)
+}
+
+/// # Panics
+/// If the element does not exist, it will panic.
+/// It is up to the caller to ensure this is not the case.
+#[cfg(target_arch = "wasm32")]
+#[must_use]
+pub fn get_reactive_for_loop_element(
+    parent_id: &str,
+    for_loop_id: &str,
+    index: usize,
+) -> web_sys::Element {
+    let selector = format!("[data-quux-for-loop-id='{parent_id}.{for_loop_id}.{index}']");
+    let error_message = format!("get element with selector ({selector})");
+    document()
+        .query_selector(&selector)
         .expect_internal(&error_message)
         .expect_internal(&error_message)
 }
 
 #[cfg(target_arch = "wasm32")]
 #[must_use]
-pub fn get_document() -> web_sys::Document {
+pub fn document() -> web_sys::Document {
     web_sys::window()
         .expect_internal("get window")
         .document()

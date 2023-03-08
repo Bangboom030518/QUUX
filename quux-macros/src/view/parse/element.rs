@@ -14,22 +14,31 @@ pub struct Attributes {
     pub is_root: bool,
     pub element_needs_id: bool,
     pub reactive_attributes: HashMap<String, Expr>,
+    pub events: HashMap<String, Expr>,
+    pub reactive_classes: Vec<Expr>,
 }
 
 impl Attributes {
     /// Adds a static attribute.
     /// If it's an event listener, the attribute will be ignored and  reactive will be set to true
     pub fn insert_static(&mut self, key: &str, value: Expr) -> Option<Expr> {
-        if key.starts_with("on:") || key == "class:active-when" {
+        if let Some(event) = key.strip_prefix("on:") {
             self.element_needs_id = true;
-            None
-        } else {
-            self.attributes.insert(key.to_string(), value)
+            return self.events.insert(event.to_string(), value);
         }
+
+        // TODO: should class name be included in key???
+        if key == "class:active-when" {
+            self.element_needs_id = true;
+            self.reactive_classes.push(value);
+            return None;
+        }
+
+        self.attributes.insert(key.to_string(), value)
     }
 
     /// Adds a reactive attribute, setting it to the initial value of the store.
-    pub fn insert_reactive(&mut self, key: &str, value: Expr) -> Option<Expr> {
+    pub fn insert_reactive(&mut self, key: &str, value: &Expr) -> Option<Expr> {
         self.reactive_attributes
             .insert(key.to_string(), value.clone());
         self.attributes.insert(
@@ -51,7 +60,7 @@ impl Attributes {
             }
             attribute::Value::Reactive(value) => {
                 assert!(
-                    self.insert_reactive(&key, value).is_none(),
+                    self.insert_reactive(&key, &value).is_none(),
                     "Duplicate attributes found!"
                 );
             }
