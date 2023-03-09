@@ -17,8 +17,6 @@
 }
 
 @define-mixin btn $color {
-  /* @mixin-content; */
-
   .btn-$(color) {
     --tw-border-opacity: 1;
     border-color: theme("colors.$color.DEFAULT" / var(--tw-border-opacity));

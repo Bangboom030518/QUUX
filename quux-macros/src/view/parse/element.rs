@@ -69,6 +69,7 @@ impl Attributes {
 }
 
 impl From<Vec<Attribute>> for Attributes {
+    // TODO: put id generation logic here as the element is uniquely identified
     fn from(attributes: Vec<Attribute>) -> Self {
         let mut result = Self::default();
         for attribute in attributes {

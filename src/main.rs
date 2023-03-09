@@ -6,8 +6,8 @@ use axum::{
     routing::get,
     Router, TypedHeader,
 };
-use quuxlet::App;
 use quux::Component;
+use quuxlet::App;
 use std::net::SocketAddr;
 
 async fn root() -> Html<String> {
