@@ -68,6 +68,13 @@ pub struct ForLoop {
     pub pattern: Pat,
     pub iterable: ForLoopIterable,
     pub item: Box<Item>,
+    pub binding: Option<Ident>,
+}
+
+impl ForLoop {
+    pub const fn is_reactive(&self) -> bool {
+        matches!(self.iterable, ForLoopIterable::Reactive(_))
+    }
 }
 
 impl Parse for ForLoop {
@@ -87,6 +94,7 @@ impl Parse for ForLoop {
             pattern,
             iterable,
             item: Box::new(item.parse()?),
+            binding: None,
         })
     }
 }

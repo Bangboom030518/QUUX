@@ -62,7 +62,7 @@ impl From<Element> for Data {
         match children {
             Children::Items(children) => data.add_child_data(children),
             Children::ReactiveStore(store) => data.add_store_data(&store, attributes.id),
-            Children::ForLoop(for_loop) => {
+            Children::ForLoop(mut for_loop) => {
                 data.reactivity
                     .push(for_loop.reactivity_code(attributes.id));
             }

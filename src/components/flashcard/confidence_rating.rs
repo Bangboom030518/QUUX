@@ -29,6 +29,10 @@ impl ConfidenceRating {
         self.is_visible.set(true);
     }
 
+    pub fn hide(&self) {
+        self.is_visible.set(false);
+    }
+
     pub fn get_rating_store(&self) -> Store<Rating> {
         self.rating.clone()
     }

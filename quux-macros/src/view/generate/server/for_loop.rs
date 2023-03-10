@@ -9,6 +9,7 @@ impl ForLoop {
             pattern,
             iterable,
             mut item,
+            ..
         } = self.clone();
         // TODO: components!!!
         let reactive: bool;
@@ -31,7 +32,7 @@ impl ForLoop {
             item.insert_for_loop_id(
                 // `[scope id].[for loop id].[for loop index]`
                 crate::parse(quote! {
-                    format!("{}.{}.{}", &scope_id, #id, index)
+                    format!("{}.{}.{}", &root_id, #id, index)
                 }),
             );
         }

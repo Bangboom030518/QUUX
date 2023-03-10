@@ -94,3 +94,13 @@ impl Component for Flashcard {
         }
     }
 }
+
+#[cfg(target_arch = "wasm32")]
+impl Drop for Flashcard {
+    fn drop(&mut self) {
+        quux::console_log!(
+            "My last words are '{:?}'. I hope the afterlife is better than this has been.",
+            self.term
+        );
+    }
+}

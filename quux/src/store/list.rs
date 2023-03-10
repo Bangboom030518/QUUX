@@ -39,12 +39,18 @@ impl<T> List<T> {
         self.value.borrow_mut().push(value);
     }
 
+    #[must_use]
+    pub fn length(&self) -> usize {
+        self.value.borrow().len()
+    }
+
     #[allow(clippy::must_use_candidate)]
     pub fn pop(&self) -> Option<T> {
+        let index = self.length() - 1;
         let mut listeners = self.listeners.borrow_mut();
         let value = self.value.borrow_mut().pop()?;
         for listener in listeners.iter_mut() {
-            listener(Event::Pop(&value));
+            listener(Event::Pop(&value, index));
         }
         Some(value)
     }
@@ -88,7 +94,7 @@ impl<T: std::fmt::Debug> std::fmt::Debug for List<T> {
 
 pub enum Event<'a, T> {
     Push(&'a T),
-    Pop(&'a T),
+    Pop(&'a T, usize),
     // Insert(&'a T, usize),
     // Remove(&'a T, usize),
 }

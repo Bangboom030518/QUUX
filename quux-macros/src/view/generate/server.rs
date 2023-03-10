@@ -63,7 +63,8 @@ pub fn generate(tree: &Element) -> TokenStream {
     let html = Html::from(tree.clone()).0;
 
     let tokens = quote! {
-        let scope_id = context.id;
+        let scope_id = context.id.clone();
+        let root_id = context.id;
         let mut for_loop_children: Vec<Vec<quux::ClientComponentNode<Self::ComponentEnum>>> = Vec::new();
         let mut components = Vec::<quux::ClientComponentNode<Self::ComponentEnum>>::new();
         let for_loop_id = context.for_loop_id;

@@ -25,7 +25,7 @@ pub fn get_reactive_for_loop_element(
     for_loop_id: &str,
     index: usize,
 ) -> web_sys::Element {
-    let selector = format!("[data-quux-for-loop-id='{parent_id}.{for_loop_id}.{index}']");
+    let selector = format!("[data-quux-for-id='{parent_id}.{for_loop_id}.{index}']");
     let error_message = format!("get element with selector ({selector})");
     document()
         .query_selector(&selector)

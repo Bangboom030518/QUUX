@@ -3,6 +3,8 @@ use super::flashcard::Flashcard;
 use crate::QUUXComponentEnum;
 use quux::prelude::*;
 use serde::{Deserialize, Serialize};
+use std::cell::RefCell;
+use std::rc::Rc;
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct Term {
@@ -39,7 +41,7 @@ impl Component for Set {
         context: quux::RenderContext<Self::ComponentEnum>,
     ) -> quux::RenderData<Self::ComponentEnum> {
         let confidence_rating: ConfidenceRating;
-        let flashcards: Vec<Flashcard>;
+        let flashcards: Rc<RefCell<Vec<Flashcard>>>;
         view! {
             div(magic= true, class = "grid place-items-center gap-4") {
                 div(class = "flashcard-stack") {
@@ -49,13 +51,23 @@ impl Component for Set {
                 }
                 button(class = "btn", on:click = {
                     let rating = confidence_rating.get_rating_store();
+                    let flashcards = Rc::clone(&flashcards);
                     let terms = self.terms.clone();
-                    rating.on_change(move |_, _| {
-                        terms.pop();
+                    let confidence_rating = Rc::new(confidence_rating);
+
+                    rating.on_change({
+                        let confidence_rating = Rc::clone(&confidence_rating);
+                        move |_, _| {
+                            terms.pop();
+                            confidence_rating.hide();
+                        }
                     });
+
+                    // let confidence_rating = Rc::clone(&confidence_rating);
                     move || {
+                        let flashcards = flashcards.borrow();
                         let Some(flashcard) = flashcards.last() else {
-                            console_log!("No flashcards found");
+                            quux::console_log!("No flashcards found");
                             return
                         };
                         flashcard.flip();
