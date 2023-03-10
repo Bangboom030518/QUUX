@@ -1,9 +1,7 @@
-use super::super::GLOBAL_ID;
 use crate::view::parse::prelude::*;
 use element::children::{ForLoop, ForLoopIterable};
 use proc_macro2::TokenStream;
 use quote::quote;
-use std::sync::atomic::Ordering::Relaxed;
 
 impl ForLoop {
     fn binding_code(&self) -> TokenStream {
@@ -28,16 +26,13 @@ impl ForLoop {
     }
 
     // TODO: rename
-    fn reactive_for_code(&self) -> TokenStream {
+    fn reactive_for_code(&self, id: u64) -> TokenStream {
         // TODO: assert not expression child
         let ForLoopIterable::Reactive(store) = self.iterable.clone() else {
             return TokenStream::new()
         };
-        let id = &GLOBAL_ID.fetch_add(1, Relaxed).to_string();
+        let id = id.to_string();
         quote! {
-            // let mut currrent_component_nodes: Vec<_> = Vec::new();
-            // for_loop_children.push(currrent_component_nodes);
-
             quux::store::List::on_change(&#store, {
                 let scope_id = Rc::clone(&scope_id);
                 move |event| {
@@ -52,8 +47,8 @@ impl ForLoop {
         }
     }
 
-    pub fn reactivity_code(&self) -> TokenStream {
-        let reactivity = self.reactive_for_code();
+    pub fn reactivity_code(&self, id: u64) -> TokenStream {
+        let reactivity = self.reactive_for_code(id);
         let binding_code = self.binding_code();
         quote! {
             #binding_code;

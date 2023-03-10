@@ -159,7 +159,7 @@ impl Component for App {
                 }
                 body {
                     h1 {{ "Welcome to Quuxlet" }}
-                    @set::Set(vec![set::Term::new("0", "1"), set::Term::new("2", "3")])
+                    @set::Set(vec![set::Term::new("term 1", "definition 1"), set::Term::new("term 2", "definition 2"), set::Term::new("term 3", "definition 3")])
                     @QUUXInitialise<Self::ComponentEnum>(include_str!("../dist/init.js"))
                 }
             }

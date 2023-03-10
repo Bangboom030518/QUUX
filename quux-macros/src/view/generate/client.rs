@@ -1,10 +1,7 @@
-use super::GLOBAL_ID;
 use crate::view::parse::prelude::*;
 use element::{children::Items, children::ReactiveStore, Attributes, Children};
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
-use std::sync::atomic::Ordering::Relaxed;
-use syn::Expr;
 
 mod for_loop;
 
@@ -13,7 +10,6 @@ struct Data {
     components: Vec<TokenStream>,
     /// Code to update DOM on changes - hydration
     reactivity: Vec<TokenStream>,
-    id: String,
 }
 
 impl Data {
@@ -44,7 +40,6 @@ impl From<Item> for Data {
                     }]
                 },
                 reactivity: Vec::new(),
-                ..Default::default()
             },
             Item::Element(element) => element.into(),
             Item::Expression(_) => Self::new(),
@@ -61,15 +56,15 @@ impl From<Element> for Data {
         }: Element,
     ) -> Self {
         let mut data = Self {
-            id: GLOBAL_ID.fetch_add(1, Relaxed).to_string(),
             ..Default::default()
         };
-        data.add_event_data(attributes);
+        data.add_event_data(attributes.clone());
         match children {
             Children::Items(children) => data.add_child_data(children),
-            Children::ReactiveStore(store) => data.add_store_data(&store),
+            Children::ReactiveStore(store) => data.add_store_data(&store, attributes.id),
             Children::ForLoop(for_loop) => {
-                data.reactivity.push(for_loop.reactivity_code());
+                data.reactivity
+                    .push(for_loop.reactivity_code(attributes.id));
             }
         };
         data
@@ -80,25 +75,24 @@ impl Data {
     // fn add_attribute_data(&mut self, key: &str, value: &Expr) {}
 
     fn add_event_data(&mut self, attributes: Attributes) {
+        let id = attributes.id.to_string();
+
         for (event, callback) in attributes.events {
-            let scoped_id = self.id.as_str();
             self.reactivity.push(quote! {
                 let scope_id = Rc::clone(&scope_id);
                 let closure = wasm_bindgen::prelude::Closure::<dyn FnMut()>::new(#callback);
-                quux::dom::get_reactive_element(&*scope_id, #scoped_id)
+                quux::dom::get_reactive_element(&*scope_id, #id)
                     .add_event_listener_with_callback(#event, closure.as_ref().unchecked_ref())
                     .expect_internal("add event");
                 closure.forget();
             });
         }
         for expression in attributes.reactive_classes {
-            let scoped_id = self.id.as_str();
-
             self.reactivity.push(quote! {
                 let (store, mapping, class_name) = #expression;
                 let store = quux::Store::clone(store);
                 let scope_id = Rc::clone(&scope_id);
-                let class_list = quux::dom::get_reactive_element(&*scope_id, #scoped_id).class_list();
+                let class_list = quux::dom::get_reactive_element(&*scope_id, #id).class_list();
                 store.on_change(move |previous, current| if mapping(std::clone::Clone::clone(current)) {
                     class_list.add_1(class_name).unwrap();
                 } else {
@@ -120,14 +114,14 @@ impl Data {
         }
     }
 
-    fn add_store_data(&mut self, ReactiveStore(store): &ReactiveStore) {
+    fn add_store_data(&mut self, ReactiveStore(store): &ReactiveStore, id: u64) {
+        let id = id.to_string();
         // TODO: Consider initializing store only once
         // TODO: Consider initializing the document only once
-        let scoped_id = self.id.as_str();
         self.reactivity.push(quote! {
             let scope_id = Rc::clone(&scope_id);
             #store.on_change(move |_, new| {
-                let element = quux::dom::get_reactive_element(&*scope_id, #scoped_id);
+                let element = quux::dom::get_reactive_element(&*scope_id, #id);
                 quux::dom::as_html_element(element)
                     .set_inner_text(&std::string::ToString::to_string(new));
             });

@@ -7,10 +7,11 @@ use quote::{quote, ToTokens};
 impl Attributes {
     /// Adds the scoped id attribute with the value of `id` if the containing element needs an id because it is reactive.
     /// If the element is not reactive, nothing is added.
-    pub fn insert_scoped_id(&mut self, id: &str) {
+    fn insert_scoped_id(&mut self) {
         if !self.element_needs_id {
             return;
         }
+        let id = self.id;
         self.attributes.insert(
             "data-quux-scoped-id".to_string(),
             parse(quote! { format!("{}.{}", &scope_id, #id) }),
@@ -20,12 +21,17 @@ impl Attributes {
 
 impl ToTokens for Attributes {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        if self.attributes.is_empty() {
+        let mut attributes = self.clone();
+
+        attributes.insert_scoped_id();
+
+        if attributes.attributes.is_empty() {
             return tokens.extend(quote! {
                 String::new()
             });
         }
-        let attributes = self.attributes.iter().map(|(key, value)| {
+
+        let attributes = attributes.attributes.iter().map(|(key, value)| {
             quote! {
                 format!("{}=\"{}\"", #key, #value)
             }

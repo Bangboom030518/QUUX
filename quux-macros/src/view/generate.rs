@@ -8,7 +8,7 @@ use std::sync::atomic::{AtomicU64, Ordering::Relaxed};
 pub mod client;
 pub mod server;
 
-static GLOBAL_ID: AtomicU64 = AtomicU64::new(0);
+static FOR_LOOP_ID: AtomicU64 = AtomicU64::new(0);
 
 fn parse<T: syn::parse::Parse>(tokens: TokenStream) -> T {
     let tokens = tokens.into();
@@ -16,9 +16,9 @@ fn parse<T: syn::parse::Parse>(tokens: TokenStream) -> T {
 }
 
 pub fn generate(tree: &Element) -> TokenStream {
-    GLOBAL_ID.swap(0, Relaxed);
+    FOR_LOOP_ID.swap(0, Relaxed);
     let server = server::generate(tree);
-    GLOBAL_ID.swap(0, Relaxed);
+    FOR_LOOP_ID.swap(0, Relaxed);
     let client = client::generate(tree);
     // TODO: move component bindings outside!!?
     quote! {

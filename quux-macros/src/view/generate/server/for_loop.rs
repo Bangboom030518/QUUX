@@ -1,12 +1,10 @@
-use super::super::GLOBAL_ID;
 use super::Html;
 use crate::view::parse::element::{children::ForLoopIterable, ForLoop};
 use proc_macro2::TokenStream;
-use quote::{quote, ToTokens};
-use std::sync::atomic::Ordering::Relaxed;
+use quote::quote;
 
-impl ToTokens for ForLoop {
-    fn to_tokens(&self, tokens: &mut TokenStream) {
+impl ForLoop {
+    pub fn tokens(&self, id: u64) -> TokenStream {
         let Self {
             pattern,
             iterable,
@@ -29,7 +27,7 @@ impl ToTokens for ForLoop {
             }
         };
         if reactive {
-            let id = GLOBAL_ID.fetch_add(1, Relaxed);
+            let id = id.to_string();
             item.insert_for_loop_id(
                 // `[scope id].[for loop id].[for loop index]`
                 crate::parse(quote! {
@@ -39,13 +37,13 @@ impl ToTokens for ForLoop {
         }
         let Html(html) = (*item).into();
 
-        tokens.extend(quote! {{
+        quote! {{
             let mut components = Vec::<quux::ClientComponentNode<Self::ComponentEnum>>::new();
             let html = (#iterable).enumerate().map(|(index, #pattern)| {
                 ToString::to_string(&#html)
             }).collect::<String>();
             for_loop_children.push(components);
             html
-        }});
+        }}
     }
 }

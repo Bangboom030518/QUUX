@@ -4,6 +4,9 @@ use attribute::Attribute;
 pub use children::{Children, ForLoop};
 use quote::quote;
 use std::collections::HashMap;
+use std::sync::atomic::{AtomicU64, Ordering::Relaxed};
+
+static ID: AtomicU64 = AtomicU64::new(0);
 
 pub mod attribute;
 pub mod children;
@@ -16,6 +19,7 @@ pub struct Attributes {
     pub reactive_attributes: HashMap<String, Expr>,
     pub events: HashMap<String, Expr>,
     pub reactive_classes: Vec<Expr>,
+    pub id: u64,
 }
 
 impl Attributes {
@@ -71,7 +75,10 @@ impl Attributes {
 impl From<Vec<Attribute>> for Attributes {
     // TODO: put id generation logic here as the element is uniquely identified
     fn from(attributes: Vec<Attribute>) -> Self {
-        let mut result = Self::default();
+        let mut result = Self {
+            id: ID.fetch_add(1, Relaxed),
+            ..Default::default()
+        };
         for attribute in attributes {
             result.add_attribute(attribute);
         }

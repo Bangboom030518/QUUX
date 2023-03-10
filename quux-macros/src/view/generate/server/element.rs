@@ -1,4 +1,4 @@
-use super::{super::GLOBAL_ID, Html};
+use super::Html;
 use crate::view::parse::{
     element::children::{Items, ReactiveStore},
     prelude::*,
@@ -6,7 +6,6 @@ use crate::view::parse::{
 use element::Children;
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
-use std::sync::atomic::Ordering::Relaxed;
 use syn::Expr;
 
 impl ToTokens for ReactiveStore {
@@ -63,7 +62,7 @@ impl Element {
                 self.attributes.element_needs_id = true;
                 store.to_token_stream()
             }
-            Children::ForLoop(for_loop) => for_loop.to_token_stream(),
+            Children::ForLoop(for_loop) => for_loop.tokens(self.attributes.id),
         }
     }
 
@@ -74,9 +73,8 @@ impl Element {
 
 impl From<Element> for Html {
     fn from(mut value: Element) -> Self {
-        let mut attributes = value.attributes.clone();
+        let attributes = value.attributes.clone();
         let tag_name = value.tag_name.clone();
-        attributes.insert_scoped_id(&GLOBAL_ID.fetch_add(1, Relaxed).to_string());
 
         if is_self_closing(&tag_name) {
             Self(quote! {

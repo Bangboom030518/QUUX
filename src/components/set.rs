@@ -42,7 +42,7 @@ impl Component for Set {
         let flashcards: Vec<Flashcard>;
         view! {
             div(magic= true, class = "grid place-items-center gap-4") {
-                div(class = "stack") {
+                div(class = "flashcard-stack") {
                     for term in $self.terms {
                         @Flashcard(term): flashcards
                     }
@@ -54,7 +54,7 @@ impl Component for Set {
                         terms.pop();
                     });
                     move || {
-                        let Some(flashcard) = flashcards.first() else {
+                        let Some(flashcard) = flashcards.last() else {
                             console_log!("No flashcards found");
                             return
                         };
