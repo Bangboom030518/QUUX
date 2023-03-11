@@ -43,6 +43,7 @@ impl Component for Set {
         let confidence_rating: ConfidenceRating;
         let flashcards: Rc<RefCell<Vec<Flashcard>>>;
         view! {
+            context,
             div(magic= true, class = "grid place-items-center gap-4") {
                 div(class = "flashcard-stack") {
                     for term in $self.terms {
@@ -63,7 +64,6 @@ impl Component for Set {
                         }
                     });
 
-                    // let confidence_rating = Rc::clone(&confidence_rating);
                     move || {
                         let flashcards = flashcards.borrow();
                         let Some(flashcard) = flashcards.last() else {

@@ -14,7 +14,7 @@ impl Attributes {
         let id = self.id;
         self.attributes.insert(
             "data-quux-scoped-id".to_string(),
-            parse(quote! { format!("{}.{}", &scope_id, #id) }),
+            parse(quote! { format!("{}.{}", &id, #id) }),
         );
     }
 }

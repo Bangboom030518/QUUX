@@ -1,5 +1,3 @@
-// TODO: list stores!!!!!!!
-
 pub use list::List;
 use serde::{Deserialize, Serialize};
 use std::{

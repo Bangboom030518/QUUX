@@ -1,5 +1,3 @@
-// TODO: add component enum instead of trait, should auto generate
-
 #![warn(clippy::pedantic, clippy::nursery)]
 
 pub use cfg_if;
@@ -78,6 +76,7 @@ impl<T> RenderData<T> {
     }
 }
 
+
 pub trait Component: Serialize + DeserializeOwned {
     type Props;
     type ComponentEnum: ComponentEnum;
@@ -99,30 +98,10 @@ pub trait Component: Serialize + DeserializeOwned {
         )
     }
 
-    // TODO: gobble gobble gobble
     fn render(
         &self,
         context: RenderContext<Self::ComponentEnum>,
     ) -> RenderData<Self::ComponentEnum>;
-
-    // TODO: doesn't need to be associated with this trait
-    #[cfg(target_arch = "wasm32")]
-    fn init_as_root<T: ComponentEnum + DeserializeOwned>() {
-        std::panic::set_hook(Box::new(console_error_panic_hook::hook));
-
-        let init_script = dom::document()
-            .get_element_by_id("__quux_init_script__")
-            .expect("`__quux_init_script__` not found");
-
-        let tree = init_script
-            .get_attribute("data-quux-tree")
-            .expect("`__quux_init_script__` doesn't have a tree attached");
-        let tree: ClientComponentNode<T> = tree.parse().unwrap();
-
-        // Don't deserialize here!
-        // let root_component = Self::from_bytes(&tree.component);
-        tree.component.render(tree.render_context);
-    }
 }
 
 impl<T: Component> SerializePostcard for T {}
@@ -155,6 +134,24 @@ impl<T> SerializePostcard for ClientComponentNode<T> where T: ComponentEnum {}
 
 pub trait ComponentEnum: Serialize + Debug + Clone + From<QUUXInitialise<Self>> {
     fn render(&self, context: RenderContext<Self>) -> RenderData<Self>;
+
+    #[cfg(target_arch = "wasm32")]
+    fn init_as_root() where Self: DeserializeOwned {
+        std::panic::set_hook(Box::new(console_error_panic_hook::hook));
+
+        let init_script = dom::document()
+            .get_element_by_id("__quux_init_script__")
+            .expect("`__quux_init_script__` not found");
+
+        let tree = init_script
+            .get_attribute("data-quux-tree")
+            .expect("`__quux_init_script__` doesn't have a tree attached");
+        let tree: ClientComponentNode<Self> = tree.parse().unwrap();
+
+        // Don't deserialize here!
+        // let root_component = Self::from_bytes(&tree.component);
+        tree.component.render(tree.render_context);
+    }
 }
 
 /// The id is passed to render method on client

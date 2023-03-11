@@ -15,7 +15,7 @@ fn parse<T: syn::parse::Parse>(tokens: TokenStream) -> T {
     syn::parse(tokens).unwrap()
 }
 
-pub fn generate(tree: &Element) -> TokenStream {
+pub fn generate(tree: &View) -> TokenStream {
     FOR_LOOP_ID.swap(0, Relaxed);
     let server = server::generate(tree);
     FOR_LOOP_ID.swap(0, Relaxed);

@@ -71,6 +71,7 @@ impl Component for Flashcard {
     ) -> quux::RenderData<Self::ComponentEnum> {
         // let confidence_rating: ConfidenceRating;
         view! {
+            context,
             article(class = "grid place-items-center gap-4 text-center", class:active-when = (&self.is_visible, |visible: bool| !visible, "hidden")) {
                 div(class = "relative min-w-[60ch] min-h-[40ch]") {
                     div(

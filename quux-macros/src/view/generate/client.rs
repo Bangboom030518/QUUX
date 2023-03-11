@@ -129,26 +129,23 @@ impl Data {
     }
 }
 
-pub fn generate(tree: &Element) -> TokenStream {
-    let tree = tree.clone();
-
-    // TODO: remove
-    // std::fs::write("id.log", "").unwrap();
+pub fn generate(tree: &View) -> TokenStream {
+    let View { context, element } = tree.clone();
 
     let Data {
         components,
         reactivity,
         ..
-    } = tree.clone().into();
+    } = element.clone().into();
 
     // TODO: remove
-    let tokens = quote! {
-        use std::rc::Rc;
+    let tokens = quote! {{
         use wasm_bindgen::JsCast;
         use quux::errors::MapInternal;
-        let mut children = context.children.into_iter();
-        let mut for_loop_children = context.for_loop_children.into_iter();
-        let scope_id = Rc::new(context.id);
+        use std::rc::Rc;
+        let mut children = #context.children.into_iter();
+        let mut for_loop_children = #context.for_loop_children.into_iter();
+        let scope_id = Rc::new(#context.id);
         #(#components);*;
         // TODO: what about non-for-loop components?
         for child in children {
@@ -157,8 +154,8 @@ pub fn generate(tree: &Element) -> TokenStream {
         }
         #({ #reactivity });*;
         quux::RenderData::new()
-    };
-    if tree.attributes.attributes.contains_key("magic") {
+    }};
+    if element.attributes.attributes.contains_key("magic") {
         std::fs::write(
             "expansion-client.rs",
             quote! {fn main() {#tokens}}.to_string(),

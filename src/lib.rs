@@ -13,7 +13,7 @@ mod components;
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen(start)]
 pub fn init_app() {
-    App::init_as_root::<QUUXComponentEnum>();
+    QUUXComponentEnum::init_as_root();
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -147,6 +147,7 @@ impl Component for App {
         context: quux::RenderContext<Self::ComponentEnum>,
     ) -> quux::RenderData<Self::ComponentEnum> {
         view! {
+            context,
             html(lang="en") {
                 head {
                     meta(charset="UTF-8") {}

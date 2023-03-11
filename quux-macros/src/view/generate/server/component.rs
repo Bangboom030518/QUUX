@@ -35,9 +35,9 @@ impl From<Component> for Html {
         let html = quote! {
             {
                 let component = <#name as quux::Component>::init(#props);
-                let scope_id = quux::generate_id();
+                let id = quux::generate_id();
                 let render_context = quux::RenderContext {
-                    id: scope_id.clone(),
+                    id: id.clone(),
                     for_loop_id: #for_loop_id,
                     ..Default::default()
                 };

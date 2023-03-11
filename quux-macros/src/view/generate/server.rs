@@ -1,8 +1,23 @@
 use super::parse;
 use crate::view::parse::prelude::*;
+use lazy_static::lazy_static;
 use proc_macro2::TokenStream;
-use quote::{quote, ToTokens};
+use quote::{format_ident, quote, ToTokens};
 use syn::Expr;
+
+#[derive(Clone, Copy)]
+struct ConstIdent(&'static str);
+
+impl ToTokens for ConstIdent {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        format_ident!("{}", self.0).to_tokens(tokens);
+    }
+}
+
+lazy_static! {
+    static ref ID: ConstIdent = ConstIdent("id");
+    static ref ROOT_ID: ConstIdent = ConstIdent("root_id");
+}
 
 mod attributes;
 mod component;
@@ -15,7 +30,6 @@ pub struct Html(pub TokenStream);
 
 impl ToTokens for Html {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        // TODO: remove clone?
         tokens.extend(self.0.clone());
     }
 }
@@ -32,7 +46,7 @@ impl From<Item> for Html {
 
 impl Item {
     fn insert_for_loop_id(&mut self, value: Expr) {
-        let duplicate_attribute = match self {
+        let unique = match self {
             Self::Element(element) => element
                 .insert_attribute("data-quux-for-id", value)
                 .is_none(),
@@ -41,11 +55,7 @@ impl Item {
                 panic!("Reactive for loops must contain either elements or components. Found expression")
             }
         };
-        // TODO: remove comment
-        // assert!(
-        //     !duplicate_attribute,
-        //     "duplicate \"data-quux-for-id\" attribute"
-        // );
+        assert!(unique, "duplicate \"data-quux-for-id\" attribute");
     }
 }
 
@@ -57,24 +67,29 @@ impl From<Expr> for Html {
     }
 }
 
-pub fn generate(tree: &Element) -> TokenStream {
-    let mut tree = tree.clone();
-    tree.attributes.is_root = true;
-    let html = Html::from(tree.clone()).0;
+pub fn generate(tree: &View) -> TokenStream {
+    let View {
+        context,
+        mut element,
+    } = tree.clone();
+    element.attributes.is_root = true;
+    let Html(html) = Html::from(element.clone());
 
+    let id = *ID;
+    let root_id = *ROOT_ID;
     let tokens = quote! {
-        let scope_id = context.id.clone();
-        let root_id = context.id;
+        let #id = #context.id.clone();
+        let #root_id = #context.id;
         let mut for_loop_children: Vec<Vec<quux::ClientComponentNode<Self::ComponentEnum>>> = Vec::new();
         let mut components = Vec::<quux::ClientComponentNode<Self::ComponentEnum>>::new();
-        let for_loop_id = context.for_loop_id;
+        let for_loop_id = #context.for_loop_id;
 
         quux::RenderData {
             html: #html,
             component_node: quux::ClientComponentNode {
                 component: Self::ComponentEnum::from(self.clone()),
                 render_context: quux::RenderContext {
-                    id: scope_id,
+                    id: #id,
                     children: components,
                     for_loop_id: None,
                     for_loop_children,
@@ -83,7 +98,7 @@ pub fn generate(tree: &Element) -> TokenStream {
         }
     };
     // TODO: remove
-    if tree.attributes.attributes.contains_key("magic") {
+    if element.attributes.attributes.contains_key("magic") {
         std::fs::write(
             "expansion-server.rs",
             quote! {fn main() {#tokens}}.to_string(),

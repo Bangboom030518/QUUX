@@ -46,6 +46,21 @@ pub fn parse_html_ident(input: ParseStream) -> syn::Result<String> {
 }
 
 #[derive(Clone)]
+pub struct View {
+    pub context: Ident,
+    pub element: Element,
+}
+
+impl Parse for View {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let context = input.parse()?;
+        input.parse::<Token![,]>()?;
+        let element = input.parse()?;
+        Ok(Self { context, element })
+    }
+}
+
+#[derive(Clone)]
 pub enum Item {
     Component(Component),
     Element(Element),
@@ -77,7 +92,7 @@ pub mod prelude {
     pub use super::{
         component::{self, Component},
         element::{self, Element},
-        Item,
+        Item, View,
     };
 }
 
