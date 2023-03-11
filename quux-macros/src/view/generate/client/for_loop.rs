@@ -5,7 +5,6 @@ use quote::quote;
 
 impl ForLoop {
     fn binding_code(&mut self) -> TokenStream {
-        // TODO: handle reactive fors properly
         let Item::Component(Component { binding, .. }) = *self.item.clone() else {
             return TokenStream::new()
         };
@@ -48,12 +47,12 @@ impl ForLoop {
         }}
     }
 
-    // TODO: rename
-    fn reactive_for_code(&self, id: u64) -> TokenStream {
-        // TODO: assert not expression child
+    fn list_store_code(&self, id: u64) -> TokenStream {
+
         let ForLoopIterable::Reactive(store) = self.iterable.clone() else {
             return TokenStream::new()
         };
+        assert!(!matches!(*self.item, Item::Expression(_)), "reactive for loops must contain either elements or components");
         let pop_code = self.pop_code(id);
         let binding_code = self
             .binding
@@ -75,9 +74,9 @@ impl ForLoop {
         }
     }
 
-    pub fn reactivity_code(&mut self, id: u64) -> TokenStream {
+    pub fn reactivity(&mut self, id: u64) -> TokenStream {
         let binding_code = self.binding_code();
-        let reactivity = self.reactive_for_code(id);
+        let reactivity = self.list_store_code(id);
         quote! {
             #binding_code;
             #reactivity;

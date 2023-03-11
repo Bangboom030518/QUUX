@@ -11,7 +11,6 @@ pub struct Component {
 }
 
 impl Parse for Component {
-    // TODO: refactor
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let name = input.parse()?;
         let props = input.parse()?;

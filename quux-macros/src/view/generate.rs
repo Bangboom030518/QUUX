@@ -20,7 +20,6 @@ pub fn generate(tree: &View) -> TokenStream {
     let server = server::generate(tree);
     FOR_LOOP_ID.swap(0, Relaxed);
     let client = client::generate(tree);
-    // TODO: move component bindings outside!!?
     quote! {
         quux::cfg_if::cfg_if! {
             if #[cfg(target_arch = "wasm32")] {

@@ -11,31 +11,20 @@ impl ForLoop {
             mut item,
             ..
         } = self.clone();
-        // TODO: components!!!
-        let reactive: bool;
         let iterable = match iterable {
-            ForLoopIterable::Static(iterable) => {
-                reactive = false;
-                quote! {
-                    #iterable
-                }
-            }
+            ForLoopIterable::Static(iterable) => quote! { #iterable },
             ForLoopIterable::Reactive(iterable) => {
-                reactive = true;
+                let id = id.to_string();
+                item.insert_for_loop_id(
+                    crate::parse(quote! {
+                        format!("{}.{}.{}", &root_id, #id, index)
+                    }),
+                );
                 quote! {
                     (std::cell::Ref::<Vec<_>>::from(&#iterable)).iter().cloned()
                 }
             }
         };
-        if reactive {
-            let id = id.to_string();
-            item.insert_for_loop_id(
-                // `[scope id].[for loop id].[for loop index]`
-                crate::parse(quote! {
-                    format!("{}.{}.{}", &root_id, #id, index)
-                }),
-            );
-        }
         let Html(html) = (*item).into();
 
         quote! {{

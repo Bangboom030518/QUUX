@@ -1,5 +1,3 @@
-// TODO: Can we remove scope id now ??!1!?
-
 use super::Html;
 use crate::view::parse::prelude::*;
 use quote::quote;

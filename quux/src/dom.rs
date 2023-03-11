@@ -54,10 +54,9 @@ extern "C" {
     pub fn log(input: &str);
 }
 
-// TODO: remove `unsafe`
 #[macro_export]
 macro_rules! console_log {
-    ($($t:tt)*) => (unsafe { quux::dom::log(&format_args!($($t)*).to_string()) })
+    ($($t:tt)*) => (quux::dom::log(&format_args!($($t)*).to_string()))
 }
 
 pub use console_log;

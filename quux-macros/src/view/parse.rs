@@ -1,4 +1,3 @@
-// TODO: take `context` as first 'argument'
 use internal::prelude::*;
 
 pub mod component;

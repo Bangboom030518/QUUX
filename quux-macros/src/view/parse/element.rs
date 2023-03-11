@@ -73,7 +73,6 @@ impl Attributes {
 }
 
 impl From<Vec<Attribute>> for Attributes {
-    // TODO: put id generation logic here as the element is uniquely identified
     fn from(attributes: Vec<Attribute>) -> Self {
         let mut result = Self {
             id: ID.fetch_add(1, Relaxed),

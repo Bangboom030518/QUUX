@@ -61,13 +61,8 @@ impl<T> List<T> {
     where
         T: Clone,
     {
-        // TODO: clone????
         self.value.borrow().get(index).cloned()
     }
-
-    // pub fn get_values(&self) -> Vec<T>> {
-    //     self.value.borrow()
-    // }
 }
 
 impl<'a, T> From<&'a List<T>> for std::cell::Ref<'a, Vec<T>> {
@@ -87,8 +82,9 @@ impl<T> Clone for List<T> {
 
 impl<T: std::fmt::Debug> std::fmt::Debug for List<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        // TODO: show listeners
-        f.debug_list().entries(self.value.borrow().iter()).finish()
+        f.debug_struct("List")
+            .field("value", &self.value.borrow())
+            .field("listeners", &self.listeners.borrow().len()).finish()
     }
 }
 

@@ -97,7 +97,6 @@ pub fn generate(tree: &View) -> TokenStream {
             }
         }
     };
-    // TODO: remove
     if element.attributes.attributes.contains_key("magic") {
         std::fs::write(
             "expansion-server.rs",

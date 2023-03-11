@@ -6,7 +6,6 @@ use proc_macro2::TokenStream as TokenStream2;
 mod view;
 
 // TODO: document
-// TODO: accept context and component enum type in a parameter-like manner
 #[proc_macro]
 pub fn view(input: TokenStream) -> TokenStream {
     view::view(input)

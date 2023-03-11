@@ -28,7 +28,6 @@ async fn wasm() -> (TypedHeader<ContentType>, &'static [u8]) {
 async fn main() {
     let app = Router::new()
         .route("/", get(root))
-        // TODO rename
         .route("/dist/quuxlet_bg.wasm", get(wasm));
 
     let address = SocketAddr::from(([127, 0, 0, 1], 3000));

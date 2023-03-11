@@ -63,8 +63,7 @@ impl From<Element> for Data {
             Children::Items(children) => data.add_child_data(children),
             Children::ReactiveStore(store) => data.add_store_data(&store, attributes.id),
             Children::ForLoop(mut for_loop) => {
-                data.reactivity
-                    .push(for_loop.reactivity_code(attributes.id));
+                data.reactivity.push(for_loop.reactivity(attributes.id));
             }
         };
         data
@@ -116,8 +115,6 @@ impl Data {
 
     fn add_store_data(&mut self, ReactiveStore(store): &ReactiveStore, id: u64) {
         let id = id.to_string();
-        // TODO: Consider initializing store only once
-        // TODO: Consider initializing the document only once
         self.reactivity.push(quote! {
             let scope_id = Rc::clone(&scope_id);
             #store.on_change(move |_, new| {
@@ -138,7 +135,6 @@ pub fn generate(tree: &View) -> TokenStream {
         ..
     } = element.clone().into();
 
-    // TODO: remove
     let tokens = quote! {{
         use wasm_bindgen::JsCast;
         use quux::errors::MapInternal;
@@ -147,7 +143,6 @@ pub fn generate(tree: &View) -> TokenStream {
         let mut for_loop_children = #context.for_loop_children.into_iter();
         let scope_id = Rc::new(#context.id);
         #(#components);*;
-        // TODO: what about non-for-loop components?
         for child in children {
             let mut component = child.component;
             component.render(child.render_context);
