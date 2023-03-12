@@ -28,7 +28,7 @@ pub trait SerializePostcard: Serialize {
 
     fn serialize_base64(&self) -> String {
         let bytes = self.serialize_bytes();
-        base64::encode(&bytes)
+        base64::encode(bytes)
     }
 }
 
