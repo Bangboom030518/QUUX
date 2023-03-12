@@ -5,10 +5,10 @@ pub use postcard;
 
 use internal::prelude::*;
 
+pub mod component;
 pub mod errors;
 pub mod render;
 pub mod store;
-pub mod component;
 
 mod quux_initialise;
 
@@ -28,7 +28,7 @@ pub trait SerializePostcard: Serialize {
 
     fn serialize_base64(&self) -> String {
         let bytes = self.serialize_bytes();
-        base64::encode(bytes)
+        base64::encode(&bytes)
     }
 }
 
@@ -53,9 +53,10 @@ pub mod prelude {
     #[cfg(target_arch = "wasm32")]
     pub use super::dom::console_log;
     pub use super::{
+        component::{self, Component, Enum as ComponentEnum},
+        quux_initialise::QUUXInitialise,
         render,
         store::{self, Store},
-        component::{self, Component, Enum as ComponentEnum}, quux_initialise::QUUXInitialise
     };
 
     pub use quux_macros::view;

@@ -1,20 +1,5 @@
-use crate::view::parse::prelude::*;
-use lazy_static::lazy_static;
 use super::internal::prelude::*;
-
-#[derive(Clone, Copy)]
-struct ConstIdent(&'static str);
-
-impl ToTokens for ConstIdent {
-    fn to_tokens(&self, tokens: &mut TokenStream) {
-        format_ident!("{}", self.0).to_tokens(tokens);
-    }
-}
-
-// TODO: remove
-lazy_static! {
-    static ref ID: ConstIdent = ConstIdent("id");
-}
+use crate::view::parse::prelude::*;
 
 mod attributes;
 mod component;
@@ -78,10 +63,9 @@ pub fn generate(tree: &View) -> TokenStream {
     element.attributes.is_root = true;
     let Html(html) = Html::from(element.clone());
 
-    let id = *ID;
     let tokens = quote! {
         let context = #context;
-        let #id = context.id;
+        let id = context.id;
         let mut component_id = context.id;
         let mut for_loop_children: Vec<Vec<quux::render::ClientComponentNode<Self::ComponentEnum>>> = Vec::new();
         let mut components = Vec::<quux::render::ClientComponentNode<Self::ComponentEnum>>::new();
@@ -92,7 +76,7 @@ pub fn generate(tree: &View) -> TokenStream {
             component_node: quux::render::ClientComponentNode {
                 component: Self::ComponentEnum::from(self.clone()),
                 render_context: quux::render::Context {
-                    id: #id,
+                    id,
                     children: components,
                     for_loop_id: None,
                     for_loop_children,

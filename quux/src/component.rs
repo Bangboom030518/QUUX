@@ -14,7 +14,7 @@ pub trait Component: Serialize + DeserializeOwned {
         } = self.render(render::Context::default());
         let bytes =
             postcard::to_stdvec(&component_node).expect_internal("serialize `RenderContext`");
-        let component_node = base64::encode(bytes);
+        let component_node = base64::encode(&bytes);
         format!(
             "<!DOCTYPE html>{}",
             html.replace(&crate::TREE_INTERPOLATION_ID.to_string(), &component_node)

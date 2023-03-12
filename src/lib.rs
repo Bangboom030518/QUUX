@@ -1,10 +1,15 @@
+// TODO: should `render` gobble gobble gobble?
+
 #![feature(more_qualified_paths, stmt_expr_attributes)]
 #![warn(clippy::pedantic, clippy::nursery)]
-use components::{flashcard, set};
+use components::{flashcards, Flashcards};
 use quux::prelude::*;
 use serde::{Deserialize, Serialize};
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
+
+pub use flashcards::Set;
+
 mod components;
 
 /// # Panics
@@ -18,10 +23,10 @@ pub fn init_app() {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum QUUXComponentEnum {
     App(App),
-    Flashcard(flashcard::Flashcard),
+    Flashcard(flashcards::Flashcard),
     QUUXInitialise(QUUXInitialise<Self>),
-    Set(set::Set),
-    ConfidenceRating(flashcard::confidence_rating::ConfidenceRating),
+    Flashcards(Flashcards),
+    ConfidenceRating(flashcards::ConfidenceRating),
 }
 
 impl component::Enum for QUUXComponentEnum {
@@ -30,7 +35,7 @@ impl component::Enum for QUUXComponentEnum {
             Self::App(component) => component.render(context),
             Self::Flashcard(component) => component.render(context),
             Self::QUUXInitialise(component) => component.render(context),
-            Self::Set(component) => component.render(context),
+            Self::Flashcards(component) => component.render(context),
             Self::ConfidenceRating(component) => component.render(context),
         }
     }
@@ -72,13 +77,13 @@ impl TryFrom<QUUXComponentEnum> for App {
     }
 }
 
-impl From<flashcard::Flashcard> for QUUXComponentEnum {
-    fn from(value: flashcard::Flashcard) -> Self {
+impl From<flashcards::Flashcard> for QUUXComponentEnum {
+    fn from(value: flashcards::Flashcard) -> Self {
         Self::Flashcard(value)
     }
 }
 
-impl TryFrom<QUUXComponentEnum> for flashcard::Flashcard {
+impl TryFrom<QUUXComponentEnum> for flashcards::Flashcard {
     type Error = ();
 
     fn try_from(value: QUUXComponentEnum) -> Result<Self, Self::Error> {
@@ -90,17 +95,17 @@ impl TryFrom<QUUXComponentEnum> for flashcard::Flashcard {
     }
 }
 
-impl From<set::Set> for QUUXComponentEnum {
-    fn from(value: set::Set) -> Self {
-        Self::Set(value)
+impl From<Flashcards> for QUUXComponentEnum {
+    fn from(value: Flashcards) -> Self {
+        Self::Flashcards(value)
     }
 }
 
-impl TryFrom<QUUXComponentEnum> for set::Set {
+impl TryFrom<QUUXComponentEnum> for Flashcards {
     type Error = ();
 
     fn try_from(value: QUUXComponentEnum) -> Result<Self, Self::Error> {
-        if let QUUXComponentEnum::Set(component) = value {
+        if let QUUXComponentEnum::Flashcards(component) = value {
             Ok(component)
         } else {
             Err(())
@@ -108,13 +113,13 @@ impl TryFrom<QUUXComponentEnum> for set::Set {
     }
 }
 
-impl From<flashcard::confidence_rating::ConfidenceRating> for QUUXComponentEnum {
-    fn from(value: flashcard::confidence_rating::ConfidenceRating) -> Self {
+impl From<flashcards::ConfidenceRating> for QUUXComponentEnum {
+    fn from(value: flashcards::ConfidenceRating) -> Self {
         Self::ConfidenceRating(value)
     }
 }
 
-impl TryFrom<QUUXComponentEnum> for flashcard::confidence_rating::ConfidenceRating {
+impl TryFrom<QUUXComponentEnum> for flashcards::ConfidenceRating {
     type Error = ();
 
     fn try_from(value: QUUXComponentEnum) -> Result<Self, Self::Error> {
@@ -126,19 +131,32 @@ impl TryFrom<QUUXComponentEnum> for flashcard::confidence_rating::ConfidenceRati
     }
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Rating {
+    Terrible,
+    Bad,
+    Ok,
+    Good,
+    Perfect,
+}
+
+impl Default for Rating {
+    fn default() -> Self {
+        Self::Ok
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct App {
-    count: Store<u32>,
+    set: Set,
 }
 
 impl Component for App {
-    type Props = ();
+    type Props = flashcards::Set;
     type ComponentEnum = QUUXComponentEnum;
 
-    fn init(_props: Self::Props) -> Self {
-        Self {
-            count: Store::new(0),
-        }
+    fn init(set: Set) -> Self {
+        Self { set }
     }
 
     fn render(
@@ -159,7 +177,7 @@ impl Component for App {
                 }
                 body {
                     h1 {{ "Welcome to Quuxlet" }}
-                    @set::Set(vec![set::Term::new("term 1", "definition 1"), set::Term::new("term 2", "definition 2"), set::Term::new("term 3", "definition 3")])
+                    @Flashcards(self.set.terms.clone())
                     @QUUXInitialise<Self::ComponentEnum>(include_str!("../dist/init.js"))
                 }
             }

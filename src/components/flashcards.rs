@@ -1,10 +1,42 @@
-use super::flashcard::confidence_rating::ConfidenceRating;
-use super::flashcard::Flashcard;
 use crate::QUUXComponentEnum;
+pub use confidence_rating::ConfidenceRating;
+pub use flashcard::Flashcard;
 use quux::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::cell::RefCell;
-use std::rc::Rc;
+use std::{cell::RefCell, rc::Rc};
+
+pub mod confidence_rating;
+pub mod flashcard;
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct Set {
+    pub terms: Vec<Term>,
+    pub name: String,
+}
+
+impl Set {
+    #[cfg(not(target_arch = "wasm32"))]
+    pub async fn fetch(pool: &sqlx::Pool<sqlx::Sqlite>, set_id: &str) -> Result<Self, sqlx::Error> {
+        use sqlx::query::Map;
+
+        let query: Map<_, _, _> = sqlx::query!("SELECT sets.name FROM sets WHERE id = ?", set_id);
+        let name = query.fetch_one(pool).await?.name;
+
+        let query: Map<_, _, _> = sqlx::query!(
+            "SELECT terms.term, terms.definition FROM terms WHERE set_id = ?",
+            set_id
+        );
+
+        let terms = query
+            .fetch_all(pool)
+            .await?
+            .into_iter()
+            .map(|row| Term::new(&row.term, &row.definition))
+            .collect();
+
+        Ok(Self { terms, name })
+    }
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct Term {
@@ -22,11 +54,11 @@ impl Term {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct Set {
+pub struct Flashcards {
     terms: store::List<Term>,
 }
 
-impl Component for Set {
+impl Component for Flashcards {
     type Props = Vec<Term>;
     type ComponentEnum = QUUXComponentEnum;
 

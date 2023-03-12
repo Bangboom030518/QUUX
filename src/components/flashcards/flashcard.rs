@@ -1,9 +1,7 @@
-use super::set::Term;
+use super::Term;
 use crate::QUUXComponentEnum;
 use quux::prelude::*;
 use serde::{Deserialize, Serialize};
-
-pub mod confidence_rating;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 enum Side {
@@ -68,7 +66,6 @@ impl Component for Flashcard {
         &self,
         context: render::Context<Self::ComponentEnum>,
     ) -> render::Output<Self::ComponentEnum> {
-        // let confidence_rating: ConfidenceRating;
         view! {
             context,
             article(class = "grid place-items-center gap-4 text-center", class:active-when = (&self.is_visible, |visible: bool| !visible, "hidden")) {
@@ -92,15 +89,5 @@ impl Component for Flashcard {
                 }
             }
         }
-    }
-}
-
-#[cfg(target_arch = "wasm32")]
-impl Drop for Flashcard {
-    fn drop(&mut self) {
-        quux::console_log!(
-            "My last words are '{:?}'. I hope the afterlife is better than this has been.",
-            self.term
-        );
     }
 }
