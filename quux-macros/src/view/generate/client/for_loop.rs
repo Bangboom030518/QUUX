@@ -1,7 +1,5 @@
 use crate::view::parse::prelude::*;
-use element::children::{ForLoop, ForLoopIterable};
-use proc_macro2::TokenStream;
-use quote::quote;
+use super::super::internal::prelude::*;
 
 impl ForLoop {
     fn binding_code(&mut self) -> TokenStream {

@@ -1,8 +1,6 @@
 use crate::view::parse::prelude::*;
 use lazy_static::lazy_static;
-use proc_macro2::TokenStream;
-use quote::{format_ident, quote, ToTokens};
-use syn::{parse_quote, Expr};
+use super::internal::prelude::*;
 
 #[derive(Clone, Copy)]
 struct ConstIdent(&'static str);
@@ -13,6 +11,7 @@ impl ToTokens for ConstIdent {
     }
 }
 
+// TODO: remove
 lazy_static! {
     static ref ID: ConstIdent = ConstIdent("id");
 }
@@ -41,16 +40,20 @@ impl From<Item> for Html {
     }
 }
 
+fn for_loop_id(id: u64) -> Expr {
+    parse_quote! {
+        format!("{}.{}.{}", context.id, #id, index)
+    }
+}
+
 impl Item {
     fn insert_for_loop_id(&mut self, id: u64) {
-        let value = parse_quote! {
-            format!("{}.{}.{}", context.id, #id, index)
-        };
+        let value = for_loop_id(id);
         let unique = match self {
             Self::Element(element) => element
                 .insert_attribute("data-quux-for-id", value)
                 .is_none(),
-            Self::Component(component) => component.insert_for_loop_id(value).is_none(),
+            Self::Component(component) => component.insert_for_loop_id(id).is_none(),
             Self::Expression(_) => {
                 panic!("Reactive for loops must contain either elements or components. Found expression")
             }

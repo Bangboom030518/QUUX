@@ -39,15 +39,17 @@ pub enum Children {
 
 impl Parse for Children {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        if input.peek(Token![$]) {
-            return Ok(Self::ReactiveStore(input.parse()?));
+        let children;
+        braced!(children in input);
+        if children.peek(Token![$]) {
+            return Ok(Self::ReactiveStore(children.parse()?));
         }
 
-        if input.peek(Token![for]) {
-            return Ok(Self::ForLoop(input.parse()?));
+        if children.peek(Token![for]) {
+            return Ok(Self::ForLoop(children.parse()?));
         }
 
-        Ok(Self::Items(input.parse()?))
+        Ok(Self::Items(children.parse()?))
     }
 }
 

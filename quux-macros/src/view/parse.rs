@@ -25,7 +25,7 @@ impl Parse for View {
 pub mod prelude {
     pub use super::{
         component::{self, Component},
-        element::{self, Element},
+        element::prelude::*,
         HtmlIdent, Item, View,
     };
 }

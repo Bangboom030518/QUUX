@@ -1,8 +1,4 @@
-use crate::view::parse::prelude::*;
-use element::Attributes;
-use proc_macro2::TokenStream;
-use quote::{quote, ToTokens};
-use syn::parse_quote;
+use super::super::internal::prelude::*;
 
 impl Attributes {
     /// Adds the scoped id attribute with the value of `id` if the containing element needs an id because it is reactive.

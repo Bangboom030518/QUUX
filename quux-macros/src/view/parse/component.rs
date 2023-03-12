@@ -7,7 +7,7 @@ pub struct Component {
     pub props: Props,
     pub binding: Option<Ident>,
     /// Will be updated with a for loop id if this component is used in a for loop
-    pub for_loop_id: Option<Expr>,
+    pub for_loop_id: Option<u64>,
 }
 
 impl Parse for Component {

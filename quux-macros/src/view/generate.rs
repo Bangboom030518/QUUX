@@ -1,8 +1,6 @@
 // TODO: component:0 { component:1 { element:1.1 } } element:0.1
 pub use server::Html;
-use crate::view::parse::prelude::*;
-use proc_macro2::TokenStream;
-use quote::quote;
+use internal::prelude::*;
 
 mod client;
 mod server;
@@ -19,5 +17,15 @@ pub fn generate(tree: &View) -> TokenStream {
                 {#server}
             }
         }
+    }
+}
+
+mod internal {
+    pub mod prelude {
+        pub use proc_macro2::TokenStream;
+        pub use quote::{quote, format_ident, ToTokens};
+        pub use syn::{parse_quote, Expr};
+        pub use crate::view::parse::prelude::*;
+        pub use super::super::Html;
     }
 }

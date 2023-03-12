@@ -1,16 +1,29 @@
-use super::Html;
-use crate::view::parse::prelude::*;
-use quote::quote;
-use syn::Expr;
+use super::super::internal::prelude::*;
 
 impl Component {
-    pub fn insert_for_loop_id(&mut self, value: Expr) -> Option<Expr> {
+    pub fn insert_for_loop_id(&mut self, id: u64) -> Option<u64> {
         if self.for_loop_id.is_some() {
-            self.for_loop_id.clone()
+            self.for_loop_id
         } else {
-            self.for_loop_id = Some(value);
+            self.for_loop_id = Some(id);
             None
         }
+    }
+
+    fn for_loop_id(&self) -> TokenStream {
+        self.for_loop_id.map_or_else(
+            || {
+                quote! {
+                    None
+                }
+            },
+            |id| {
+                let id = super::for_loop_id(id);
+                quote! {
+                    Some(#id)
+                }
+            },
+        )
     }
 }
 
@@ -18,18 +31,7 @@ impl From<Component> for Html {
     fn from(value: Component) -> Self {
         let name = &value.name;
         let props = &value.props;
-        let for_loop_id = &value.for_loop_id.map_or_else(
-            || {
-                quote! {
-                    None
-                }
-            },
-            |id| {
-                quote! {
-                    Some(#id)
-                }
-            },
-        );
+        let for_loop_id = &value.for_loop_id();
         let html = quote! {
             {
                 let component = <#name as quux::component::Component>::init(#props);
