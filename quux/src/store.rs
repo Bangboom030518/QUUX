@@ -1,10 +1,5 @@
 pub use list::List;
-use serde::{Deserialize, Serialize};
-use std::{
-    cell::{Ref, RefCell},
-    fmt,
-    rc::Rc,
-};
+use crate::internal::prelude::*;
 
 pub mod list;
 
@@ -66,19 +61,17 @@ impl<T> Clone for Store<T> {
     }
 }
 
-impl<T: fmt::Display> fmt::Display for Store<T> {
+impl<T: Display> Display for Store<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
     where
-        T: fmt::Display,
+        T: Display,
     {
         write!(f, "{}", self.get())
     }
 }
 
-impl<T: fmt::Debug> fmt::Debug for Store<T> {
+impl<T: Debug> Debug for Store<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
-    where
-        T: fmt::Debug,
     {
         write!(f, "{:?}", self.get())
     }

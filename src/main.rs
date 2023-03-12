@@ -6,7 +6,7 @@ use axum::{
     routing::get,
     Router, TypedHeader,
 };
-use quux::Component;
+use quux::prelude::*;
 use quuxlet::App;
 use std::net::SocketAddr;
 

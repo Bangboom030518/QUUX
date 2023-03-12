@@ -2,13 +2,13 @@ use super::super::internal::prelude::*;
 
 #[derive(Clone)]
 pub struct Attribute {
-    pub key: String,
+    pub key: HtmlIdent,
     pub value: Value,
 }
 
 impl Parse for Attribute {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        let key = parse_html_ident(input)?;
+        let key = input.parse()?;
         input.parse::<Token![=]>()?;
         let value = input.parse()?;
         Ok(Self { key, value })

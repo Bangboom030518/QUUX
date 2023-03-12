@@ -1,7 +1,6 @@
 use super::set::Term;
 use crate::QUUXComponentEnum;
 use quux::prelude::*;
-use quux::{Component, Store};
 use serde::{Deserialize, Serialize};
 
 pub mod confidence_rating;
@@ -67,8 +66,8 @@ impl Component for Flashcard {
 
     fn render(
         &self,
-        context: quux::RenderContext<Self::ComponentEnum>,
-    ) -> quux::RenderData<Self::ComponentEnum> {
+        context: render::Context<Self::ComponentEnum>,
+    ) -> render::Output<Self::ComponentEnum> {
         // let confidence_rating: ConfidenceRating;
         view! {
             context,

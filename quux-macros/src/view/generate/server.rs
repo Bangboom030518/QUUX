@@ -1,9 +1,8 @@
-use super::parse;
 use crate::view::parse::prelude::*;
 use lazy_static::lazy_static;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote, ToTokens};
-use syn::Expr;
+use syn::{parse_quote, Expr};
 
 #[derive(Clone, Copy)]
 struct ConstIdent(&'static str);
@@ -16,7 +15,6 @@ impl ToTokens for ConstIdent {
 
 lazy_static! {
     static ref ID: ConstIdent = ConstIdent("id");
-    static ref ROOT_ID: ConstIdent = ConstIdent("root_id");
 }
 
 mod attributes;
@@ -24,7 +22,6 @@ mod component;
 mod element;
 mod for_loop;
 
-/// The generation code for an item
 #[derive(Clone, Default)]
 pub struct Html(pub TokenStream);
 
@@ -45,7 +42,10 @@ impl From<Item> for Html {
 }
 
 impl Item {
-    fn insert_for_loop_id(&mut self, value: Expr) {
+    fn insert_for_loop_id(&mut self, id: u64) {
+        let value = parse_quote! {
+            format!("{}.{}.{}", context.id, #id, index)
+        };
         let unique = match self {
             Self::Element(element) => element
                 .insert_attribute("data-quux-for-id", value)
@@ -76,19 +76,19 @@ pub fn generate(tree: &View) -> TokenStream {
     let Html(html) = Html::from(element.clone());
 
     let id = *ID;
-    let root_id = *ROOT_ID;
     let tokens = quote! {
-        let #id = #context.id.clone();
-        let #root_id = #context.id;
-        let mut for_loop_children: Vec<Vec<quux::ClientComponentNode<Self::ComponentEnum>>> = Vec::new();
-        let mut components = Vec::<quux::ClientComponentNode<Self::ComponentEnum>>::new();
-        let for_loop_id = #context.for_loop_id;
+        let context = #context;
+        let #id = context.id;
+        let mut component_id = context.id;
+        let mut for_loop_children: Vec<Vec<quux::render::ClientComponentNode<Self::ComponentEnum>>> = Vec::new();
+        let mut components = Vec::<quux::render::ClientComponentNode<Self::ComponentEnum>>::new();
+        let for_loop_id = context.for_loop_id;
 
-        quux::RenderData {
+        quux::render::Output {
             html: #html,
-            component_node: quux::ClientComponentNode {
+            component_node: quux::render::ClientComponentNode {
                 component: Self::ComponentEnum::from(self.clone()),
-                render_context: quux::RenderContext {
+                render_context: quux::render::Context {
                     id: #id,
                     children: components,
                     for_loop_id: None,

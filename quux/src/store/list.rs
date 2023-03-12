@@ -1,6 +1,5 @@
 use super::RcCell;
-use serde::{Deserialize, Serialize};
-use std::{cell::RefCell, rc::Rc};
+use crate::internal::prelude::*;
 
 pub type Callback<T> = Box<dyn FnMut(Event<T>) + 'static>;
 
@@ -84,7 +83,8 @@ impl<T: std::fmt::Debug> std::fmt::Debug for List<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         f.debug_struct("List")
             .field("value", &self.value.borrow())
-            .field("listeners", &self.listeners.borrow().len()).finish()
+            .field("listeners", &self.listeners.borrow().len())
+            .finish()
     }
 }
 

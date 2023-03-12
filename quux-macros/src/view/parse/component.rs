@@ -1,5 +1,5 @@
 use super::internal::prelude::*;
-use quote::quote;
+use syn::parse_quote;
 
 #[derive(Clone)]
 pub struct Component {
@@ -47,9 +47,9 @@ impl Parse for Props {
             parenthesized!(attributes_buffer in input);
             attributes_buffer.parse()?
         } else {
-            crate::parse(quote! {
+            parse_quote! {
                 ()
-            })
+            }
         };
         Ok(Self(props))
     }

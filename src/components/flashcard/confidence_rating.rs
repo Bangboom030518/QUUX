@@ -1,6 +1,5 @@
 use crate::QUUXComponentEnum;
 use quux::prelude::*;
-use quux::{Component, Store};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
@@ -51,8 +50,8 @@ impl Component for ConfidenceRating {
 
     fn render(
         &self,
-        context: quux::RenderContext<Self::ComponentEnum>,
-    ) -> quux::RenderData<Self::ComponentEnum> {
+        context: render::Context<Self::ComponentEnum>,
+    ) -> render::Output<Self::ComponentEnum> {
         view! {
             context,
             div(class = "flashcard-hidden btn-group", class:active-when = (&self.is_visible, |visible: bool| !visible, "flashcard-hidden")) {

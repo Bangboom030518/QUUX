@@ -1,8 +1,8 @@
-use super::parse;
 use crate::view::parse::prelude::*;
 use element::Attributes;
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
+use syn::parse_quote;
 
 impl Attributes {
     /// Adds the scoped id attribute with the value of `id` if the containing element needs an id because it is reactive.
@@ -13,8 +13,8 @@ impl Attributes {
         }
         let id = self.id;
         self.attributes.insert(
-            "data-quux-scoped-id".to_string(),
-            parse(quote! { format!("{}.{}", &id, #id) }),
+            "data-quux-id".to_string(),
+            parse_quote!(format!("{}.{}", &id, #id)),
         );
     }
 }

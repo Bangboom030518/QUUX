@@ -24,10 +24,9 @@ impl ForLoop {
         quote! {
             {
                 let mut internal: Vec<_> = Vec::new();
-                for child in for_loop_children.next().expect_internal("retrieve for loop children: client and server for loop lists don't match") {
-                    let mut component = child.component;
-                    component.render(child.render_context);
-                    internal.push(component.try_into().expect_internal("retrieve for loop children: client and server for loop lists don't match"))
+                for mut child in for_loop_children.next().expect_internal("retrieve for loop children: client and server for loop lists don't match") {
+                    quux::component::Enum::render(&child.component, child.render_context);
+                    internal.push(child.component.try_into().expect_internal("retrieve for loop children: client and server for loop lists don't match"))
                 }
                 #binding;
             }
@@ -40,9 +39,8 @@ impl ForLoop {
                 binding.borrow_mut().pop()
             }
         });
-        let id = id.to_string();
         quote! {{
-            quux::dom::get_reactive_for_loop_element(&*scope_id, #id, index).remove();
+            quux::dom::get_reactive_for_loop_element(*id, #id, index).remove();
             #binding_code;
         }}
     }
@@ -64,7 +62,7 @@ impl ForLoop {
             });
         quote! {
             quux::store::List::on_change(&#store, {
-                let scope_id = Rc::clone(&scope_id);
+                let id = Rc::clone(&id);
                 #binding_code;
                 move |event| match event {
                     quux::store::list::Event::Push(_) => todo!("handle push"),

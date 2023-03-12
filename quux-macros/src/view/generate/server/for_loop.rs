@@ -14,11 +14,7 @@ impl ForLoop {
         let iterable = match iterable {
             ForLoopIterable::Static(iterable) => quote! { #iterable },
             ForLoopIterable::Reactive(iterable) => {
-                let id = id.to_string();
-                item.insert_for_loop_id(
-                    crate::parse(quote! {
-                        format!("{}.{}.{}", &root_id, #id, index)
-                    }),
+                item.insert_for_loop_id(id
                 );
                 quote! {
                     (std::cell::Ref::<Vec<_>>::from(&#iterable)).iter().cloned()
@@ -28,7 +24,7 @@ impl ForLoop {
         let Html(html) = (*item).into();
 
         quote! {{
-            let mut components = Vec::<quux::ClientComponentNode<Self::ComponentEnum>>::new();
+            let mut components = Vec::<quux::render::ClientComponentNode<Self::ComponentEnum>>::new();
             let html = (#iterable).enumerate().map(|(index, #pattern)| {
                 ToString::to_string(&#html)
             }).collect::<String>();

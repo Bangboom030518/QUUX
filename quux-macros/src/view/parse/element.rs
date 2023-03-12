@@ -1,10 +1,10 @@
 use super::internal::prelude::*;
-use crate::{parse, view::generate::server::Html};
+use crate::view::generate::Html;
 use attribute::Attribute;
 pub use children::{Children, ForLoop};
-use quote::quote;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering::Relaxed};
+use syn::parse_quote;
 
 static ID: AtomicU64 = AtomicU64::new(0);
 
@@ -24,7 +24,7 @@ pub struct Attributes {
 
 impl Attributes {
     /// Adds a static attribute.
-    /// If it's an event listener, the attribute will be ignored and  reactive will be set to true
+    /// If it's an event listener, the attribute will be added to events and reactive will be set to true
     pub fn insert_static(&mut self, key: &str, value: Expr) -> Option<Expr> {
         if let Some(event) = key.strip_prefix("on:") {
             self.element_needs_id = true;
@@ -47,9 +47,9 @@ impl Attributes {
             .insert(key.to_string(), value.clone());
         self.attributes.insert(
             key.to_string(),
-            parse(quote! {
+            parse_quote! {
                 #value.get()
-            }),
+            },
         )
     }
 
@@ -87,7 +87,7 @@ impl From<Vec<Attribute>> for Attributes {
 
 #[derive(Clone, Default)]
 pub struct Element {
-    pub tag_name: String,
+    pub tag_name: HtmlIdent,
     pub attributes: Attributes,
     pub children: Children,
     pub html: Html,
@@ -95,7 +95,7 @@ pub struct Element {
 
 impl Parse for Element {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        let tag_name = parse_html_ident(input)?;
+        let tag_name = input.parse()?;
 
         let mut attributes = Vec::new();
         if input.peek(Paren) {

@@ -1,5 +1,5 @@
 use super::super::internal::prelude::*;
-use crate::view::generate::server::Html;
+use crate::view::generate::Html;
 
 #[derive(Clone)]
 pub struct ReactiveStore(pub Box<Expr>);
@@ -14,7 +14,7 @@ impl Parse for ReactiveStore {
 #[derive(Clone, Default)]
 pub struct Items {
     pub items: Vec<Item>,
-    pub component_initialisation_code: Html,
+    pub html: Html,
 }
 
 impl Parse for Items {

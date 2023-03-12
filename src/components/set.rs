@@ -38,8 +38,8 @@ impl Component for Set {
 
     fn render(
         &self,
-        context: quux::RenderContext<Self::ComponentEnum>,
-    ) -> quux::RenderData<Self::ComponentEnum> {
+        context: render::Context<Self::ComponentEnum>,
+    ) -> render::Output<Self::ComponentEnum> {
         let confidence_rating: ConfidenceRating;
         let flashcards: Rc<RefCell<Vec<Flashcard>>>;
         view! {

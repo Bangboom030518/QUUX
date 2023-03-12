@@ -32,16 +32,17 @@ impl From<Component> for Html {
         );
         let html = quote! {
             {
-                let component = <#name as quux::Component>::init(#props);
-                let id = quux::generate_id();
-                let render_context = quux::RenderContext {
+                let component = <#name as quux::component::Component>::init(#props);
+                component_id += 1;
+                let id = component_id;
+                let render_context = quux::render::Context {
                     id: id.clone(),
                     for_loop_id: #for_loop_id,
                     ..Default::default()
                 };
-                let rendered_component = component.render(std::clone::Clone::clone(&render_context));
+                let rendered_component = quux::component::Component::render(&component, std::clone::Clone::clone(&render_context));
                 // Push the component to the list of component for this view
-                components.push(quux::ClientComponentNode {
+                components.push(quux::render::ClientComponentNode {
                     component: Self::ComponentEnum::from(component.clone()),
                     render_context: rendered_component
                         .component_node
