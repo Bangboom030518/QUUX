@@ -1,2 +1,2 @@
-pub mod flashcard;
-pub mod set;
+pub mod flashcards;
+pub use flashcards::Flashcards;

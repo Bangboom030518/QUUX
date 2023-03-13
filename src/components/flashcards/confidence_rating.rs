@@ -1,22 +1,6 @@
-use crate::QUUXComponentEnum;
+use crate::{QUUXComponentEnum, Rating};
 use quux::prelude::*;
-use quux::{Component, ComponentEnum, Store};
 use serde::{Deserialize, Serialize};
-
-#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Rating {
-    Terrible,
-    Bad,
-    Ok,
-    Good,
-    Perfect,
-}
-
-impl Default for Rating {
-    fn default() -> Self {
-        Self::Ok
-    }
-}
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ConfidenceRating {
@@ -27,6 +11,10 @@ pub struct ConfidenceRating {
 impl ConfidenceRating {
     pub fn show(&self) {
         self.is_visible.set(true);
+    }
+
+    pub fn hide(&self) {
+        self.is_visible.set(false);
     }
 
     pub fn get_rating_store(&self) -> Store<Rating> {
@@ -47,9 +35,10 @@ impl Component for ConfidenceRating {
 
     fn render(
         &self,
-        context: quux::RenderContext<Self::ComponentEnum>,
-    ) -> quux::RenderData<Self::ComponentEnum> {
+        context: render::Context<Self::ComponentEnum>,
+    ) -> render::Output<Self::ComponentEnum> {
         view! {
+            context,
             div(class = "flashcard-hidden btn-group", class:active-when = (&self.is_visible, |visible: bool| !visible, "flashcard-hidden")) {
                 button(class = "tooltip btn btn-icon btn-terrible", on:click = {
                     let rating = self.rating.clone();

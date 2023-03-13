@@ -3,3 +3,4 @@
 - ⚡⚡⚡ Blazingly fast ⚡⚡⚡
 - Teeny tiny scripts
 - Uses Rust for both server and _CLIENT_ logic
+- https://www.elephantsql.com/plans.html

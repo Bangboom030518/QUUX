@@ -1,17 +1,13 @@
-use super::GLOBAL_ID;
 use crate::view::parse::prelude::*;
-use element::{attribute, Attribute, Children};
-use proc_macro2::TokenStream;
-use quote::{quote, ToTokens};
-use std::sync::atomic::Ordering::Relaxed;
-use syn::Expr;
+use super::internal::prelude::*;
+
+mod for_loop;
 
 #[derive(Default)]
 struct Data {
     components: Vec<TokenStream>,
     /// Code to update DOM on changes - hydration
     reactivity: Vec<TokenStream>,
-    id: String,
 }
 
 impl Data {
@@ -34,15 +30,16 @@ impl From<Item> for Data {
                     let component_string = component.name.to_token_stream().to_string();
                     vec![quote! {
                         {
+                            use quux::component::{Component, Enum};
                             let child = children.next().expect_internal(concat!("retrieve all child data (", #component_string, ") : client and server child lists don't match"));
                             let mut component = child.component;
+                            
                             component.render(child.render_context);
                             #binding;
                         }
                     }]
                 },
                 reactivity: Vec::new(),
-                ..Default::default()
             },
             Item::Element(element) => element.into(),
             Item::Expression(_) => Self::new(),
@@ -59,44 +56,40 @@ impl From<Element> for Data {
         }: Element,
     ) -> Self {
         let mut data = Self {
-            id: GLOBAL_ID.fetch_add(1, Relaxed).to_string(),
             ..Default::default()
         };
-        data.add_event_data(attributes);
+        data.add_event_data(attributes.clone());
         match children {
-            Children::Children(children) => data.add_child_data(children),
-            Children::ReactiveStore(store) => data.add_store_data(&store),
-            Children::ForLoop(_) => {} // TODO: reactive for????
+            Children::Items(children) => data.add_child_data(children),
+            Children::ReactiveStore(store) => data.add_store_data(&store, attributes.id),
+            Children::ForLoop(mut for_loop) => {
+                data.reactivity.push(for_loop.reactivity(attributes.id));
+            }
         };
         data
     }
 }
 
 impl Data {
-    fn add_attribute_data(&mut self, Attribute { key, value }: Attribute) {
-        let attribute::Value::Static(value) = value else {
-            return
-        };
+    fn add_event_data(&mut self, attributes: Attributes) {
+        let id = attributes.id;
 
-        if let Some(event_name) = key.strip_prefix("on:") {
-            let scoped_id = self.id.as_str();
-
+        for (event, callback) in attributes.events {
             self.reactivity.push(quote! {
-                let scope_id = Rc::clone(&scope_id);
-                let closure = wasm_bindgen::prelude::Closure::<dyn FnMut()>::new(#value);
-                quux::dom::get_reactive_element(&*scope_id, #scoped_id)
-                    .add_event_listener_with_callback(#event_name, closure.as_ref().unchecked_ref())
+                let id = Rc::clone(&id);
+                let closure = wasm_bindgen::prelude::Closure::<dyn FnMut()>::new(#callback);
+                quux::dom::get_reactive_element(*id, #id)
+                    .add_event_listener_with_callback(#event, closure.as_ref().unchecked_ref())
                     .expect_internal("add event");
                 closure.forget();
             });
-        } else if key == "class:active-when" {
-            let scoped_id = self.id.as_str();
-
+        }
+        for expression in attributes.reactive_classes {
             self.reactivity.push(quote! {
-                let (store, mapping, class_name) = #value;
-                let store = quux::Store::clone(store);
-                let scope_id = Rc::clone(&scope_id);
-                let class_list = quux::dom::get_reactive_element(&*scope_id, #scoped_id).class_list();
+                let (store, mapping, class_name) = #expression;
+                let store = quux::store::Store::clone(store);
+                let id = Rc::clone(&id);
+                let class_list = quux::dom::get_reactive_element(*id, #id).class_list();
                 store.on_change(move |previous, current| if mapping(std::clone::Clone::clone(current)) {
                     class_list.add_1(class_name).unwrap();
                 } else {
@@ -106,14 +99,8 @@ impl Data {
         }
     }
 
-    fn add_event_data(&mut self, attributes: Vec<Attribute>) {
-        for attribute in attributes {
-            self.add_attribute_data(attribute);
-        }
-    }
-
-    fn add_child_data(&mut self, children: Vec<Item>) {
-        for child in children {
+    fn add_child_data(&mut self, children: Items) {
+        for child in children.items {
             let Self {
                 mut components,
                 mut reactivity,
@@ -124,14 +111,11 @@ impl Data {
         }
     }
 
-    fn add_store_data(&mut self, store: &Expr) {
-        // TODO: Consider initializing store only once
-        // TODO: Consider initializing the document only once
-        let scoped_id = self.id.as_str();
+    fn add_store_data(&mut self, ReactiveStore(store): &ReactiveStore, id: u64) {
         self.reactivity.push(quote! {
-            let scope_id = Rc::clone(&scope_id);
+            let id = Rc::clone(&id);
             #store.on_change(move |_, new| {
-                let element = quux::dom::get_reactive_element(&*scope_id, #scoped_id);
+                let element = quux::dom::get_reactive_element(*id, #id);
                 quux::dom::as_html_element(element)
                     .set_inner_text(&std::string::ToString::to_string(new));
             });
@@ -139,53 +123,35 @@ impl Data {
     }
 }
 
-pub fn generate(tree: &Element) -> TokenStream {
-    let tree = tree.clone();
-
-    // TODO: remove
-    // std::fs::write("id.log", "").unwrap();
+pub fn generate(tree: &View) -> TokenStream {
+    let View { context, element } = tree.clone();
 
     let Data {
         components,
         reactivity,
         ..
-    } = tree.clone().into();
+    } = element.clone().into();
 
-    // TODO: remove
-    let debug_code = if let Some(Attribute { key, .. }) = tree.attributes.first() {
-        if key == "magic" {
-            quote! {
-                // panic!("{:?}", children.map(|child| format!("{:?}", child)).collect::<Vec<_>>())
-            }
-        } else {
-            TokenStream::new()
-        }
-    } else {
-        TokenStream::new()
-    };
     let tokens = quote! {
-        use std::rc::Rc;
         use wasm_bindgen::JsCast;
         use quux::errors::MapInternal;
-        let mut children = context.children.into_iter();
-        let scope_id = Rc::new(context.id);
-        #debug_code;
+        use std::rc::Rc;
+        let mut children = #context.children.into_iter();
+        let mut for_loop_children = #context.for_loop_children.into_iter();
+        let id = Rc::new(#context.id);
         #(#components);*;
-        for child in children {
-            let mut component = child.component;
-            component.render(child.render_context);
+        for mut child in children {
+            quux::component::Enum::render(&child.component, child.render_context);
         }
         #({ #reactivity });*;
-        quux::RenderData::new()
+        quux::render::Output::new()
     };
-    if let Some(Attribute { key, .. }) = tree.attributes.first() {
-        if key == "magic" {
-            std::fs::write(
-                "expansion-client.rs",
-                quote! {fn main() {#tokens}}.to_string(),
-            )
-            .unwrap();
-        }
+    if element.attributes.attributes.contains_key("magic") {
+        std::fs::write(
+            "expansion-client.rs",
+            quote! {fn main() {#tokens}}.to_string(),
+        )
+        .unwrap();
     }
     tokens
 }

@@ -1,26 +1,21 @@
-use super::parse;
-use crate::view::parse::prelude::{element::Attribute, *};
-use attributes::Attributes;
-use proc_macro2::TokenStream;
-use quote::quote;
-use syn::Expr;
+use super::internal::prelude::*;
+use crate::view::parse::prelude::*;
 
 mod attributes;
 mod component;
 mod element;
+mod for_loop;
 
-#[derive(Default)]
-struct Data {
-    /// tokens generating static SSR'd html
-    html: TokenStream,
-    /// tokens generating a `RenderContext` struct
-    component_nodes: Vec<TokenStream>,
-    /// the component which must be inserted into the view
-    component_constructors: Vec<TokenStream>,
+#[derive(Clone, Default)]
+pub struct Html(pub TokenStream);
+
+impl ToTokens for Html {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        tokens.extend(self.0.clone());
+    }
 }
 
-impl From<Item> for Data {
-    /// Generates data for a single item in a view
+impl From<Item> for Html {
     fn from(item: Item) -> Self {
         match item {
             Item::Element(element) => element.into(),
@@ -30,76 +25,71 @@ impl From<Item> for Data {
     }
 }
 
-impl From<Expr> for Data {
-    fn from(expression: Expr) -> Self {
-        Self {
-            html: quote! {
-                #expression.to_string()
-            },
-            ..Default::default()
-        }
+fn for_loop_id(id: u64) -> Expr {
+    parse_quote! {
+        format!("{}.{}.{}", context.id, #id, index)
     }
 }
 
-pub fn generate(tree: &Element) -> TokenStream {
-    // let mut tree = tree.clone();
-    // tree.attributes.push(Attribute {
-    //     key: "data-quux-scope-id".to_string(),
-    //     value: AttributeValue::Static(parse(quote! { scope_id })),
-    // });
-    let Data {
-        html,
-        component_nodes,
-        component_constructors,
-    } = tree.clone().into();
-
-    // TODO: remove
-    if let Some(Attribute { key, .. }) = tree.attributes.first() {
-        if key == "magic" {
-            std::fs::write(
-                "nuclear-waste-facility.txt",
-                format!(
-                    "{}\n\n\n{}",
-                    component_nodes
-                        .iter()
-                        .map(ToString::to_string)
-                        .intersperse("\n".to_string())
-                        .collect::<String>(),
-                    component_constructors
-                        .iter()
-                        .map(ToString::to_string)
-                        .intersperse("\n".to_string())
-                        .collect::<String>(),
-                ),
-            )
-            .unwrap();
-        }
+impl Item {
+    fn insert_for_loop_id(&mut self, id: u64) {
+        let value = for_loop_id(id);
+        let unique = match self {
+            Self::Element(element) => element
+                .insert_attribute("data-quux-for-id", value)
+                .is_none(),
+            Self::Component(component) => component.insert_for_loop_id(id).is_none(),
+            Self::Expression(_) => {
+                panic!("Reactive for loops must contain either elements or components. Found expression")
+            }
+        };
+        assert!(unique, "duplicate \"data-quux-for-id\" attribute");
     }
+}
+
+impl From<Expr> for Html {
+    fn from(expression: Expr) -> Self {
+        Self(quote! {
+            #expression.to_string()
+        })
+    }
+}
+
+pub fn generate(tree: &View) -> TokenStream {
+    let View {
+        context,
+        mut element,
+    } = tree.clone();
+    element.attributes.is_root = true;
+    let Html(html) = Html::from(element.clone());
 
     let tokens = quote! {
-        let scope_id = context.id;
-        let mut dynamic_component_nodes: Vec<quux::ClientComponentNode<Self::ComponentEnum>> = Vec::new();
-        #(#component_constructors)*
-        quux::RenderData {
+        let context = #context;
+        let id = context.id;
+        let mut component_id = context.id;
+        let mut for_loop_children: Vec<Vec<quux::render::ClientComponentNode<Self::ComponentEnum>>> = Vec::new();
+        let mut components = Vec::<quux::render::ClientComponentNode<Self::ComponentEnum>>::new();
+        let for_loop_id = context.for_loop_id;
+
+        quux::render::Output {
             html: #html,
-            component_node: quux::ClientComponentNode {
+            component_node: quux::render::ClientComponentNode {
                 component: Self::ComponentEnum::from(self.clone()),
-                render_context: quux::RenderContext {
-                    id: scope_id,
-                    children: vec![vec![#(#component_nodes),*], dynamic_component_nodes].concat(),
+                render_context: quux::render::Context {
+                    id,
+                    children: components,
+                    for_loop_id: None,
+                    for_loop_children,
                 }
             }
         }
     };
-    // TODO: remove
-    if let Some(attribute) = tree.attributes.first() {
-        if attribute.key == "magic" {
-            std::fs::write(
-                "expansion-server.rs",
-                quote! {fn main() {#tokens}}.to_string(),
-            )
-            .unwrap();
-        }
+    if element.attributes.attributes.contains_key("magic") {
+        std::fs::write(
+            "expansion-server.rs",
+            quote! {fn main() {#tokens}}.to_string(),
+        )
+        .unwrap();
     }
     tokens
 }
