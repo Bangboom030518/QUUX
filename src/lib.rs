@@ -2,13 +2,13 @@
 
 #![feature(more_qualified_paths, stmt_expr_attributes)]
 #![warn(clippy::pedantic, clippy::nursery)]
+
 use components::{flashcards, Flashcards};
+pub use flashcards::Set;
 use quux::prelude::*;
 use serde::{Deserialize, Serialize};
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
-
-pub use flashcards::Set;
 
 mod components;
 
@@ -27,9 +27,42 @@ init_components!(
     flashcards::ConfidenceRating
 );
 
+#[cfg(not(target_arch = "wasm32"))]
+pub async fn server_error(error: tower::BoxError) -> (axum::http::StatusCode, String) {
+    use axum::http::StatusCode;
+    if error.is::<tower::timeout::error::Elapsed>() {
+        (
+            StatusCode::REQUEST_TIMEOUT,
+            "Request took too long".to_string(),
+        )
+    } else {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Uh oh. Something went wrong — sucks to be you.".to_string(),
+        )
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct App {
     set: Set,
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl App {
+    pub async fn new(
+        pool: &sqlx::Pool<sqlx::Sqlite>,
+        set_id: &str,
+    ) -> Result<Self, (axum::http::StatusCode, String)> {
+        use axum::http::StatusCode;
+        match Set::fetch(pool, set_id).await {
+            Ok(set) => Ok(Self::init(set)),
+            Err(error) => Err(match error {
+                sqlx::Error::RowNotFound => (StatusCode::NOT_FOUND, "Set not found :(".to_string()),
+                _ => server_error(Box::new(error)).await,
+            }),
+        }
+    }
 }
 
 impl Component for App {
@@ -63,5 +96,12 @@ impl Component for App {
                 }
             }
         }
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl axum::response::IntoResponse for App {
+    fn into_response(self) -> axum::response::Response {
+        axum::response::Html::from(self.render_to_string()).into_response()
     }
 }

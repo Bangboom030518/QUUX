@@ -51,7 +51,7 @@ pub mod prelude {
     #[cfg(target_arch = "wasm32")]
     pub use super::dom::console_log;
     pub use super::{
-        component::{self, Component, Enum as ComponentEnum},
+        component::{self, Component, Enum as _},
         quux_initialise::QUUXInitialise,
         render,
         store::{self, Store},
