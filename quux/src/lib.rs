@@ -1,16 +1,14 @@
 #![warn(clippy::pedantic, clippy::nursery)]
 
 pub use cfg_if;
-pub use postcard;
-
 use internal::prelude::*;
+pub use postcard;
 
 pub mod component;
 pub mod errors;
+pub mod quux_initialise;
 pub mod render;
 pub mod store;
-
-mod quux_initialise;
 
 #[cfg(target_arch = "wasm32")]
 pub mod dom;
@@ -59,5 +57,5 @@ pub mod prelude {
         store::{self, Store},
     };
 
-    pub use quux_macros::view;
+    pub use quux_macros::{init_components, view};
 }

@@ -1,4 +1,4 @@
-use crate::QUUXComponentEnum;
+use crate::ComponentEnum;
 pub use confidence_rating::ConfidenceRating;
 pub use flashcard::Flashcard;
 use quux::prelude::*;
@@ -60,7 +60,7 @@ pub struct Flashcards {
 
 impl Component for Flashcards {
     type Props = Vec<Term>;
-    type ComponentEnum = QUUXComponentEnum;
+    type ComponentEnum = ComponentEnum;
 
     fn init(terms: Self::Props) -> Self {
         Self {

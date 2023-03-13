@@ -3,6 +3,7 @@
 use axum::{
     extract::{Path, State},
     headers::{ContentType, Header, HeaderValue},
+    http::StatusCode,
     response::Html,
     routing::get,
     Router, TypedHeader,
@@ -20,12 +21,13 @@ async fn root() -> Html<String> {
     .into()
 }
 
-async fn not_found() -> Html<String> {
-    "
-        <h1>Error: not found!</h1>
+async fn not_found() -> (StatusCode, Html<String>) {
+    let html = "
+        <h1>Page not found!</h1>
     "
     .to_string()
-    .into()
+    .into();
+    (StatusCode::NOT_FOUND, html)
 }
 
 async fn set(State(pool): State<Pool<Sqlite>>, Path(id): Path<String>) -> Html<String> {
@@ -60,6 +62,7 @@ async fn main() {
         .route("/", get(root))
         .route("/set/:set_id", get(set))
         .route("/dist/quuxlet_bg.wasm", get(wasm))
+        .fallback(not_found)
         .with_state(pool);
 
     let address = SocketAddr::from(([127, 0, 0, 1], 3000));

@@ -17,134 +17,15 @@ mod components;
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen(start)]
 pub fn init_app() {
-    QUUXComponentEnum::init_app().unwrap();
+    ComponentEnum::init_app().unwrap();
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub enum QUUXComponentEnum {
-    App(App),
-    Flashcard(flashcards::Flashcard),
-    QUUXInitialise(QUUXInitialise<Self>),
-    Flashcards(Flashcards),
-    ConfidenceRating(flashcards::ConfidenceRating),
-}
-
-impl component::Enum for QUUXComponentEnum {
-    fn render(&self, context: render::Context<Self>) -> render::Output<Self> {
-        match self {
-            Self::App(component) => component.render(context),
-            Self::Flashcard(component) => component.render(context),
-            Self::QUUXInitialise(component) => component.render(context),
-            Self::Flashcards(component) => component.render(context),
-            Self::ConfidenceRating(component) => component.render(context),
-        }
-    }
-}
-
-impl From<QUUXInitialise<Self>> for QUUXComponentEnum {
-    fn from(value: QUUXInitialise<Self>) -> Self {
-        Self::QUUXInitialise(value)
-    }
-}
-
-impl TryFrom<QUUXComponentEnum> for QUUXInitialise<QUUXComponentEnum> {
-    type Error = ();
-
-    fn try_from(value: QUUXComponentEnum) -> Result<Self, Self::Error> {
-        if let QUUXComponentEnum::QUUXInitialise(component) = value {
-            Ok(component)
-        } else {
-            Err(())
-        }
-    }
-}
-
-impl From<App> for QUUXComponentEnum {
-    fn from(value: App) -> Self {
-        Self::App(value)
-    }
-}
-
-impl TryFrom<QUUXComponentEnum> for App {
-    type Error = ();
-
-    fn try_from(value: QUUXComponentEnum) -> Result<Self, Self::Error> {
-        if let QUUXComponentEnum::App(component) = value {
-            Ok(component)
-        } else {
-            Err(())
-        }
-    }
-}
-
-impl From<flashcards::Flashcard> for QUUXComponentEnum {
-    fn from(value: flashcards::Flashcard) -> Self {
-        Self::Flashcard(value)
-    }
-}
-
-impl TryFrom<QUUXComponentEnum> for flashcards::Flashcard {
-    type Error = ();
-
-    fn try_from(value: QUUXComponentEnum) -> Result<Self, Self::Error> {
-        if let QUUXComponentEnum::Flashcard(value) = value {
-            Ok(value)
-        } else {
-            Err(())
-        }
-    }
-}
-
-impl From<Flashcards> for QUUXComponentEnum {
-    fn from(value: Flashcards) -> Self {
-        Self::Flashcards(value)
-    }
-}
-
-impl TryFrom<QUUXComponentEnum> for Flashcards {
-    type Error = ();
-
-    fn try_from(value: QUUXComponentEnum) -> Result<Self, Self::Error> {
-        if let QUUXComponentEnum::Flashcards(component) = value {
-            Ok(component)
-        } else {
-            Err(())
-        }
-    }
-}
-
-impl From<flashcards::ConfidenceRating> for QUUXComponentEnum {
-    fn from(value: flashcards::ConfidenceRating) -> Self {
-        Self::ConfidenceRating(value)
-    }
-}
-
-impl TryFrom<QUUXComponentEnum> for flashcards::ConfidenceRating {
-    type Error = ();
-
-    fn try_from(value: QUUXComponentEnum) -> Result<Self, Self::Error> {
-        if let QUUXComponentEnum::ConfidenceRating(component) = value {
-            Ok(component)
-        } else {
-            Err(())
-        }
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Rating {
-    Terrible,
-    Bad,
-    Ok,
-    Good,
-    Perfect,
-}
-
-impl Default for Rating {
-    fn default() -> Self {
-        Self::Ok
-    }
-}
+init_components!(
+    App,
+    Flashcards,
+    flashcards::Flashcard,
+    flashcards::ConfidenceRating
+);
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct App {
@@ -153,7 +34,7 @@ pub struct App {
 
 impl Component for App {
     type Props = flashcards::Set;
-    type ComponentEnum = QUUXComponentEnum;
+    type ComponentEnum = ComponentEnum;
 
     fn init(set: Set) -> Self {
         Self { set }

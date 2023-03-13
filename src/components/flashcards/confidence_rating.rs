@@ -1,6 +1,21 @@
-use crate::{QUUXComponentEnum, Rating};
+use crate::ComponentEnum;
 use quux::prelude::*;
 use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Rating {
+    Terrible,
+    Bad,
+    Ok,
+    Good,
+    Perfect,
+}
+
+impl Default for Rating {
+    fn default() -> Self {
+        Self::Ok
+    }
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ConfidenceRating {
@@ -24,7 +39,7 @@ impl ConfidenceRating {
 
 impl Component for ConfidenceRating {
     type Props = ();
-    type ComponentEnum = QUUXComponentEnum;
+    type ComponentEnum = ComponentEnum;
 
     fn init(_: Self::Props) -> Self {
         Self {

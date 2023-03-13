@@ -1,5 +1,5 @@
 use super::Term;
-use crate::QUUXComponentEnum;
+use crate::ComponentEnum;
 use quux::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -51,7 +51,7 @@ impl Flashcard {
 
 impl Component for Flashcard {
     type Props = Term;
-    type ComponentEnum = QUUXComponentEnum;
+    type ComponentEnum = ComponentEnum;
 
     fn init(term: Term) -> Self {
         Self {
