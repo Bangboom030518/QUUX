@@ -1,6 +1,6 @@
 use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote};
-use syn::{parse::Parse, parse_macro_input, parse_quote, Token, Type};
+use syn::{parse::Parse, parse_macro_input, parse_quote, Token, Type, punctuated::Punctuated,};
 
 struct Component {
     ty: Type,
@@ -74,24 +74,18 @@ impl Components {
 
 impl Parse for Components {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
-        let mut components = vec![Component {
-            ty: parse_quote! {
+        let components = Punctuated::<_, Token![,]>::parse_terminated(input)?
+            .into_iter()
+            .chain(std::iter::once(parse_quote! {
                 quux::quux_initialise::QUUXInitialise<ComponentEnum>
-            },
-            variant_name: format_ident!("QUUXInitialise"),
-        }];
-        let mut index = 0;
-        loop {
-            components.push(Component {
-                ty: input.parse()?,
-                variant_name: format_ident!("Component{index}"),
-            });
-            if input.is_empty() {
-                break;
-            }
-            index += 1;
-            input.parse::<Token![,]>()?;
-        }
+            }))
+            .enumerate()
+            .map(|(index, ty)| Component {
+                variant_name: format_ident!("Component{index}")
+                ty
+            })
+            .collect();
+        
         Ok(Self(components))
     }
 }
