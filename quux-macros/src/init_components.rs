@@ -1,6 +1,6 @@
 use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote};
-use syn::{parse::Parse, parse_macro_input, parse_quote, Token, Type, punctuated::Punctuated,};
+use syn::{parse::Parse, parse_macro_input, parse_quote, punctuated::Punctuated, Token, Type};
 
 struct Component {
     ty: Type,
@@ -60,9 +60,9 @@ impl Components {
             .unzip();
         quote! {
             impl quux::component::Enum for ComponentEnum {
-                fn render(&self, context: render::Context<Self>) -> render::Output<Self> {
+                fn render(self, context: render::Context<Self>) -> quux::component::EnumRenderOutput<Self> {
                     match self {
-                        #(Self::#variants(component) => component.render(context)),*
+                        #(Self::#variants(component) => component.render(context).into()),*
                     }
                 }
             }
@@ -82,10 +82,10 @@ impl Parse for Components {
             .enumerate()
             .map(|(index, ty)| Component {
                 variant_name: format_ident!("Component{index}"),
-                ty
+                ty,
             })
             .collect();
-        
+
         Ok(Self(components))
     }
 }

@@ -62,10 +62,7 @@ impl Component for Flashcard {
         }
     }
 
-    fn render(
-        &self,
-        context: render::Context<Self::ComponentEnum>,
-    ) -> render::Output<Self::ComponentEnum> {
+    fn render(self, context: render::Context<Self::ComponentEnum>) -> render::Output<Self> {
         view! {
             context,
             article(class = "grid place-items-center gap-4 text-center", class:active-when = (&self.is_visible, |visible: bool| !visible, "hidden")) {

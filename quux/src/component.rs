@@ -7,7 +7,7 @@ pub trait Component: Serialize + DeserializeOwned {
     fn init(props: Self::Props) -> Self;
 
     #[cfg(not(target_arch = "wasm32"))]
-    fn render_to_string(&self) -> String {
+    fn render_to_string(self) -> String {
         let render::Output {
             html,
             component_node,
@@ -21,25 +21,58 @@ pub trait Component: Serialize + DeserializeOwned {
         )
     }
 
-    fn render(
-        &self,
-        context: render::Context<Self::ComponentEnum>,
-    ) -> render::Output<Self::ComponentEnum>;
+    fn render(self, context: render::Context<Self::ComponentEnum>) -> render::Output<Self>;
 }
+
+#[cfg(not(target_arch = "wasm32"))]
+pub struct EnumRenderOutput<T>
+where
+    T: Enum,
+{
+    pub html: String,
+    pub component_node: super::render::ClientComponentNode<T>,
+}
+
+#[cfg(target_arch = "wasm32")]
+pub struct EnumRenderOutput<T>(std::marker::PhantomData<T>)
+where
+    T: Enum;
+
+impl<T: Component> From<render::Output<T>> for EnumRenderOutput<<T as Component>::ComponentEnum> {
+    #[cfg(not(target_arch = "wasm32"))]
+    fn from(value: render::Output<T>) -> Self {
+        let render::Output {
+            html,
+            component_node,
+            ..
+        } = value;
+        Self {
+            html,
+            component_node,
+        }
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    fn from(_: render::Output<T>) -> Self {
+        Self(std::marker::PhantomData)
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
 
 impl<T: Component> SerializePostcard for T {}
 
 pub trait Enum: Serialize + Debug + Clone + From<InitialisationScript<Self>> {
-    fn render(&self, context: render::Context<Self>) -> render::Output<Self>;
+    fn render(self, context: render::Context<Self>) -> EnumRenderOutput<Self>;
 
     /// Recursively hydrates the dom, starting at the root app component
     /// Applies a console panic hook for better debugging
     /// # Errors
     /// - If there is no init script in the dom (`QUUXInitialise`)
-    /// - If the init script doesn't have a shadow tree attached
-    /// - If the shadow tree is unparseable
+    /// - If the init script doesn't have a virtual dom tree attached
+    /// - If the virtual dom tree is unparseable
     #[cfg(target_arch = "wasm32")]
-    fn init_app() -> Result<render::Output<Self>, errors::InitApp>
+    fn init_app() -> Result<EnumRenderOutput<Self>, errors::InitApp>
     where
         Self: DeserializeOwned,
     {

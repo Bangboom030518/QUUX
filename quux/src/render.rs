@@ -32,27 +32,17 @@ impl<T: component::Enum> Default for Context<T> {
 #[cfg(not(target_arch = "wasm32"))]
 pub struct Output<T>
 where
-    T: component::Enum,
+    T: Component,
 {
     pub html: String,
-    pub component_node: ClientComponentNode<T>,
+    pub component_node: ClientComponentNode<<T as Component>::ComponentEnum>,
 }
 
 #[cfg(target_arch = "wasm32")]
 #[derive(Default)]
-pub struct Output<T> {
-    _phantom: std::marker::PhantomData<T>,
-}
-
-#[cfg(target_arch = "wasm32")]
-impl<T> Output<T> {
-    #[must_use]
-    pub const fn new() -> Self {
-        Self {
-            _phantom: std::marker::PhantomData,
-        }
-    }
-}
+pub struct Output<T>(pub T)
+where
+    T: Component;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 /// Represents a reactive node on the client. Only for `Component`s.

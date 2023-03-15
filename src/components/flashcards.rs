@@ -68,15 +68,12 @@ impl Component for Flashcards {
         }
     }
 
-    fn render(
-        &self,
-        context: render::Context<Self::ComponentEnum>,
-    ) -> render::Output<Self::ComponentEnum> {
+    fn render(self, context: render::Context<Self::ComponentEnum>) -> render::Output<Self> {
         let confidence_rating: ConfidenceRating;
         let flashcards: Rc<RefCell<Vec<Flashcard>>>;
         view! {
             context,
-            div(magic= true, class = "grid place-items-center gap-4") {
+            div(class = "grid place-items-center gap-4", magic = true) {
                 div(class = "flashcard-stack") {
                     for term in $self.terms {
                         @Flashcard(term): flashcards

@@ -1,5 +1,5 @@
-use crate::view::parse::prelude::*;
 use super::super::internal::prelude::*;
+use crate::view::parse::prelude::*;
 
 impl ForLoop {
     fn binding_code(&mut self) -> TokenStream {
@@ -23,7 +23,8 @@ impl ForLoop {
             {
                 let mut internal: Vec<_> = Vec::new();
                 for mut child in for_loop_children.next().expect_internal("retrieve for loop children: client and server for loop lists don't match") {
-                    quux::component::Enum::render(&child.component, child.render_context);
+                    // TODO: remove clone
+                    quux::component::Enum::render(child.component.clone(), child.render_context);
                     internal.push(child.component.try_into().expect_internal("retrieve for loop children: client and server for loop lists don't match"))
                 }
                 #binding;
@@ -44,11 +45,13 @@ impl ForLoop {
     }
 
     fn list_store_code(&self, id: u64) -> TokenStream {
-
         let ForLoopIterable::Reactive(store) = self.iterable.clone() else {
             return TokenStream::new()
         };
-        assert!(!matches!(*self.item, Item::Expression(_)), "reactive for loops must contain either elements or components");
+        assert!(
+            !matches!(*self.item, Item::Expression(_)),
+            "reactive for loops must contain either elements or components"
+        );
         let pop_code = self.pop_code(id);
         let binding_code = self
             .binding

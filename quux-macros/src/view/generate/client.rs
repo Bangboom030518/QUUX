@@ -1,5 +1,5 @@
-use crate::view::parse::prelude::*;
 use super::internal::prelude::*;
+use crate::view::parse::prelude::*;
 
 mod for_loop;
 
@@ -33,8 +33,9 @@ impl From<Item> for Data {
                             use quux::component::{Component, Enum};
                             let child = children.next().expect_internal(concat!("retrieve all child data (", #component_string, ") : client and server child lists don't match"));
                             let mut component = child.component;
-                            
-                            component.render(child.render_context);
+
+                            // TODO: remove clone
+                            component.clone().render(child.render_context);
                             #binding;
                         }
                     }]
@@ -141,10 +142,10 @@ pub fn generate(tree: &View) -> TokenStream {
         let id = Rc::new(#context.id);
         #(#components);*;
         for mut child in children {
-            quux::component::Enum::render(&child.component, child.render_context);
+            quux::component::Enum::render(child.component, child.render_context);
         }
         #({ #reactivity });*;
-        quux::render::Output::new()
+        quux::render::Output(self)
     };
     if element.attributes.attributes.contains_key("magic") {
         std::fs::write(

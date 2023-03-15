@@ -37,7 +37,6 @@ mod internal {
             prelude::*,
             SerializePostcard,
         };
-        pub use serde::{de::DeserializeOwned, Deserialize, Serialize};
         pub use std::{
             cell::{Ref, RefCell},
             fmt::{self, Debug, Display},
@@ -56,6 +55,6 @@ pub mod prelude {
         render,
         store::{self, Store},
     };
-
     pub use quux_macros::{init_components, view};
+    pub use serde::{de::DeserializeOwned, Deserialize, Serialize};
 }

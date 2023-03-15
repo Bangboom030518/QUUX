@@ -34,10 +34,7 @@ impl<T: component::Enum> Component for InitialisationScript<T> {
     }
 
     #[cfg(not(target_arch = "wasm32"))]
-    fn render(
-        &self,
-        _: render::Context<Self::ComponentEnum>,
-    ) -> render::Output<Self::ComponentEnum> {
+    fn render(self, _: render::Context<Self::ComponentEnum>) -> render::Output<Self> {
         render::Output {
             html: format!(
                 "<script type=\"module\" id=\"__quux_init_script__\" data-quux-tree=\"{}\">{};</script>",
@@ -45,17 +42,14 @@ impl<T: component::Enum> Component for InitialisationScript<T> {
                 self.init_script_path,
             ),
             component_node: crate::render::ClientComponentNode {
-                component: self.clone().into(),
+                component: self.into(),
                 render_context: render::Context::default()
             },
         }
     }
 
     #[cfg(target_arch = "wasm32")]
-    fn render(
-        &self,
-        _: render::Context<Self::ComponentEnum>,
-    ) -> render::Output<Self::ComponentEnum> {
-        render::Output::new()
+    fn render(self, _: render::Context<Self::ComponentEnum>) -> render::Output<Self> {
+        render::Output(self)
     }
 }

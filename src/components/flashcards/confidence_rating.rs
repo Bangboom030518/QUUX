@@ -48,10 +48,7 @@ impl Component for ConfidenceRating {
         }
     }
 
-    fn render(
-        &self,
-        context: render::Context<Self::ComponentEnum>,
-    ) -> render::Output<Self::ComponentEnum> {
+    fn render(self, context: render::Context<Self::ComponentEnum>) -> render::Output<Self> {
         view! {
             context,
             div(class = "flashcard-hidden btn-group", class:active-when = (&self.is_visible, |visible: bool| !visible, "flashcard-hidden")) {

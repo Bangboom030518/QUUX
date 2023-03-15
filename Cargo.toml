@@ -15,7 +15,7 @@ wasm-bindgen = { workspace = true }
 serde = { workspace = true }
 
 [target.'cfg(not(target_arch="wasm32"))'.dependencies]
-axum = { version = "0.6", features = ["headers"] }
+axum = { version = "0.6", features = ["headers", "macros"] }
 tokio = { workspace = true }
 sqlx = { version = "0.6", features = ["runtime-tokio-native-tls", "sqlite"] }
 tower = { version = "0.4", features = ["timeout"] }

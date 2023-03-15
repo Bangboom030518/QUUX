@@ -42,7 +42,8 @@ impl From<Component> for Html {
                     for_loop_id: #for_loop_id,
                     ..Default::default()
                 };
-                let rendered_component = quux::component::Component::render(&component, std::clone::Clone::clone(&render_context));
+                // TODO: remove clone
+                let rendered_component = quux::component::Component::render(component.clone(), std::clone::Clone::clone(&render_context));
                 // Push the component to the list of component for this view
                 components.push(quux::render::ClientComponentNode {
                     component: Self::ComponentEnum::from(component.clone()),
