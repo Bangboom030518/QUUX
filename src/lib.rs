@@ -1,11 +1,15 @@
+// TODO: should `render` gobble gobble gobble?
+
 #![feature(more_qualified_paths, stmt_expr_attributes)]
 #![warn(clippy::pedantic, clippy::nursery)]
-use components::{flashcard, set};
+
+use components::{flashcards, Flashcards};
+pub use flashcards::Set;
 use quux::prelude::*;
-use quux::{Component, ComponentEnum, QUUXInitialise, Store};
 use serde::{Deserialize, Serialize};
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
+
 mod components;
 
 /// # Panics
@@ -13,140 +17,68 @@ mod components;
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen(start)]
 pub fn init_app() {
-    App::init_as_root::<QUUXComponentEnum>();
+    ComponentEnum::init_app().unwrap();
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub enum QUUXComponentEnum {
-    App(App),
-    Flashcard(flashcard::Flashcard),
-    QUUXInitialise(QUUXInitialise<Self>),
-    Set(set::Set),
-    ConfidenceRating(flashcard::confidence_rating::ConfidenceRating),
-}
+init_components!(
+    App,
+    Flashcards,
+    flashcards::Flashcard,
+    flashcards::ConfidenceRating
+);
 
-impl ComponentEnum for QUUXComponentEnum {
-    fn render(&self, context: quux::RenderContext<Self>) -> quux::RenderData<Self> {
-        match self {
-            Self::App(component) => component.render(context),
-            Self::Flashcard(component) => component.render(context),
-            Self::QUUXInitialise(component) => component.render(context),
-            Self::Set(component) => component.render(context),
-            Self::ConfidenceRating(component) => component.render(context),
-        }
-    }
-}
-
-impl From<QUUXInitialise<Self>> for QUUXComponentEnum {
-    fn from(value: QUUXInitialise<Self>) -> Self {
-        Self::QUUXInitialise(value)
-    }
-}
-
-impl TryFrom<QUUXComponentEnum> for QUUXInitialise<QUUXComponentEnum> {
-    type Error = ();
-
-    fn try_from(value: QUUXComponentEnum) -> Result<Self, Self::Error> {
-        if let QUUXComponentEnum::QUUXInitialise(component) = value {
-            Ok(component)
-        } else {
-            Err(())
-        }
-    }
-}
-
-impl From<App> for QUUXComponentEnum {
-    fn from(value: App) -> Self {
-        Self::App(value)
-    }
-}
-
-impl TryFrom<QUUXComponentEnum> for App {
-    type Error = ();
-
-    fn try_from(value: QUUXComponentEnum) -> Result<Self, Self::Error> {
-        if let QUUXComponentEnum::App(component) = value {
-            Ok(component)
-        } else {
-            Err(())
-        }
-    }
-}
-
-impl From<flashcard::Flashcard> for QUUXComponentEnum {
-    fn from(value: flashcard::Flashcard) -> Self {
-        Self::Flashcard(value)
-    }
-}
-
-impl TryFrom<QUUXComponentEnum> for flashcard::Flashcard {
-    type Error = ();
-
-    fn try_from(value: QUUXComponentEnum) -> Result<Self, Self::Error> {
-        if let QUUXComponentEnum::Flashcard(value) = value {
-            Ok(value)
-        } else {
-            Err(())
-        }
-    }
-}
-
-impl From<set::Set> for QUUXComponentEnum {
-    fn from(value: set::Set) -> Self {
-        Self::Set(value)
-    }
-}
-
-impl TryFrom<QUUXComponentEnum> for set::Set {
-    type Error = ();
-
-    fn try_from(value: QUUXComponentEnum) -> Result<Self, Self::Error> {
-        if let QUUXComponentEnum::Set(component) = value {
-            Ok(component)
-        } else {
-            Err(())
-        }
-    }
-}
-
-impl From<flashcard::confidence_rating::ConfidenceRating> for QUUXComponentEnum {
-    fn from(value: flashcard::confidence_rating::ConfidenceRating) -> Self {
-        Self::ConfidenceRating(value)
-    }
-}
-
-impl TryFrom<QUUXComponentEnum> for flashcard::confidence_rating::ConfidenceRating {
-    type Error = ();
-
-    fn try_from(value: QUUXComponentEnum) -> Result<Self, Self::Error> {
-        if let QUUXComponentEnum::ConfidenceRating(component) = value {
-            Ok(component)
-        } else {
-            Err(())
-        }
+#[cfg(not(target_arch = "wasm32"))]
+pub async fn server_error(error: tower::BoxError) -> (axum::http::StatusCode, String) {
+    use axum::http::StatusCode;
+    if error.is::<tower::timeout::error::Elapsed>() {
+        (
+            StatusCode::REQUEST_TIMEOUT,
+            "Request took too long".to_string(),
+        )
+    } else {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Uh oh. Something went wrong — sucks to be you.".to_string(),
+        )
     }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct App {
-    count: Store<u32>,
+    set: Set,
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl App {
+    pub async fn new(
+        pool: &sqlx::Pool<sqlx::Sqlite>,
+        set_id: &str,
+    ) -> Result<Self, (axum::http::StatusCode, String)> {
+        use axum::http::StatusCode;
+        match Set::fetch(pool, set_id).await {
+            Ok(set) => Ok(Self::init(set)),
+            Err(error) => Err(match error {
+                sqlx::Error::RowNotFound => (StatusCode::NOT_FOUND, "Set not found :(".to_string()),
+                _ => server_error(Box::new(error)).await,
+            }),
+        }
+    }
 }
 
 impl Component for App {
-    type Props = ();
-    type ComponentEnum = QUUXComponentEnum;
+    type Props = flashcards::Set;
+    type ComponentEnum = ComponentEnum;
 
-    fn init(_props: Self::Props) -> Self {
-        Self {
-            count: Store::new(0),
-        }
+    fn init(set: Set) -> Self {
+        Self { set }
     }
 
     fn render(
         &self,
-        context: quux::RenderContext<Self::ComponentEnum>,
-    ) -> quux::RenderData<Self::ComponentEnum> {
+        context: render::Context<Self::ComponentEnum>,
+    ) -> render::Output<Self::ComponentEnum> {
         view! {
+            context,
             html(lang="en") {
                 head {
                     meta(charset="UTF-8") {}
@@ -159,11 +91,17 @@ impl Component for App {
                 }
                 body {
                     h1 {{ "Welcome to Quuxlet" }}
-                    @flashcard::Flashcard(term = "a".to_string(), definition = "b".to_string())
-                    @set::Set(terms = vec![set::Term::new("0", "1"), set::Term::new("2", "3")])
-                    @QUUXInitialise<Self::ComponentEnum>(init_script_content = include_str!("../dist/init.js"))
+                    @Flashcards(self.set.terms.clone())
+                    @QUUXInitialise<Self::ComponentEnum>(include_str!("../dist/init.js"))
                 }
             }
         }
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl axum::response::IntoResponse for App {
+    fn into_response(self) -> axum::response::Response {
+        axum::response::Html::from(self.render_to_string()).into_response()
     }
 }

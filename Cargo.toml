@@ -17,6 +17,10 @@ serde = { workspace = true }
 [target.'cfg(not(target_arch="wasm32"))'.dependencies]
 axum = { version = "0.6", features = ["headers"] }
 tokio = { workspace = true }
+sqlx = { version = "0.6", features = ["runtime-tokio-native-tls", "sqlite"] }
+tower = { version = "0.4", features = ["timeout"] }
+tower-http = { version = "0.4", features = ["fs"] }
+mime = "0.3"
 
 [target.'cfg(target_arch="wasm32")'.dependencies]
 web-sys = { workspace = true }

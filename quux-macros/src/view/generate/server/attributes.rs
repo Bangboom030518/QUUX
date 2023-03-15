@@ -1,71 +1,53 @@
-use std::collections::HashMap;
-
-use super::parse;
-use quote::quote;
-use syn::Expr;
-use crate::view::parse::prelude::*;
-use element::{attribute::Value, Attribute};
-
-#[derive(Default)]
-pub struct Attributes {
-    pub keys: Vec<String>,
-    pub values: Vec<Expr>,
-    pub reactive: bool,
-    pub reactive_attributes: HashMap<String, Expr>,
-}
+use super::super::internal::prelude::*;
 
 impl Attributes {
-    /// Adds the scoped id attribute with the value of `id`, if `attributes.reactive` is true. If the element is not reactive, nothing is added.
-    pub fn add_scoped_id(&mut self, id: &str) {
-        if self.reactive {
-            self.keys.push("data-quux-scoped-id".to_string());
-            self.values
-                .push(parse(quote! { format!("{}.{}", scope_id, #id) }));
+    /// Adds the scoped id attribute with the value of `id` if the containing element needs an id because it is reactive.
+    /// If the element is not reactive, nothing is added.
+    fn insert_scoped_id(&mut self) {
+        if !self.element_needs_id {
+            return;
         }
-    }
-
-    /// Adds an attribute with a key of `key` and a value of `value`
-    pub fn add_entry(&mut self, key: String, value: Expr) {
-        self.keys.push(key);
-        self.values.push(value);
-    }
-
-    /// Adds a static attribute.
-    /// If it's an event listener, the attribute will be ignored and  reactive will be set to true
-    pub fn add_static_value(&mut self, key: String, value: Expr) {
-        if key.starts_with("on:") || key == "class:active-when" {
-            self.reactive = true;
-        } else {
-            self.add_entry(key, value);
-        }
-    }
-
-    /// Adds a reactive attribute, setting it to the initial value of the store.
-    pub fn add_reactive_value(&mut self, key: String, value: &Expr) {
-        self.reactive_attributes.insert(key.clone(), value.clone());
-        self.add_entry(
-            key,
-            parse(quote! {
-                #value.get()
-            }),
+        let id = self.id;
+        self.attributes.insert(
+            "data-quux-id".to_string(),
+            parse_quote!(format!("{}.{}", &id, #id)),
         );
-    }
-
-    /// Adds an `Attribute`
-    fn add_attribute(&mut self, Attribute { key, value }: Attribute) {
-        match value {
-            Value::Static(value) => self.add_static_value(key, value),
-            Value::Reactive(value) => self.add_reactive_value(key, &value),
-        }
     }
 }
 
-impl From<Vec<Attribute>> for Attributes {
-    fn from(attributes: Vec<Attribute>) -> Self {
-        let mut result = Self::default();
-        for attribute in attributes {
-            result.add_attribute(attribute);
+impl ToTokens for Attributes {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let mut attributes = self.clone();
+
+        attributes.insert_scoped_id();
+
+        if attributes.attributes.is_empty() {
+            return tokens.extend(quote! {
+                String::new()
+            });
         }
-        result
+
+        let attributes = attributes.attributes.iter().map(|(key, value)| {
+            quote! {
+                format!("{}=\"{}\"", #key, #value)
+            }
+        });
+        let for_loop_id = if self.is_root {
+            quote! {
+                &if let Some(id) = for_loop_id {
+                    format!("data-quux-for-id=\"{}\"", id)
+                } else {
+                    String::new()
+                }
+            }
+        } else {
+            quote! {
+                ""
+            }
+        };
+
+        tokens.extend(quote! {
+            String::new() + #(&#attributes)+* + #for_loop_id
+        });
     }
 }
