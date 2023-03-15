@@ -6,14 +6,12 @@
 use axum::{
     error_handling::HandleErrorLayer,
     extract::{Path, State},
-    headers::{ContentType, Header, HeaderValue},
     http::StatusCode,
     response::Html,
     routing::get,
-    BoxError, Router, TypedHeader,
+    Router,
 };
-use quux::prelude::*;
-use quuxlet::{App, Set};
+use quuxlet::App;
 use sqlx::{Pool, Sqlite};
 use std::{net::SocketAddr, time::Duration};
 use tower::ServiceBuilder;

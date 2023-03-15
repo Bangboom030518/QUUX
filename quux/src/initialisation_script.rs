@@ -10,19 +10,19 @@ use crate::internal::prelude::*;
 ///         ...
 ///         body {
 ///             ...
-///             @QUUXInitialise
+///             @InitialisationScript
 ///         }
 ///     }
 /// }
 /// ```
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
-pub struct QUUXInitialise<T: component::Enum> {
+pub struct InitialisationScript<T: component::Enum> {
     #[serde(skip)]
     init_script_path: &'static str,
     _phantom: std::marker::PhantomData<T>,
 }
 
-impl<T: component::Enum> Component for QUUXInitialise<T> {
+impl<T: component::Enum> Component for InitialisationScript<T> {
     type Props = &'static str;
     type ComponentEnum = T;
 

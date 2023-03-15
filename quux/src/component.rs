@@ -29,7 +29,7 @@ pub trait Component: Serialize + DeserializeOwned {
 
 impl<T: Component> SerializePostcard for T {}
 
-pub trait Enum: Serialize + Debug + Clone + From<QUUXInitialise<Self>> {
+pub trait Enum: Serialize + Debug + Clone + From<InitialisationScript<Self>> {
     fn render(&self, context: render::Context<Self>) -> render::Output<Self>;
 
     /// Recursively hydrates the dom, starting at the root app component

@@ -77,11 +77,11 @@ impl Parse for Components {
         let components = Punctuated::<_, Token![,]>::parse_terminated(input)?
             .into_iter()
             .chain(std::iter::once(parse_quote! {
-                quux::quux_initialise::QUUXInitialise<ComponentEnum>
+                quux::initialisation_script::InitialisationScript<ComponentEnum>
             }))
             .enumerate()
             .map(|(index, ty)| Component {
-                variant_name: format_ident!("Component{index}")
+                variant_name: format_ident!("Component{index}"),
                 ty
             })
             .collect();

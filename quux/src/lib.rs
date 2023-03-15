@@ -6,7 +6,7 @@ pub use postcard;
 
 pub mod component;
 pub mod errors;
-pub mod quux_initialise;
+pub mod initialisation_script;
 pub mod render;
 pub mod store;
 
@@ -52,7 +52,7 @@ pub mod prelude {
     pub use super::dom::console_log;
     pub use super::{
         component::{self, Component, Enum as _},
-        quux_initialise::QUUXInitialise,
+        initialisation_script::InitialisationScript,
         render,
         store::{self, Store},
     };

@@ -92,7 +92,7 @@ impl Component for App {
                 body {
                     h1 {{ "Welcome to Quuxlet" }}
                     @Flashcards(self.set.terms.clone())
-                    @QUUXInitialise<Self::ComponentEnum>(include_str!("../dist/init.js"))
+                    @InitialisationScript<Self::ComponentEnum>(include_str!("../dist/init.js"))
                 }
             }
         }
