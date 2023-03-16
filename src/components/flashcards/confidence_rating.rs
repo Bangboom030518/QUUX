@@ -52,7 +52,7 @@ impl Component for ConfidenceRating {
 
     fn render(self, context: render::Context<Self::ComponentEnum>) -> render::Output<Self> {
         view! {
-            context,
+            context, T,
             div(class = "flashcard-hidden btn-group", "class:active-when" = (&self.is_visible, |visible: bool| !visible, "flashcard-hidden")) {
                 button(class = "tooltip btn btn-icon btn-terrible", on:click = {
                     let rating = self.rating.clone();

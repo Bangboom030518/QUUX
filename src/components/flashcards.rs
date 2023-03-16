@@ -74,7 +74,7 @@ impl Component for Flashcards {
         let confidence_rating: ConfidenceRating;
         let flashcards: Rc<RefCell<Vec<Flashcard>>>;
         view! {
-            context,
+            context, T,
             div(class = "grid place-items-center gap-4", magic = true) {
                 div(class = "flashcard-stack") {
                     for term in $self.terms {

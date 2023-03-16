@@ -39,6 +39,7 @@ mod internal {
         pub use std::{
             cell::{Ref, RefCell},
             fmt::{self, Debug, Display},
+            marker::PhantomData,
             rc::Rc,
             str::FromStr,
         };
@@ -54,6 +55,6 @@ pub mod prelude {
         render,
         store::{self, Store},
     };
-    pub use quux_macros::{init_components, view, server, client};
+    pub use quux_macros::{client, init_components, server, view};
     pub use serde::{de::DeserializeOwned, Deserialize, Serialize};
 }

@@ -1,7 +1,7 @@
-use crate::ComponentEnum;
+// use crate::ComponentEnum;
 use quux::prelude::*;
 
-// init_components!(ServerError);
+init_components!(ServerError);
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub enum ServerError {
@@ -16,8 +16,12 @@ impl std::fmt::Display for ServerError {
     }
 }
 
-impl Component for ServerError {
-    type ComponentEnum = ComponentEnum;
+// impl<T> From<T> for ServerError {
+
+// }
+
+impl<T> Component<T> for ServerError {
+    // type ComponentEnum = T;
     #[server]
     type Props = tower::BoxError;
     #[client]
@@ -34,7 +38,7 @@ impl Component for ServerError {
 
     fn render(self, context: render::Context<Self::ComponentEnum>) -> render::Output<Self> {
         view! {
-            context,
+            context, T,
             h1 {{ "Internal Server Error!" }}
         }
     }

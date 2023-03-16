@@ -58,31 +58,31 @@ impl From<Expr> for Html {
 pub fn generate(tree: &View) -> TokenStream {
     let View {
         context,
+        component_enum,
         mut element,
     } = tree.clone();
     element.attributes.is_root = true;
     let Html(html) = Html::from(element.clone());
 
     let tokens = quote! {
+        type ComponentEnum = #component_enum;
+
         let context = #context;
         let id = context.id;
         let mut component_id = context.id;
-        let mut for_loop_children: Vec<Vec<quux::render::ClientComponentNode<Self::ComponentEnum>>> = Vec::new();
-        let mut components = Vec::<quux::render::ClientComponentNode<Self::ComponentEnum>>::new();
+        let mut for_loop_children: Vec<Vec<quux::render::ClientComponentNode<ComponentEnum>>> = Vec::new();
+        let mut components = Vec::<quux::render::ClientComponentNode<ComponentEnum>>::new();
         let for_loop_id = context.for_loop_id;
 
-        quux::render::Output {
-            html: #html,
-            component_node: quux::render::ClientComponentNode {
-                component: Self::ComponentEnum::from(self.clone()),
-                render_context: quux::render::Context {
-                    id,
-                    children: components,
-                    for_loop_id: None,
-                    for_loop_children,
-                }
+        quux::render::Output::new(&#html, quux::render::ClientComponentNode {
+            component: ComponentEnum::from(self.clone()),
+            render_context: quux::render::Context {
+                id,
+                children: components,
+                for_loop_id: None,
+                for_loop_children,
             }
-        }
+        })
     };
     if element.attributes.attributes.contains_key("magic") {
         std::fs::write(

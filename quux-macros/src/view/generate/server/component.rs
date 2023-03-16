@@ -46,7 +46,7 @@ impl From<Component> for Html {
                 let rendered_component = quux::component::Component::render(component.clone(), std::clone::Clone::clone(&render_context));
                 // Push the component to the list of component for this view
                 components.push(quux::render::ClientComponentNode {
-                    component: Self::ComponentEnum::from(component.clone()),
+                    component: ComponentEnum::from(component.clone()),
                     render_context: rendered_component
                         .component_node
                         .render_context

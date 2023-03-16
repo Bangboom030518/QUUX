@@ -125,7 +125,11 @@ impl Data {
 }
 
 pub fn generate(tree: &View) -> TokenStream {
-    let View { context, element } = tree.clone();
+    let View {
+        context,
+        element,
+        component_enum,
+    } = tree.clone();
 
     let Data {
         components,
@@ -134,6 +138,7 @@ pub fn generate(tree: &View) -> TokenStream {
     } = element.clone().into();
 
     let tokens = quote! {
+        type ComponentEnum = #component_enum;
         use wasm_bindgen::JsCast;
         use quux::errors::MapInternal;
         use std::rc::Rc;
@@ -145,7 +150,7 @@ pub fn generate(tree: &View) -> TokenStream {
             quux::component::Enum::render(child.component, child.render_context);
         }
         #({ #reactivity });*;
-        quux::render::Output(self)
+        quux::render::Output::new(self)
     };
     if element.attributes.attributes.contains_key("magic") {
         std::fs::write(

@@ -11,14 +11,21 @@ mod item;
 pub struct View {
     pub context: Expr,
     pub element: Element,
+    pub component_enum: Type,
 }
 
 impl Parse for View {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let context = input.parse()?;
         input.parse::<Token![,]>()?;
+        let component_enum = input.parse()?;
+        input.parse::<Token![,]>()?;
         let element = input.parse()?;
-        Ok(Self { context, element })
+        Ok(Self {
+            context,
+            element,
+            component_enum,
+        })
     }
 }
 
@@ -38,7 +45,7 @@ mod internal {
             braced, parenthesized,
             parse::{Parse, ParseStream},
             token::{Brace, Paren},
-            Expr, Ident, LitInt, Pat, Path, Token,
+            Expr, Ident, LitInt, Pat, Path, Token, Type,
         };
     }
 }

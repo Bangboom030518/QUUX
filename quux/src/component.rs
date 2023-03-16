@@ -3,19 +3,20 @@ use crate::{
     render::{ClientComponentNode, Context},
 };
 
-pub trait Component: Serialize + DeserializeOwned {
+pub trait Component<T: Enum + From<Self>>: Serialize + DeserializeOwned {
     #[server]
     type Props;
-    type ComponentEnum: Enum;
+    // type ComponentEnum = T;
 
     #[server]
     fn init(props: Self::Props) -> Self;
 
-    #[cfg(not(target_arch = "wasm32"))]
+    #[server]
     fn render_to_string(self) -> String {
         let render::Output {
             html,
             component_node,
+            ..
         } = self.render(render::Context::default());
         let bytes =
             postcard::to_stdvec(&component_node).expect_internal("serialize `RenderContext`");
@@ -26,7 +27,7 @@ pub trait Component: Serialize + DeserializeOwned {
         )
     }
 
-    fn render(self, context: render::Context<Self::ComponentEnum>) -> render::Output<Self>;
+    fn render(self, context: render::Context<T>) -> render::Output<Self, T>;
 }
 
 #[client]
@@ -49,9 +50,13 @@ pub struct EnumRenderOutput<T>(std::marker::PhantomData<T>)
 where
     T: Enum;
 
-impl<T: Component> From<render::Output<T>> for EnumRenderOutput<<T as Component>::ComponentEnum> {
+impl<T, E: Enum> From<render::Output<T, E>> for EnumRenderOutput<E>
+where
+    T: Component<E>,
+    E: From<T>,
+{
     #[cfg(not(target_arch = "wasm32"))]
-    fn from(value: render::Output<T>) -> Self {
+    fn from(value: render::Output<T, E>) -> Self {
         let render::Output {
             html,
             component_node,
@@ -110,9 +115,14 @@ impl<T: Component> From<render::Output<T>> for EnumRenderOutput<<T as Component>
 
 #[client]
 
-impl<T: Component> SerializePostcard for T {}
+impl<E, T> SerializePostcard for T
+where
+    E: Enum + From<T>,
+    T: Component<E>,
+{
+}
 
-pub trait Enum: Serialize + Debug + Clone + From<InitialisationScript<Self>> {
+pub trait Enum: Serialize + Debug + Clone {
     fn render(self, context: render::Context<Self>) -> EnumRenderOutput<Self>;
 
     /// Recursively hydrates the dom, starting at the root app component

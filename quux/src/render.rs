@@ -29,21 +29,56 @@ impl<T: component::Enum> Default for Context<T> {
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
-pub struct Output<T>
+#[server]
+pub struct Output<T, E>
 where
-    T: Component,
+    E: component::Enum + From<T>,
+    T: Component<E>,
 {
     pub html: String,
-    pub component_node: ClientComponentNode<<T as Component>::ComponentEnum>,
+    pub component_node: ClientComponentNode<E>,
+    _phantom: PhantomData<T>,
 }
 
-#[cfg(target_arch = "wasm32")]
-#[derive(Default)]
-pub struct Output<T>(pub T)
+#[server]
+impl<T, E> Output<T, E>
 where
-    T: Component;
+    E: component::Enum + From<T>,
+    T: Component<E>,
+{
+    pub fn new(html: &str, component_node: ClientComponentNode<E>) -> Self {
+        Self {
+            html: html.to_string(),
+            component_node,
+            _phantom: PhantomData,
+        }
+    }
+}
 
+#[client]
+#[derive(Default)]
+pub struct Output<T, E>
+where
+    E: component::Enum,
+    T: Component<E>,
+{
+    pub component: T,
+    _phantom: PhantomData<E>,
+}
+
+#[client]
+impl<T, E> Output<T, E>
+where
+    E: component::Enum,
+    T: Component<E>,
+{
+    pub fn new(component: E) {
+        Self {
+            component,
+            _phantom: PhantomData,
+        }
+    }
+}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 /// Represents a reactive node on the client. Only for `Component`s.
 pub struct ClientComponentNode<T>
