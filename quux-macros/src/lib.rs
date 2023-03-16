@@ -1,6 +1,7 @@
 #![warn(clippy::pedantic, clippy::nursery)]
 #![feature(exact_size_is_empty, iter_intersperse)]
 use proc_macro::TokenStream;
+use quote::quote;
 
 mod init_components;
 mod view;
@@ -14,4 +15,23 @@ pub fn view(input: TokenStream) -> TokenStream {
 #[proc_macro]
 pub fn init_components(input: TokenStream) -> TokenStream {
     init_components::init_components(input)
+}
+
+/// Includes the item only on the server build. Equivalent to `#[cfg(not(target_arch = "wasm32"))]`
+#[proc_macro_attribute]
+pub fn server(_attribute: TokenStream, item: TokenStream) -> TokenStream {
+    let item = proc_macro2::TokenStream::from(item);
+    quote! {
+        #[cfg(not(target_arch = "wasm32"))]
+        #item
+    }.into()
+}
+/// Includes the item only on the client build. Equivalent to `#[cfg(target_arch = "wasm32")]`
+#[proc_macro_attribute]
+pub fn client(_attribute: TokenStream, item: TokenStream) -> TokenStream {
+    let item = proc_macro2::TokenStream::from(item);
+    quote! {
+        #[cfg(target_arch = "wasm32")]
+        #item
+    }.into()
 }

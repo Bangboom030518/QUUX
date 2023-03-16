@@ -16,9 +16,9 @@ impl std::fmt::Display for ServerError {
 
 impl Component for ServerError {
     type ComponentEnum = ComponentEnum;
-    #[cfg(not(target_arch = "wasm32"))]
+    #[server]
     type Props = tower::BoxError;
-    #[cfg(target_arch = "wasm32")]
+    #[client]
     type Props = ();
 
     #[cfg(not(target_arch = "wasm32"))]
@@ -38,7 +38,7 @@ impl Component for ServerError {
     fn render(self, context: render::Context<Self::ComponentEnum>) -> render::Output<Self> {
         view! {
             context,
-            div {{todo!()}}
+            h1 {{ "Internal Server Error!" }}
         }
     }
 }

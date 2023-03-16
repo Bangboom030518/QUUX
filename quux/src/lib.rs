@@ -55,6 +55,6 @@ pub mod prelude {
         render,
         store::{self, Store},
     };
-    pub use quux_macros::{init_components, view};
+    pub use quux_macros::{init_components, view, server, client};
     pub use serde::{de::DeserializeOwned, Deserialize, Serialize};
 }

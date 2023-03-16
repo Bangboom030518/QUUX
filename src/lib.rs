@@ -23,7 +23,8 @@ init_components!(
 
 /// # Panics
 /// This function will panic if it's unable to retrieve and parse the tree sent by the server
-#[cfg(target_arch = "wasm32")]
+// #[cfg(target_arch = "wasm32")]
+#[client]
 #[wasm_bindgen(start)]
 pub fn init_app() {
     ComponentEnum::init_app().unwrap();
