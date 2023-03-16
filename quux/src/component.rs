@@ -3,16 +3,13 @@ use crate::{
     render::{ClientComponentNode, Context},
 };
 
-pub trait Component<T: Enum + From<Self>>: Serialize + DeserializeOwned {
+#[typetag::serde(tag = "type")]
+pub trait Component {
     #[server]
-    type Props;
-    // type ComponentEnum = T;
-
-    #[server]
-    fn init(props: Self::Props) -> Self;
-
-    #[server]
-    fn render_to_string(self) -> String {
+    fn render_to_string(self) -> String
+    where
+        Self: Serialize + Sized,
+    {
         let render::Output {
             html,
             component_node,
@@ -27,128 +24,20 @@ pub trait Component<T: Enum + From<Self>>: Serialize + DeserializeOwned {
         )
     }
 
-    fn render(self, context: render::Context<T>) -> render::Output<Self, T>;
+    fn render(self, context: render::Context) -> render::Output<Self>
+    where
+        Self: Sized;
 }
 
-#[client]
-pub trait InitClient {
+pub trait Init {
     type Props;
     fn init(props: Self::Props) -> Self;
 }
 
-#[server]
-pub struct EnumRenderOutput<T>
-where
-    T: Enum,
-{
-    pub html: String,
-    pub component_node: super::render::ClientComponentNode<T>,
-}
-
 #[client]
-pub struct EnumRenderOutput<T>(std::marker::PhantomData<T>)
-where
-    T: Enum;
-
-impl<T, E: Enum> From<render::Output<T, E>> for EnumRenderOutput<E>
-where
-    T: Component<E>,
-    E: From<T>,
-{
-    #[cfg(not(target_arch = "wasm32"))]
-    fn from(value: render::Output<T, E>) -> Self {
-        let render::Output {
-            html,
-            component_node,
-            ..
-        } = value;
-        Self {
-            html,
-            component_node,
-        }
-    }
-
-    #[client]
-    fn from(_: render::Output<T>) -> Self {
-        Self(std::marker::PhantomData)
-    }
-}
-
-// impl<A: Enum, B: Enum> From<ClientComponentNode<A>> for ClientComponentNode<B> {
-//     fn from(value: ClientComponentNode<A>) -> Self {
-//         let ClientComponentNode {
-//             component,
-//             render_context,
-//         } = value;
-//         Self {
-//             component: B::from(component),
-//             render_context,
-//         }
-//     }
-// }
-
-// impl<A: Enum, B: Enum> From<EnumRenderOutput<A>> for EnumRenderOutput<B> {
-//     #[server]
-//     fn from(value: EnumRenderOutput<A>) -> Self {
-//         let EnumRenderOutput {
-//             html,
-//             component_node,
-//         } = value;
-//         Self {
-//             html,
-//             component_node,
-//         }
-//     }
-
-//     #[client]
-//     fn from(value: EnumRenderOutput<A>) -> Self {
-//         let EnumRenderOutput {
-//             html,
-//             component_node,
-//         } = value;
-//         Self {
-//             html,
-//             component_node,
-//         }
-//     }
-// }
-
-#[client]
-
 impl<E, T> SerializePostcard for T
 where
     E: Enum + From<T>,
     T: Component<E>,
 {
-}
-
-pub trait Enum: Serialize + Debug + Clone {
-    fn render(self, context: render::Context<Self>) -> EnumRenderOutput<Self>;
-
-    /// Recursively hydrates the dom, starting at the root app component
-    /// Applies a console panic hook for better debugging
-    /// # Errors
-    /// - If there is no init script in the dom (`QUUXInitialise`)
-    /// - If the init script doesn't have a virtual dom tree attached
-    /// - If the virtual dom tree is unparseable
-    #[cfg(target_arch = "wasm32")]
-    fn init_app() -> Result<EnumRenderOutput<Self>, errors::InitApp>
-    where
-        Self: DeserializeOwned,
-    {
-        std::panic::set_hook(Box::new(console_error_panic_hook::hook));
-
-        let init_script = crate::dom::document()
-            .get_element_by_id("__quux_init_script__")
-            .map_or_else(|| Err(errors::InitApp::NoInitScript), Ok)?;
-
-        let tree = init_script
-            .get_attribute("data-quux-tree")
-            .map_or_else(|| Err(errors::InitApp::NoTreeOnInitScript), Ok)?;
-
-        let tree: render::ClientComponentNode<Self> =
-            tree.parse().map_err(errors::InitApp::InvalidTree)?;
-
-        Ok(tree.component.render(tree.render_context))
-    }
 }

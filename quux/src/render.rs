@@ -1,24 +1,20 @@
 use crate::internal::prelude::*;
 use std::str::FromStr;
-
 /// The id is passed to render method on client
-/// Children are recusively hydrated
+/// Children are recusively hydrated.
 /// This created whenever a `view!()` macro is used
 ///
 /// For an `view!()`, this will contain an id used on the client for reactivity, as well as any children that are components.
 /// This will allow for a `view!()` to manage its children by encapsulating them under one unique id.
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Context<T>
-where
-    T: component::Enum,
-{
-    pub children: Vec<ClientComponentNode<T>>,
-    pub for_loop_children: Vec<Vec<ClientComponentNode<T>>>,
+#[derive(Serialize, Deserialize)]
+pub struct Context {
+    pub children: Vec<ClientComponentNode>,
+    pub for_loop_children: Vec<Vec<ClientComponentNode>>,
     pub id: u64,
     pub for_loop_id: Option<String>,
 }
 
-impl<T: component::Enum> Default for Context<T> {
+impl Default for Context {
     fn default() -> Self {
         Self {
             children: Vec::new(),
@@ -30,23 +26,21 @@ impl<T: component::Enum> Default for Context<T> {
 }
 
 #[server]
-pub struct Output<T, E>
+pub struct Output<T>
 where
-    E: component::Enum + From<T>,
-    T: Component<E>,
+    T: Component + Sized,
 {
     pub html: String,
-    pub component_node: ClientComponentNode<E>,
+    pub component_node: ClientComponentNode,
     _phantom: PhantomData<T>,
 }
 
 #[server]
-impl<T, E> Output<T, E>
+impl<T> Output<T>
 where
-    E: component::Enum + From<T>,
-    T: Component<E>,
+    T: Component + Sized,
 {
-    pub fn new(html: &str, component_node: ClientComponentNode<E>) -> Self {
+    pub fn new(html: &str, component_node: ClientComponentNode) -> Self {
         Self {
             html: html.to_string(),
             component_node,
@@ -57,43 +51,29 @@ where
 
 #[client]
 #[derive(Default)]
-pub struct Output<T, E>
+pub struct Output<T>
 where
-    E: component::Enum,
-    T: Component<E>,
+    T: Component + Sized,
 {
     pub component: T,
-    _phantom: PhantomData<E>,
 }
 
 #[client]
-impl<T, E> Output<T, E>
-where
-    E: component::Enum,
-    T: Component<E>,
-{
-    pub fn new(component: E) {
-        Self {
-            component,
-            _phantom: PhantomData,
-        }
+impl Output {
+    pub fn new(component: T) {
+        Self { component }
     }
 }
-#[derive(Serialize, Deserialize, Debug, Clone)]
+
+#[derive(Serialize, Deserialize)]
 /// Represents a reactive node on the client. Only for `Component`s.
-pub struct ClientComponentNode<T>
-where
-    T: component::Enum,
-{
-    pub component: T,
+pub struct ClientComponentNode {
+    pub component: Box<dyn std::any::Any>,
     // #[serde(bound(deserialize = "T: Deserialize<'a>"))]
-    pub render_context: Context<T>,
+    pub render_context: Context,
 }
 
-impl<T> FromStr for ClientComponentNode<T>
-where
-    T: component::Enum + DeserializeOwned,
-{
+impl FromStr for ClientComponentNode {
     type Err = errors::ClientParse;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -103,4 +83,4 @@ where
     }
 }
 
-impl<T> SerializePostcard for ClientComponentNode<T> where T: component::Enum {}
+impl SerializePostcard for ClientComponentNode {}

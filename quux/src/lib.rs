@@ -50,7 +50,7 @@ pub mod prelude {
     #[cfg(target_arch = "wasm32")]
     pub use super::dom::console_log;
     pub use super::{
-        component::{self, Component, Enum as _},
+        component::{self, Component},
         initialisation_script::InitialisationScript,
         render,
         store::{self, Store},

@@ -1,6 +1,7 @@
 pub use html_ident::HtmlIdent;
 use internal::prelude::*;
 pub use item::Item;
+use syn::parse_quote;
 
 pub mod component;
 pub mod element;
@@ -18,13 +19,13 @@ impl Parse for View {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let context = input.parse()?;
         input.parse::<Token![,]>()?;
-        let component_enum = input.parse()?;
-        input.parse::<Token![,]>()?;
+        // let component_enum = input.parse()?;
+        // input.parse::<Token![,]>()?;
         let element = input.parse()?;
         Ok(Self {
             context,
             element,
-            component_enum,
+            component_enum: parse_quote!(_),
         })
     }
 }

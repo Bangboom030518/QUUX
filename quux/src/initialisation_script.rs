@@ -22,27 +22,38 @@ pub struct InitialisationScript {
     // _phantom: std::marker::PhantomData<T>,
 }
 
-impl<T: component::Enum + From<Self>> Component<T> for InitialisationScript {
-    #[server]
+#[server]
+impl component::Init for InitialisationScript {
     type Props = &'static str;
-    // type ComponentEnum = T;
 
-    #[server]
     fn init(init_script: Self::Props) -> Self {
-        Self {
-            init_script,
-            // _phantom: std::marker::PhantomData,
-        }
+        Self { init_script }
+    }
+}
+
+#[typetag::serde]
+impl Component for InitialisationScript {
+    #[server]
+    fn render(self, context: render::Context) -> render::Output<Self> {
+        // use crate as quux;
+
+        render::Output::new(
+            todo!(),
+            render::ClientComponentNode {
+                component: Box::new(self),
+                render_context: render::Context::default(),
+            },
+        )
+        // view! {
+        //     context,
+        //     script("type"="module", id="__quux_init_script__", data-quux-tree = *crate::TREE_INTERPOLATION_ID) {
+        //         {self.init_script}
+        //     }
+        // }
     }
 
-    fn render(self, context: render::Context<T>) -> render::Output<Self, T> {
-        use crate as quux;
-        view! {
-            context,
-            T,
-            script("type"="module", id="__quux_init_script__", data-quux-tree = *crate::TREE_INTERPOLATION_ID) {
-                {self.init_script}
-            }
-        }
+    #[client]
+    fn render(self, _: render::Context) -> render::Output<Self> {
+        render::Output::new(self)
     }
 }
