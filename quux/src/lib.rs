@@ -13,8 +13,7 @@ pub mod store;
 #[cfg(target_arch = "wasm32")]
 pub mod dom;
 
-// TODO: remove?
-#[cfg(not(target_arch = "wasm32"))]
+#[server]
 lazy_static::lazy_static! {
     pub static ref TREE_INTERPOLATION_ID: uuid::Uuid = uuid::Uuid::new_v4();
 }

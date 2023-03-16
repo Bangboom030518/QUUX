@@ -1,11 +1,18 @@
+use syn::LitStr;
+
 use super::internal::prelude::*;
 use std::ops::Deref;
 
+// TODO: make expr?
 #[derive(Clone, Default)]
 pub struct HtmlIdent(pub String);
 
 impl Parse for HtmlIdent {
     fn parse(input: ParseStream) -> syn::Result<Self> {
+        if input.peek(LitStr) {
+            return Ok(Self(input.parse::<LitStr>()?.value()))
+        }
+
         let mut result = input.parse::<Ident>()?.to_string();
 
         if input.peek(Ident) {

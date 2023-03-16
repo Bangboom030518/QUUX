@@ -1,7 +1,53 @@
 use super::server_error::ServerError;
-use crate::{components::Flashcards, ComponentEnum};
+use crate::components::Flashcards;
 use quux::prelude::*;
+// note: required for `quux::render::Output<set::Set>` to implement `Into<EnumRenderOutput<set::ComponentEnum>>`
 
+// init_components!($ Set);
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub enum ComponentEnum {
+    Component0(Set),
+    Component1(quux::initialisation_script::InitialisationScript<ComponentEnum>),
+}
+impl quux::component::Enum for ComponentEnum {
+    fn render(self, context: render::Context<Self>) -> quux::component::EnumRenderOutput<Self> {
+        match self {
+            Self::Component0(component) => component.render(context.into()).into(),
+            Self::Component1(component) => component.render(context).into(),
+        }
+    }
+}
+impl From<Set> for ComponentEnum {
+    fn from(value: Set) -> Self {
+        Self::Component0(value)
+    }
+}
+impl TryFrom<ComponentEnum> for Set {
+    type Error = ();
+    fn try_from(value: ComponentEnum) -> Result<Self, Self::Error> {
+        if let ComponentEnum::Component0(component) = value {
+            Ok(component)
+        } else {
+            Err(())
+        }
+    }
+}
+impl From<quux::initialisation_script::InitialisationScript<ComponentEnum>> for ComponentEnum {
+    fn from(value: quux::initialisation_script::InitialisationScript<ComponentEnum>) -> Self {
+        Self::Component1(value)
+    }
+}
+impl TryFrom<ComponentEnum> for quux::initialisation_script::InitialisationScript<ComponentEnum> {
+    type Error = ();
+    fn try_from(value: ComponentEnum) -> Result<Self, Self::Error> {
+        if let ComponentEnum::Component1(component) = value {
+            Ok(component)
+        } else {
+            Err(())
+        }
+    }
+}
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Set(super::super::Set);
 
@@ -20,7 +66,7 @@ impl Set {
 
 impl Component for Set {
     type Props = super::super::Set;
-    type ComponentEnum = ComponentEnum;
+    type ComponentEnum = crate::ComponentEnum;
 
     fn init(set: super::super::Set) -> Self {
         Self(set)
@@ -32,7 +78,7 @@ impl Component for Set {
             html(lang="en") {
                 head {
                     meta(charset="UTF-8") {}
-                    meta(http-equiv="X-UA-Compatible", content="IE=edge") {}
+                    meta("http-equiv"="X-UA-Compatible", content="IE=edge") {}
                     meta(name="viewport", content="width=device-width, initial-scale=1.0") {}
                     style {
                         { include_str!("../../dist/output.css") }

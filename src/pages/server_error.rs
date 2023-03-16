@@ -1,6 +1,8 @@
 use crate::ComponentEnum;
 use quux::prelude::*;
 
+// init_components!(ServerError);
+
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub enum ServerError {
     Timeout,
@@ -21,18 +23,13 @@ impl Component for ServerError {
     #[client]
     type Props = ();
 
-    #[cfg(not(target_arch = "wasm32"))]
+    #[server]
     fn init(error: Self::Props) -> Self {
         if error.is::<tower::timeout::error::Elapsed>() {
             Self::Timeout
         } else {
             Self::Internal
         }
-    }
-
-    #[cfg(target_arch = "wasm32")]
-    fn init(_: Self::Props) -> Self {
-        unimplemented!()
     }
 
     fn render(self, context: render::Context<Self::ComponentEnum>) -> render::Output<Self> {
@@ -43,7 +40,7 @@ impl Component for ServerError {
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[server]
 impl From<ServerError> for axum::http::StatusCode {
     fn from(value: ServerError) -> Self {
         match value {

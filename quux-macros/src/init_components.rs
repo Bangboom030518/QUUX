@@ -39,7 +39,7 @@ impl Component {
     }
 }
 
-struct Components(Vec<Component>);
+struct Components(Vec<Component>, bool);
 
 impl Components {
     fn enum_declaration(&self) -> TokenStream {
@@ -74,6 +74,8 @@ impl Components {
 
 impl Parse for Components {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
+        let magic = input.parse::<Token![$]>().is_ok();
+
         let components = Punctuated::<_, Token![,]>::parse_terminated(input)?
             .into_iter()
             .chain(std::iter::once(parse_quote! {
@@ -86,7 +88,7 @@ impl Parse for Components {
             })
             .collect();
 
-        Ok(Self(components))
+        Ok(Self(components, magic))
     }
 }
 
@@ -94,11 +96,15 @@ impl From<Components> for TokenStream {
     fn from(value: Components) -> Self {
         let enum_declaration = value.enum_declaration();
         let implementations = value.implementations();
-        quote! {
+        let tokens = quote! {
             #enum_declaration
 
             #implementations
+        };
+        if value.1 {
+            std::fs::write("magic.rs", tokens.to_string()).unwrap();
         }
+        tokens
     }
 }
 

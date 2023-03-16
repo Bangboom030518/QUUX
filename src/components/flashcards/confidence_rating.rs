@@ -38,9 +38,11 @@ impl ConfidenceRating {
 }
 
 impl Component for ConfidenceRating {
+    #[server]
     type Props = ();
     type ComponentEnum = ComponentEnum;
 
+    #[server]
     fn init(_: Self::Props) -> Self {
         Self {
             is_visible: Store::new(false),
@@ -51,7 +53,7 @@ impl Component for ConfidenceRating {
     fn render(self, context: render::Context<Self::ComponentEnum>) -> render::Output<Self> {
         view! {
             context,
-            div(class = "flashcard-hidden btn-group", class:active-when = (&self.is_visible, |visible: bool| !visible, "flashcard-hidden")) {
+            div(class = "flashcard-hidden btn-group", "class:active-when" = (&self.is_visible, |visible: bool| !visible, "flashcard-hidden")) {
                 button(class = "tooltip btn btn-icon btn-terrible", on:click = {
                     let rating = self.rating.clone();
                     move || rating.set(Rating::Terrible)

@@ -1,9 +1,14 @@
-use crate::internal::prelude::*;
+use crate::{
+    internal::prelude::*,
+    render::{ClientComponentNode, Context},
+};
 
 pub trait Component: Serialize + DeserializeOwned {
+    #[server]
     type Props;
     type ComponentEnum: Enum;
 
+    #[server]
     fn init(props: Self::Props) -> Self;
 
     #[cfg(not(target_arch = "wasm32"))]
@@ -24,7 +29,13 @@ pub trait Component: Serialize + DeserializeOwned {
     fn render(self, context: render::Context<Self::ComponentEnum>) -> render::Output<Self>;
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[client]
+pub trait InitClient {
+    type Props;
+    fn init(props: Self::Props) -> Self;
+}
+
+#[server]
 pub struct EnumRenderOutput<T>
 where
     T: Enum,
@@ -33,7 +44,7 @@ where
     pub component_node: super::render::ClientComponentNode<T>,
 }
 
-#[cfg(target_arch = "wasm32")]
+#[client]
 pub struct EnumRenderOutput<T>(std::marker::PhantomData<T>)
 where
     T: Enum;
@@ -52,13 +63,52 @@ impl<T: Component> From<render::Output<T>> for EnumRenderOutput<<T as Component>
         }
     }
 
-    #[cfg(target_arch = "wasm32")]
+    #[client]
     fn from(_: render::Output<T>) -> Self {
         Self(std::marker::PhantomData)
     }
 }
 
-#[cfg(target_arch = "wasm32")]
+// impl<A: Enum, B: Enum> From<ClientComponentNode<A>> for ClientComponentNode<B> {
+//     fn from(value: ClientComponentNode<A>) -> Self {
+//         let ClientComponentNode {
+//             component,
+//             render_context,
+//         } = value;
+//         Self {
+//             component: B::from(component),
+//             render_context,
+//         }
+//     }
+// }
+
+// impl<A: Enum, B: Enum> From<EnumRenderOutput<A>> for EnumRenderOutput<B> {
+//     #[server]
+//     fn from(value: EnumRenderOutput<A>) -> Self {
+//         let EnumRenderOutput {
+//             html,
+//             component_node,
+//         } = value;
+//         Self {
+//             html,
+//             component_node,
+//         }
+//     }
+
+//     #[client]
+//     fn from(value: EnumRenderOutput<A>) -> Self {
+//         let EnumRenderOutput {
+//             html,
+//             component_node,
+//         } = value;
+//         Self {
+//             html,
+//             component_node,
+//         }
+//     }
+// }
+
+#[client]
 
 impl<T: Component> SerializePostcard for T {}
 

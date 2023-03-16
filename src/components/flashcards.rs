@@ -15,7 +15,7 @@ pub struct Set {
 }
 
 impl Set {
-    #[cfg(not(target_arch = "wasm32"))]
+    #[server]
     pub async fn fetch(pool: &sqlx::Pool<sqlx::Sqlite>, set_id: &str) -> Result<Self, sqlx::Error> {
         use sqlx::query::Map;
 
@@ -59,9 +59,11 @@ pub struct Flashcards {
 }
 
 impl Component for Flashcards {
+    #[server]
     type Props = Vec<Term>;
     type ComponentEnum = ComponentEnum;
 
+    #[server]
     fn init(terms: Self::Props) -> Self {
         Self {
             terms: store::List::new(terms),

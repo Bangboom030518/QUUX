@@ -50,9 +50,11 @@ impl Flashcard {
 }
 
 impl Component for Flashcard {
+    #[server]
     type Props = Term;
     type ComponentEnum = ComponentEnum;
 
+    #[server]
     fn init(term: Term) -> Self {
         Self {
             term,

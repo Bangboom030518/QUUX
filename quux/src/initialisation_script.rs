@@ -18,38 +18,30 @@ use crate::internal::prelude::*;
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
 pub struct InitialisationScript<T: component::Enum> {
     #[serde(skip)]
-    init_script_path: &'static str,
+    init_script: &'static str,
     _phantom: std::marker::PhantomData<T>,
 }
 
 impl<T: component::Enum> Component for InitialisationScript<T> {
+    #[server]
     type Props = &'static str;
     type ComponentEnum = T;
 
-    fn init(init_script_path: Self::Props) -> Self {
+    #[server]
+    fn init(init_script: Self::Props) -> Self {
         Self {
-            init_script_path,
+            init_script,
             _phantom: std::marker::PhantomData,
         }
     }
 
-    #[cfg(not(target_arch = "wasm32"))]
-    fn render(self, _: render::Context<Self::ComponentEnum>) -> render::Output<Self> {
-        render::Output {
-            html: format!(
-                "<script type=\"module\" id=\"__quux_init_script__\" data-quux-tree=\"{}\">{};</script>",
-                *crate::TREE_INTERPOLATION_ID,
-                self.init_script_path,
-            ),
-            component_node: crate::render::ClientComponentNode {
-                component: self.into(),
-                render_context: render::Context::default()
-            },
+    fn render(self, context: render::Context<Self::ComponentEnum>) -> render::Output<Self> {
+        use crate as quux;
+        view! {
+            context,
+            script("type"="module", id="__quux_init_script__", data-quux-tree = *crate::TREE_INTERPOLATION_ID) {
+                {self.init_script}
+            }
         }
-    }
-
-    #[cfg(target_arch = "wasm32")]
-    fn render(self, _: render::Context<Self::ComponentEnum>) -> render::Output<Self> {
-        render::Output(self)
     }
 }
