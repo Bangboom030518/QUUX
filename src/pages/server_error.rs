@@ -1,8 +1,6 @@
 // use crate::ComponentEnum;
 use quux::prelude::*;
 
-init_components!(ServerError);
-
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub enum ServerError {
     Timeout,
@@ -20,26 +18,24 @@ impl std::fmt::Display for ServerError {
 
 // }
 
-impl<T> Component<T> for ServerError {
-    // type ComponentEnum = T;
-    #[server]
-    type Props = tower::BoxError;
-    #[client]
-    type Props = ();
+impl Component for ServerError {
+    fn render(self, context: Context<Self>) -> Output<Self> {
+        view! {
+            context,
+            h1 {{ "Internal Server Error!" }}
+        }
+    }
+}
 
-    #[server]
+#[server]
+impl component::Init for ServerError {
+    type Props = tower::BoxError;
+
     fn init(error: Self::Props) -> Self {
         if error.is::<tower::timeout::error::Elapsed>() {
             Self::Timeout
         } else {
             Self::Internal
-        }
-    }
-
-    fn render(self, context: render::Context<Self::ComponentEnum>) -> render::Output<Self> {
-        view! {
-            context, T,
-            h1 {{ "Internal Server Error!" }}
         }
     }
 }

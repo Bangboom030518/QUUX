@@ -7,8 +7,8 @@ pub use postcard;
 pub mod component;
 pub mod errors;
 pub mod initialisation_script;
-pub mod render;
 pub mod store;
+pub mod view;
 
 #[cfg(target_arch = "wasm32")]
 pub mod dom;
@@ -52,8 +52,8 @@ pub mod prelude {
     pub use super::{
         component::{self, Component},
         initialisation_script::InitialisationScript,
-        render,
         store::{self, Store},
+        view::{Context, Output},
     };
     pub use quux_macros::{client, init_components, server, view};
     pub use serde::{de::DeserializeOwned, Deserialize, Serialize};

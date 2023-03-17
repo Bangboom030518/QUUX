@@ -1,17 +1,46 @@
 use super::internal::prelude::*;
 use crate::view::parse::prelude::*;
+use syn::parse_quote;
 
 mod attributes;
 mod component;
 mod element;
 mod for_loop;
 
-#[derive(Clone, Default)]
-pub struct Html(pub TokenStream);
+#[derive(Clone)]
+pub struct Html {
+    pub html: syn::Expr,
+    /// The types of components for a tuple for the Children type
+    pub components: Vec<syn::Type>,
+    /// The types of for loop components for a tuple for the ForLoopChildren type
+    pub for_loop_components: Vec<syn::Type>,
+}
+
+impl Html {
+    fn new(html: syn::Expr) -> Self {
+        Self {
+            html,
+            components: Vec::new(),
+            for_loop_components: Vec::new(),
+        }
+    }
+}
+
+impl Default for Html {
+    fn default() -> Self {
+        Self {
+            html: parse_quote! {
+                String::new()
+            },
+            components: Vec::new(),
+            for_loop_components: Vec::new(),
+        }
+    }
+}
 
 impl ToTokens for Html {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        tokens.extend(self.0.clone());
+        self.html.to_tokens(tokens);
     }
 }
 
@@ -49,11 +78,36 @@ impl Item {
 
 impl From<Expr> for Html {
     fn from(expression: Expr) -> Self {
-        Self(quote! {
-            #expression.to_string()
-        })
+        Self {
+            html: parse_quote! {
+                #expression.to_string()
+            },
+            components: Vec::new(),
+            for_loop_components: Vec::new(),
+        }
     }
 }
+
+// An example output of a view on the server
+// ```
+// Self::Output {
+//     html: unimplemented!(),
+//     component_node: SerializedComponent {
+//         component: self,
+//         render_context: Self::ClientContext {
+//             components: Self::Children(child_a, child_b, ..),
+//             for_loop_components: Self::ForLoops(for_loop_a, for_loop_b, ..),
+//             id,
+//         },
+//     },
+// }
+// ```
+/*
+struct ClientContext {
+    pub id: u64,
+    pub components: (A, B, ..)
+}
+*/
 
 pub fn generate(tree: &View) -> TokenStream {
     let View {
@@ -62,7 +116,7 @@ pub fn generate(tree: &View) -> TokenStream {
         mut element,
     } = tree.clone();
     element.attributes.is_root = true;
-    let Html(html) = Html::from(element.clone());
+    let Html { html, .. } = Html::from(element.clone());
 
     let tokens = quote! {
         type ComponentEnum = #component_enum;
@@ -74,12 +128,20 @@ pub fn generate(tree: &View) -> TokenStream {
         let mut components = Vec::<quux::render::ClientComponentNode<ComponentEnum>>::new();
         let for_loop_id = context.for_loop_id;
 
+        #[quux_client_context]
+        struct ClientContext {
+            id: u64,
+            for_loop_id: Option<String>,
+            children: #children_type,
+            for_loop_children: #for_loop_children_type,
+        }
+
         quux::render::Output::new(&#html, quux::render::ClientComponentNode {
             component: ComponentEnum::from(self.clone()),
-            render_context: quux::render::Context {
+            render_context: Self::ClientContext {
                 id,
-                children: components,
                 for_loop_id: None,
+                children: components,
                 for_loop_children,
             }
         })

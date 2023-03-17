@@ -3,7 +3,7 @@ use syn::parse_quote;
 
 #[derive(Clone)]
 pub struct Component {
-    pub name: Path,
+    pub name: Type,
     pub props: Props,
     pub binding: Option<Ident>,
     /// Will be updated with a for loop id if this component is used in a for loop

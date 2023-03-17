@@ -31,17 +31,23 @@ impl component::Init for InitialisationScript {
     }
 }
 
-#[typetag::serde]
+#[derive(Serialize, Deserialize, Default)]
+pub struct ClientContext {
+    components: (),
+}
+
 impl Component for InitialisationScript {
+    type ClientContext = ClientContext;
+
     #[server]
-    fn render(self, context: render::Context) -> render::Output<Self> {
+    fn render(self, context: crate::view::Context<Self>) -> crate::view::Output<Self> {
         // use crate as quux;
 
-        render::Output::new(
+        crate::view::Output::new(
             todo!(),
-            render::ClientComponentNode {
-                component: Box::new(self),
-                render_context: render::Context::default(),
+            crate::view::SerializedComponent {
+                component: self,
+                render_context: crate::view::Context::new(0, None),
             },
         )
         // view! {
@@ -53,7 +59,7 @@ impl Component for InitialisationScript {
     }
 
     #[client]
-    fn render(self, _: render::Context) -> render::Output<Self> {
-        render::Output::new(self)
+    fn render(self, _: crate::view::Context) -> crate::view::Output<Self> {
+        crate::view::Output::new(self)
     }
 }

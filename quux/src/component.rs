@@ -1,20 +1,18 @@
-use crate::{
-    internal::prelude::*,
-    render::{ClientComponentNode, Context},
-};
+use crate::internal::prelude::*;
 
-#[typetag::serde(tag = "type")]
-pub trait Component {
+pub trait Component: Serialize {
+    type ClientContext: Serialize + DeserializeOwned;
+
     #[server]
     fn render_to_string(self) -> String
     where
-        Self: Serialize + Sized,
+        Self: Sized,
     {
-        let render::Output {
+        let crate::view::Output {
             html,
             component_node,
             ..
-        } = self.render(render::Context::default());
+        } = self.render(crate::view::Context::new(0, None));
         let bytes =
             postcard::to_stdvec(&component_node).expect_internal("serialize `RenderContext`");
         let component_node = base64::encode(bytes);
@@ -24,7 +22,7 @@ pub trait Component {
         )
     }
 
-    fn render(self, context: render::Context) -> render::Output<Self>
+    fn render(self, context: crate::view::Context<Self>) -> crate::view::Output<Self>
     where
         Self: Sized;
 }
@@ -35,9 +33,4 @@ pub trait Init {
 }
 
 #[client]
-impl<E, T> SerializePostcard for T
-where
-    E: Enum + From<T>,
-    T: Component<E>,
-{
-}
+impl<T: Component> SerializePostcard for T {}

@@ -150,7 +150,7 @@ pub fn generate(tree: &View) -> TokenStream {
             quux::component::Enum::render(child.component, child.render_context);
         }
         #({ #reactivity });*;
-        quux::render::Output::new(self)
+        quux::view::Output::new(self)
     };
     if element.attributes.attributes.contains_key("magic") {
         std::fs::write(

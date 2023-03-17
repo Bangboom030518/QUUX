@@ -18,7 +18,7 @@ impl ForLoop {
                 }
             }
         };
-        let Html(html) = (*item).into();
+        let Html { html, .. } = (*item).into();
 
         quote! {{
             let mut components = Vec::<quux::render::ClientComponentNode<ComponentEnum>>::new();
