@@ -29,8 +29,9 @@ impl Component {
 
 impl From<Component> for Html {
     fn from(value: Component) -> Self {
-        let name = &value.name;
-        let props = &value.props;
+        let Component {
+            name, props, ident, ..
+        } = &value;
         let for_loop_id = &value.for_loop_id();
         let html = parse_quote! {
             {
@@ -44,23 +45,21 @@ impl From<Component> for Html {
                 };
                 // TODO: remove clone
                 let rendered_component = quux::component::Component::render(component.clone(), std::clone::Clone::clone(&render_context));
-                // FIXME: components is no longer a Vec
-                // Push the component to the list of component for this view
-                components.push(quux::render::ClientComponentNode {
+                #ident = quux::render::ClientComponentNode {
                     component: ComponentEnum::from(component.clone()),
                     render_context: rendered_component
                         .component_node
                         .render_context
                         .clone()
                     ,
-                });
+                };
                 rendered_component.html
             }
         };
         Self {
             html,
-            components: vec![value.name],
-            for_loop_components: todo!(),
+            components: vec![value],
+            for_loop_components: Vec::new(),
         }
     }
 }

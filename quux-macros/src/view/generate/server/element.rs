@@ -1,30 +1,46 @@
 use super::super::internal::prelude::*;
 use crate::view::parse::prelude::*;
 
-impl From<ReactiveStore> for syn::Expr {
-    fn from(ReactiveStore(store): ReactiveStore) -> Self {
-        parse_quote! { #store.get() }
+impl ToTokens for ReactiveStore {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let Self(store) = self;
+        quote! { #store.get() }.to_tokens(tokens);
     }
 }
 
-impl From<Item> for syn::Expr {
-    fn from(value: Item) -> Self {
-        let Html { html, .. } = value.into();
-        parse_quote! { &#html }
+impl ToTokens for Item {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let Html { html, .. } = self.clone().into();
+        html.to_tokens(tokens);
     }
 }
 
-impl Items {
-    /// Generates the body of an element.
-    pub fn html_body(&self) -> syn::Expr {
-        if self.items.is_empty() {
-            return parse_quote! {
-                String::new()
-            };
+impl From<Items> for Html {
+    fn from(value: Items) -> Self {
+        if value.items.is_empty() {
+            return Self::default();
         }
-        let html = &self.items;
-        parse_quote! {
-            String::new() + #(#html)+*
+
+        let (html, (components, for_loop_components)): (Vec<_>, (Vec<_>, Vec<_>)) = value
+            .items
+            .iter()
+            .cloned()
+            .map(|item| {
+                let Self {
+                    html,
+                    components,
+                    for_loop_components,
+                } = item.into();
+                (html, (components, for_loop_components))
+            })
+            .unzip();
+
+        Self {
+            html: parse_quote! {
+                String::new() + #(&#html)+*
+            },
+            components: components.concat(),
+            for_loop_components: for_loop_components.concat(),
         }
     }
 }
@@ -37,27 +53,7 @@ const SELF_CLOSING_ELEMENTS: &[&str] = &[
 fn is_self_closing(tag_name: &str) -> bool {
     SELF_CLOSING_ELEMENTS.contains(&tag_name.to_lowercase().as_str())
 }
-
 impl Element {
-    /// Generates the html body for an element.
-    /// Sets `self.attributes.element_needs_id` if necessary
-    fn html_body(&mut self) -> syn::Expr {
-        if !matches!(&self.children, Children::Items(items) if items.items.is_empty()) {
-            assert!(
-                !is_self_closing(&self.tag_name),
-                "Self-closing elements cannot contain children"
-            );
-        }
-        match self.children.clone() {
-            Children::Items(items) => items.html_body(),
-            Children::ReactiveStore(store) => {
-                self.attributes.element_needs_id = true;
-                store.into()
-            }
-            Children::ForLoop(for_loop) => for_loop.tokens(self.attributes.id),
-        }
-    }
-
     pub fn insert_attribute(&mut self, key: &str, value: Expr) -> Option<Expr> {
         self.attributes.insert_static(key, value)
     }
@@ -67,21 +63,36 @@ impl From<Element> for Html {
     fn from(mut value: Element) -> Self {
         let attributes = value.attributes.clone();
         let tag_name = value.tag_name.clone();
-
-        let html = if is_self_closing(&tag_name) {
-            parse_quote! {
-                format!("<{} {} />", #tag_name, #attributes)
+        if is_self_closing(&tag_name) {
+            Self {
+                html: parse_quote! {
+                    format!("<{} {} />", #tag_name, #attributes)
+                },
+                ..Default::default()
             }
         } else {
-            let body = value.html_body();
-            parse_quote! {
-                format!("<{0} {1}>{2}</{0}>", #tag_name, #attributes, #body)
+            assert!(
+                !matches!(&value.children, Children::Items(items) if items.items.is_empty()),
+                "Self-closing elements cannot contain children"
+            );
+            let html: Html = match value.children {
+                Children::Items(items) => items.into(),
+                Children::ReactiveStore(store) => {
+                    value.attributes.element_needs_id = true;
+                    Self {
+                        html: parse_quote! { #store },
+                        ..Default::default()
+                    }
+                }
+                Children::ForLoop(for_loop) => for_loop.html(value.attributes.id),
+            };
+            let body = html.html;
+            Self {
+                html: parse_quote! {
+                    format!("<{0} {1}>{2}</{0}>", #tag_name, #attributes, #body)
+                },
+                ..html
             }
-        };
-        Self {
-            html,
-            components: todo!(),
-            for_loop_components: todo!(),
         }
     }
 }

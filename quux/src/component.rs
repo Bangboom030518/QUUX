@@ -1,8 +1,6 @@
-use crate::internal::prelude::*;
+use crate::{internal::prelude::*, view::ClientContext};
 
-pub trait Component: Serialize {
-    type ClientContext: Serialize + DeserializeOwned;
-
+pub trait Component: Serialize + ClientContext {
     #[server]
     fn render_to_string(self) -> String
     where

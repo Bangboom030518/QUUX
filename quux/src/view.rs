@@ -26,10 +26,14 @@ impl<T> ServerContext<T> {
     }
 }
 
+pub trait ClientContext {
+    type Context;
+}
+
 /// The `Context` passed to the render method of a component
 #[server]
 pub type Context<T> = ServerContext<T>;
 
 /// The `Context` passed to the render method of a component
 #[client]
-pub type Context<T: Component> = T::ClientContext;
+pub type Context<T: Component> = <T as ClientContext>::Context;

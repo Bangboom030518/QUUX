@@ -11,9 +11,9 @@ mod for_loop;
 pub struct Html {
     pub html: syn::Expr,
     /// The types of components for a tuple for the Children type
-    pub components: Vec<syn::Type>,
+    pub components: Vec<Component>,
     /// The types of for loop components for a tuple for the ForLoopChildren type
-    pub for_loop_components: Vec<syn::Type>,
+    pub for_loop_components: Vec<Vec<Component>>,
 }
 
 impl Html {
@@ -116,33 +116,52 @@ pub fn generate(tree: &View) -> TokenStream {
         mut element,
     } = tree.clone();
     element.attributes.is_root = true;
-    let Html { html, .. } = Html::from(element.clone());
+    let Html {
+        html,
+        components,
+        for_loop_components,
+    } = Html::from(element.clone());
+
+    let ((component_types, component_idents), component_declarations): ((Vec<_>, Vec<_>), Vec<_>) =
+        components
+            .iter()
+            .map(|Component { name, ident, .. }| {
+                (
+                    (name, ident),
+                    quote! {
+                        let #ident: quux::view::SerializedComponent<#name>;
+                    },
+                )
+            })
+            .unzip();
 
     let tokens = quote! {
-        type ComponentEnum = #component_enum;
-
         let context = #context;
         let id = context.id;
         let mut component_id = context.id;
-        let mut for_loop_children: Vec<Vec<quux::render::ClientComponentNode<ComponentEnum>>> = Vec::new();
-        let mut components = Vec::<quux::render::ClientComponentNode<ComponentEnum>>::new();
+        #(#component_declarations);*
+        // let mut for_loop_children: Vec<Vec<quux::render::ClientComponentNode<ComponentEnum>>> = Vec::new();
+        // let mut components = Vec::<quux::render::ClientComponentNode<ComponentEnum>>::new();
         let for_loop_id = context.for_loop_id;
 
-        #[quux_client_context]
-        struct ClientContext {
+        impl quux::view::ClientContext for Component {
+            type Context = ClientContext;
+        }
+
+        pub struct ClientContext {
             id: u64,
             for_loop_id: Option<String>,
-            children: #children_type,
-            for_loop_children: #for_loop_children_type,
+            components: (#(#component_types),*),
+            for_loop_components: (#(#for_loop_components),*),
         }
 
         quux::render::Output::new(&#html, quux::render::ClientComponentNode {
             component: ComponentEnum::from(self.clone()),
-            render_context: Self::ClientContext {
+            render_context: ClientContext {
                 id,
                 for_loop_id: None,
-                children: components,
-                for_loop_children,
+                components: (#(#component_idents),*),
+                for_loop_components,
             }
         })
     };
