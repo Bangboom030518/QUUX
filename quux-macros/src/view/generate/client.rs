@@ -3,9 +3,30 @@ use crate::view::parse::prelude::*;
 
 mod for_loop;
 
+/*
+                    let binding = component.binding.map_or_else(TokenStream::new, |binding| {
+                        quote! {
+                            #binding = component
+                        }
+                    });
+
+                    let component_string = component.name.to_token_stream().to_string();
+                    vec![quote! {
+                        {
+                            let child = children.#index;
+                            let mut component = child.component;
+
+                            // TODO: remove clone
+                            let component = component.render(child.render_context).component;
+                            #binding;
+                        }
+                    }]
+
+*/
+
 #[derive(Default)]
 struct Data {
-    components: Vec<TokenStream>,
+    components: Vec<Component>,
     /// Code to update DOM on changes - hydration
     reactivity: Vec<TokenStream>,
 }
@@ -20,26 +41,7 @@ impl From<Item> for Data {
     fn from(item: Item) -> Self {
         match item {
             Item::Component(component) => Self {
-                components: {
-                    let binding = component.binding.map_or_else(TokenStream::new, |binding| {
-                        quote! {
-                            #binding = component.try_into().unwrap()
-                        }
-                    });
-
-                    let component_string = component.name.to_token_stream().to_string();
-                    vec![quote! {
-                        {
-                            use quux::component::{Component, Enum};
-                            let child = children.next().expect_internal(concat!("retrieve all child data (", #component_string, ") : client and server child lists don't match"));
-                            let mut component = child.component;
-
-                            // TODO: remove clone
-                            component.clone().render(child.render_context);
-                            #binding;
-                        }
-                    }]
-                },
+                components: vec![component],
                 reactivity: Vec::new(),
             },
             Item::Element(element) => element.into(),
@@ -125,30 +127,45 @@ impl Data {
 }
 
 pub fn generate(tree: &View) -> TokenStream {
-    let View {
-        context,
-        element,
-        component_enum,
-    } = tree.clone();
+    let View { context, element } = tree.clone();
 
     let Data {
         components,
         reactivity,
         ..
     } = element.clone().into();
+    let components = components
+        .into_iter()
+        .enumerate()
+        // TODO: remove need to keep index in sync with server
+        .map(|(index, component)| {
+            let index = syn::Index::from(index);
+            let binding = component.binding.map_or_else(TokenStream::new, |binding| {
+                quote! {
+                    #binding = component
+                }
+            });
 
+            quote! {
+                {
+                    let child = children.#index;
+                    let component = child.render().component;
+                    #binding;
+                }
+            }
+        });
     let tokens = quote! {
-        type ComponentEnum = #component_enum;
         use wasm_bindgen::JsCast;
         use quux::errors::MapInternal;
         use std::rc::Rc;
-        let mut children = #context.children.into_iter();
-        let mut for_loop_children = #context.for_loop_children.into_iter();
+        use quux::component::{Component};
+        let children = #context.components;
+        let mut for_loop_components = #context.for_loop_components;
         let id = Rc::new(#context.id);
         #(#components);*;
-        for mut child in children {
-            quux::component::Enum::render(child.component, child.render_context);
-        }
+        // for mut child in children {
+        //     quux::component::Enum::render(child.component, child.render_context);
+        // }
         #({ #reactivity });*;
         quux::view::Output::new(self)
     };

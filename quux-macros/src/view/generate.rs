@@ -6,14 +6,20 @@ mod client;
 mod server;
 
 pub fn generate(tree: &View) -> TokenStream {
-    let server = server::generate(tree);
+    let server::Output {
+        render_output: server,
+        client_context,
+    } = server::generate(tree);
     let client = client::generate(tree);
     quote! {
-        quux::cfg_if::cfg_if! {
-            if #[cfg(target_arch = "wasm32")] {
-                {#client}
-            } else {
-                {#server}
+        {
+            #client_context;
+            quux::cfg_if::cfg_if! {
+                if #[cfg(target_arch = "wasm32")] {
+                    {#client}
+                } else {
+                    {#server}
+                }
             }
         }
     }
@@ -23,8 +29,8 @@ mod internal {
     pub mod prelude {
         pub use super::super::Html;
         pub use crate::view::parse::prelude::*;
-        pub use proc_macro2::TokenStream;
+        pub use proc_macro2::{Ident, TokenStream};
         pub use quote::{format_ident, quote, ToTokens};
-        pub use syn::{parse_quote, Expr};
+        pub use syn::{parse_quote, Expr, Type};
     }
 }

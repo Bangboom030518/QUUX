@@ -12,7 +12,6 @@ mod item;
 pub struct View {
     pub context: Expr,
     pub element: Element,
-    pub component_enum: Type,
 }
 
 impl Parse for View {
@@ -22,11 +21,7 @@ impl Parse for View {
         // let component_enum = input.parse()?;
         // input.parse::<Token![,]>()?;
         let element = input.parse()?;
-        Ok(Self {
-            context,
-            element,
-            component_enum: parse_quote!(_),
-        })
+        Ok(Self { context, element })
     }
 }
 

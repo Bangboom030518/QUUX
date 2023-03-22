@@ -1,5 +1,4 @@
 use super::Term;
-use crate::ComponentEnum;
 use quux::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -49,13 +48,10 @@ impl Flashcard {
     }
 }
 
-impl Component for Flashcard {
-    #[server]
+impl component::Init for Flashcard {
     type Props = Term;
-    type ComponentEnum = ComponentEnum;
 
-    #[server]
-    fn init(term: Term) -> Self {
+    fn init(term: Self::Props) -> Self {
         Self {
             term,
             side: Store::new(Side::Term),
@@ -63,10 +59,13 @@ impl Component for Flashcard {
             is_visible: Store::new(true),
         }
     }
+}
 
-    fn render(self, context: render::Context<Self::ComponentEnum>) -> render::Output<Self> {
+impl Component for Flashcard {
+    fn render(self, context: Context<Self>) -> Output<Self> {
+        type Component = Flashcard;
         view! {
-            context, T,
+            context,
             article(class = "grid place-items-center gap-4 text-center", class:active-when = (&self.is_visible, |visible: bool| !visible, "hidden")) {
                 div(class = "relative min-w-[60ch] min-h-[40ch]") {
                     div(

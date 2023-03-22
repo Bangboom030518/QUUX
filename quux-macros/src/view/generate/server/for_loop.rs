@@ -1,10 +1,9 @@
-use proc_macro2::Ident;
-
 use super::super::internal::prelude::*;
 use crate::view::parse::prelude::*;
 
 impl ForLoop {
     pub fn html(self, id: u64) -> Html {
+        let ident = format_ident!("for_loop_components_{id}");
         let Self {
             pattern,
             iterable,
@@ -25,7 +24,7 @@ impl ForLoop {
             components,
             mut for_loop_components,
         } = (*item).into();
-        for_loop_components.push(components);
+        for_loop_components.push((ident.clone(), components.clone()));
         let ((component_types, component_idents), component_declarations): (
             (Vec<_>, Vec<_>),
             Vec<_>,
@@ -40,7 +39,6 @@ impl ForLoop {
                 )
             })
             .unzip();
-        let ident: Ident = todo!();
         Html {
             html: parse_quote! {{
                 let (html, components): (String, Vec<_>) = (#iterable).enumerate().map(|(index, #pattern)| {

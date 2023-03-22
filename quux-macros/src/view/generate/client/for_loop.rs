@@ -21,13 +21,13 @@ impl ForLoop {
         };
         quote! {
             {
-                let mut internal: Vec<_> = Vec::new();
-                for mut child in for_loop_children.next().expect_internal("retrieve for loop children: client and server for loop lists don't match") {
-                    // TODO: remove clone
-                    quux::component::Enum::render(child.component.clone(), child.render_context);
-                    internal.push(child.component.try_into().expect_internal("retrieve for loop children: client and server for loop lists don't match"))
-                }
-                #binding;
+                todo!()
+                // let mut internal: Vec<_> = Vec::new();
+                // for child in for_loop_children.#index {
+                //     quux::component::Component::render(child.component.clone(), child.render_context);
+                //     internal.push(child.component)
+                // }
+                // #binding;
             }
         }
     }

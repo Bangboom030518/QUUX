@@ -1,7 +1,6 @@
 use super::server_error::ServerError;
 use crate::{components::Flashcards, Component};
 use quux::prelude::*;
-// note: required for `quux::render::Output<set::Set>` to implement `Into<EnumRenderOutput<set::ComponentEnum>>`
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Set(super::super::Set);
@@ -19,17 +18,19 @@ impl Set {
     }
 }
 
-impl<T> Component<T> for Set {
+impl quux::component::Init for Set {
     type Props = super::super::Set;
-    type ComponentEnum = crate::ComponentEnum;
 
     fn init(set: super::super::Set) -> Self {
         Self(set)
     }
+}
 
-    fn render(self, context: render::Context<Self::ComponentEnum>) -> render::Output<Self> {
+impl Component for Set {
+    fn render(self, context: Context<Self>) -> Output<Self> {
+        type Component = Set;
         view! {
-            context, T,
+            context,
             html(lang="en") {
                 head {
                     meta(charset="UTF-8") {}
@@ -43,7 +44,7 @@ impl<T> Component<T> for Set {
                 body {
                     h1 {{ "Welcome to Quuxlet" }}
                     @Flashcards(self.0.terms.clone())
-                    @InitialisationScript<Self::ComponentEnum>(include_str!("../../dist/init.js"))
+                    @InitialisationScript(include_str!("../../dist/init.js"))
                 }
             }
         }

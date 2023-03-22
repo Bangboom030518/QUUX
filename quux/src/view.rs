@@ -27,7 +27,7 @@ impl<T> ServerContext<T> {
 }
 
 pub trait ClientContext {
-    type Context;
+    type Context: Serialize + DeserializeOwned;
 }
 
 /// The `Context` passed to the render method of a component
@@ -36,4 +36,4 @@ pub type Context<T> = ServerContext<T>;
 
 /// The `Context` passed to the render method of a component
 #[client]
-pub type Context<T: Component> = <T as ClientContext>::Context;
+pub type Context<T> = <T as ClientContext>::Context;

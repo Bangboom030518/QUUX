@@ -1,4 +1,3 @@
-use crate::ComponentEnum;
 pub use confidence_rating::ConfidenceRating;
 pub use flashcard::Flashcard;
 use quux::prelude::*;
@@ -58,23 +57,23 @@ pub struct Flashcards {
     terms: store::List<Term>,
 }
 
-impl Component for Flashcards {
-    #[server]
+impl component::Init for Flashcards {
     type Props = Vec<Term>;
-    type ComponentEnum = ComponentEnum;
 
-    #[server]
     fn init(terms: Self::Props) -> Self {
         Self {
             terms: store::List::new(terms),
         }
     }
+}
 
-    fn render(self, context: render::Context<Self::ComponentEnum>) -> render::Output<Self> {
+impl Component for Flashcards {
+    fn render(self, context: Context<Self>) -> Output<Self> {
+        type Component = Flashcards;
         let confidence_rating: ConfidenceRating;
         let flashcards: Rc<RefCell<Vec<Flashcard>>>;
         view! {
-            context, T,
+            context,
             div(class = "grid place-items-center gap-4", magic = true) {
                 div(class = "flashcard-stack") {
                     for term in $self.terms {

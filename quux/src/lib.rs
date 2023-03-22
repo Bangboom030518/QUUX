@@ -9,6 +9,7 @@ pub mod errors;
 pub mod initialisation_script;
 pub mod store;
 pub mod view;
+pub use serde;
 
 #[cfg(target_arch = "wasm32")]
 pub mod dom;
@@ -47,7 +48,7 @@ mod internal {
 }
 
 pub mod prelude {
-    #[cfg(target_arch = "wasm32")]
+    #[client]
     pub use super::dom::console_log;
     pub use super::{
         component::{self, Component},

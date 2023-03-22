@@ -1,4 +1,3 @@
-// use crate::ComponentEnum;
 use quux::prelude::*;
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
@@ -14,12 +13,9 @@ impl std::fmt::Display for ServerError {
     }
 }
 
-// impl<T> From<T> for ServerError {
-
-// }
-
 impl Component for ServerError {
     fn render(self, context: Context<Self>) -> Output<Self> {
+        type Component = ServerError;
         view! {
             context,
             h1 {{ "Internal Server Error!" }}

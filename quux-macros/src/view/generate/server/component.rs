@@ -38,15 +38,15 @@ impl From<Component> for Html {
                 let component = <#name as quux::component::Component>::init(#props);
                 component_id += 1;
                 let id = component_id;
-                let render_context = quux::render::Context {
+                let render_context = quux::view::Context {
                     id: id.clone(),
                     for_loop_id: #for_loop_id,
                     ..Default::default()
                 };
                 // TODO: remove clone
                 let rendered_component = quux::component::Component::render(component.clone(), std::clone::Clone::clone(&render_context));
-                #ident = quux::render::ClientComponentNode {
-                    component: ComponentEnum::from(component.clone()),
+                #ident = quux::view::SerializedComponent {
+                    component: component.clone(),
                     render_context: rendered_component
                         .component_node
                         .render_context

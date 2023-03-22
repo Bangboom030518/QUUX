@@ -6,7 +6,14 @@ use crate::internal::prelude::*;
 #[derive(Serialize, Deserialize)]
 pub struct SerializedComponent<T: Component> {
     pub component: T,
-    pub render_context: crate::view::Context<T>,
+    pub render_context: <T as super::ClientContext>::Context,
+}
+
+impl<T: Component> SerializedComponent<T> {
+    #[client]
+    fn render(self) -> Output<T> {
+        self.component.render(self.render_context)
+    }
 }
 
 impl<T> FromStr for SerializedComponent<T>

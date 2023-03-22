@@ -39,10 +39,12 @@ async fn not_found() -> (StatusCode, Html<String>) {
 async fn set(
     State(pool): State<Pool<Sqlite>>,
     Path(id): Path<String>,
-) -> Result<Set, quuxlet::pages::ServerError> {
-    Set::new(&pool, &id)
-        .await
-        .map_err(|err| quuxlet::pages::ServerError::init(Box::new(err)))
+) -> Result<Route, quuxlet::pages::ServerError> {
+    Route::Set(
+        Set::new(&pool, &id)
+            .await
+            .map_err(|err| quuxlet::pages::ServerError::init(Box::new(err)))?,
+    )
 }
 
 #[tokio::main]

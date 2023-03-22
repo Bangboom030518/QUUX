@@ -4,7 +4,7 @@ use crate::internal::prelude::*;
 #[server]
 pub struct Output<T>
 where
-    T: Component + Sized,
+    T: Component,
 {
     pub html: String,
     pub component_node: SerializedComponent<T>,
@@ -13,7 +13,7 @@ where
 #[server]
 impl<T> Output<T>
 where
-    T: Component + Sized,
+    T: Component,
 {
     pub fn new(html: &str, component_node: SerializedComponent<T>) -> Self {
         Self {
@@ -27,14 +27,17 @@ where
 #[derive(Default)]
 pub struct Output<T>
 where
-    T: Component + Sized,
+    T: Component,
 {
     pub component: T,
 }
 
 #[client]
-impl Output {
-    pub fn new(component: T) {
+impl<T> Output<T>
+where
+    T: Component,
+{
+    pub fn new(component: T) -> Self {
         Self { component }
     }
 }

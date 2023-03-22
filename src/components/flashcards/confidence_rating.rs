@@ -1,4 +1,3 @@
-use crate::ComponentEnum;
 use quux::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -37,22 +36,22 @@ impl ConfidenceRating {
     }
 }
 
-impl Component for ConfidenceRating {
-    #[server]
+impl component::Init for ConfidenceRating {
     type Props = ();
-    type ComponentEnum = ComponentEnum;
 
-    #[server]
-    fn init(_: Self::Props) -> Self {
+    fn init(props: Self::Props) -> Self {
         Self {
             is_visible: Store::new(false),
             rating: Store::new(Rating::Ok),
         }
     }
+}
 
-    fn render(self, context: render::Context<Self::ComponentEnum>) -> render::Output<Self> {
+impl Component for ConfidenceRating {
+    fn render(self, context: Context<Self>) -> Output<Self> {
+        type Component = ConfidenceRating;
         view! {
-            context, T,
+            context,
             div(class = "flashcard-hidden btn-group", "class:active-when" = (&self.is_visible, |visible: bool| !visible, "flashcard-hidden")) {
                 button(class = "tooltip btn btn-icon btn-terrible", on:click = {
                     let rating = self.rating.clone();
