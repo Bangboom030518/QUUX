@@ -138,7 +138,7 @@ pub fn generate(tree: &View) -> Output {
             // The types of components in the inner view of a for loop
             let types = components.into_iter().map(|Component { name, .. }| name);
             let ty: Type = parse_quote! {
-                Vec<(#(#types),*)>
+                Vec<(#(quux::view::SerializedComponent<#types>,)*)>
             };
             (
                 (ty.clone(), ident.clone()),
@@ -163,8 +163,8 @@ pub fn generate(tree: &View) -> Output {
             render_context: ClientContext {
                 id,
                 for_loop_id: None,
-                components: (#(#component_idents),*),
-                for_loop_components: (#(#for_loop_idents),*),
+                components: (#(#component_idents,)*),
+                for_loop_components: (#(#for_loop_idents,)*),
             }
         })
     };
@@ -178,20 +178,20 @@ pub fn generate(tree: &View) -> Output {
         pub struct ClientContext {
             id: u64,
             for_loop_id: Option<String>,
-            components: (#(#component_types),*),
-            for_loop_components: (#(#for_loop_types),*),
+            components: (#(quux::view::SerializedComponent<#component_types>,)*),
+            for_loop_components: (#(#for_loop_types,)*),
         }
     };
 
     if element.attributes.attributes.contains_key("magic") {
         std::fs::write(
             "expansion-server.rs",
-            quote! {fn main() {#render_output}}.to_string(),
+            quote! {fn main() {#render_output} fn context_impl() {#client_context}}.to_string(),
         )
         .unwrap();
     }
     Output {
-        render_output,
         client_context,
+        render_output,
     }
 }

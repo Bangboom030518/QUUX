@@ -28,6 +28,15 @@ pub trait SerializePostcard: Serialize {
         let bytes = self.serialize_bytes();
         base64::encode(bytes)
     }
+
+    fn deserialize_base64(string: &str) -> Result<Self, errors::ClientParse>
+    where
+        Self: DeserializeOwned + Sized,
+    {
+        let bytes = base64::decode(string).map_err(errors::ClientParse::Base64Decode)?;
+        let node = postcard::from_bytes(&bytes).map_err(errors::ClientParse::PostcardDecode)?;
+        Ok(node)
+    }
 }
 
 mod internal {
@@ -51,7 +60,7 @@ pub mod prelude {
     #[client]
     pub use super::dom::console_log;
     pub use super::{
-        component::{self, Component},
+        component::{self, Component, Routes as _},
         initialisation_script::InitialisationScript,
         store::{self, Store},
         view::{Context, Output},

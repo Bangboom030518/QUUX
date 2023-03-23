@@ -10,18 +10,49 @@ use wasm_bindgen::prelude::*;
 mod components;
 pub mod pages;
 
+#[derive(Serialize, Deserialize)]
 pub enum Routes {
     Set(SerializedComponent<pages::Set>),
     ServerError(SerializedComponent<pages::ServerError>),
+}
+
+impl From<SerializedComponent<pages::Set>> for Routes {
+    fn from(value: SerializedComponent<pages::Set>) -> Self {
+        Self::Set(value)
+    }
+}
+
+impl From<SerializedComponent<pages::ServerError>> for Routes {
+    fn from(value: SerializedComponent<pages::ServerError>) -> Self {
+        Self::ServerError(value)
+    }
 }
 
 impl quux::component::Routes for Routes {
     #[client]
     fn render(self) {
         match self {
-            Self::Set(set) => set.render(),
-            Self::ServerError(server_error) => server_error.render(),
-        }
+            Self::Set(set) => {
+                set.render();
+            }
+            Self::ServerError(server_error) => {
+                server_error.render();
+            }
+        };
+    }
+}
+
+#[server]
+impl axum::response::IntoResponse for pages::Set {
+    fn into_response(self) -> axum::response::Response {
+        axum::response::Html::from(Routes::render_to_string(self)).into_response()
+    }
+}
+
+#[server]
+impl axum::response::IntoResponse for pages::ServerError {
+    fn into_response(self) -> axum::response::Response {
+        axum::response::Html::from(Routes::render_to_string(self)).into_response()
     }
 }
 

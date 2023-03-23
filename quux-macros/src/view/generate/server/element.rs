@@ -64,6 +64,10 @@ impl From<Element> for Html {
         let attributes = value.attributes.clone();
         let tag_name = value.tag_name.clone();
         if is_self_closing(&tag_name) {
+            assert!(
+                !matches!(&value.children, Children::Items(items) if items.items.is_empty()),
+                "Self-closing elements cannot contain children"
+            );
             Self {
                 html: parse_quote! {
                     format!("<{} {} />", #tag_name, #attributes)
@@ -71,11 +75,7 @@ impl From<Element> for Html {
                 ..Default::default()
             }
         } else {
-            assert!(
-                !matches!(&value.children, Children::Items(items) if items.items.is_empty()),
-                "Self-closing elements cannot contain children"
-            );
-            let html: Html = match value.children {
+            let html: Self = match value.children {
                 Children::Items(items) => items.into(),
                 Children::ReactiveStore(store) => {
                     value.attributes.element_needs_id = true;

@@ -50,10 +50,3 @@ impl Component for Set {
         }
     }
 }
-
-#[cfg(not(target_arch = "wasm32"))]
-impl axum::response::IntoResponse for Set {
-    fn into_response(self) -> axum::response::Response {
-        axum::response::Html::from(self.render_to_string()).into_response()
-    }
-}

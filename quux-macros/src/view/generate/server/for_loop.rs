@@ -9,7 +9,7 @@ impl ForLoop {
             iterable,
             mut item,
             ..
-        } = self.clone();
+        } = self;
         let iterable = match iterable {
             ForLoopIterable::Static(iterable) => quote! { #iterable },
             ForLoopIterable::Reactive(iterable) => {

@@ -46,10 +46,10 @@ impl From<ServerError> for axum::http::StatusCode {
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
-impl axum::response::IntoResponse for ServerError {
-    fn into_response(self) -> axum::response::Response {
-        use axum::http::StatusCode;
-        (StatusCode::from(self), self.render_to_string()).into_response()
-    }
-}
+// #[cfg(not(target_arch = "wasm32"))]
+// impl axum::response::IntoResponse for ServerError {
+//     fn into_response(self) -> axum::response::Response {
+//         use axum::http::StatusCode;
+//         (StatusCode::from(self), self.render_to_string()).into_response()
+//     }
+// }
