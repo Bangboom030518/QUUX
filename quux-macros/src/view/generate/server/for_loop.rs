@@ -25,14 +25,11 @@ impl ForLoop {
             mut for_loop_components,
         } = (*item).into();
         for_loop_components.push((ident.clone(), components.clone()));
-        let ((component_types, component_idents), component_declarations): (
-            (Vec<_>, Vec<_>),
-            Vec<_>,
-        ) = components
+        let (component_idents, component_declarations): (Vec<_>, Vec<_>) = components
             .iter()
             .map(|Component { name, ident, .. }| {
                 (
-                    (name, ident),
+                    ident.clone(),
                     quote! {
                         let #ident: quux::view::SerializedComponent<#name>;
                     },
@@ -44,7 +41,7 @@ impl ForLoop {
                 let (html, components): (String, Vec<_>) = (#iterable).enumerate().map(|(index, #pattern)| {
                     #(#component_declarations);*
 
-                    (ToString::to_string(&#html), (#(#component_idents),*))
+                    (ToString::to_string(&#html), (#(#component_idents,)*))
                 }).unzip();
                 #ident = components;
                 html

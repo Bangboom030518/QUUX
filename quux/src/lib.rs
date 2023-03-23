@@ -60,7 +60,7 @@ pub mod prelude {
     #[client]
     pub use super::dom::console_log;
     pub use super::{
-        component::{self, Component, Routes as _},
+        component::{self, Component, Routes as _, Init as _},
         initialisation_script::InitialisationScript,
         store::{self, Store},
         view::{Context, Output},

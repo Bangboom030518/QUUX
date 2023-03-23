@@ -3,7 +3,7 @@ use crate::internal::prelude::*;
 /// Everything the client needs to render a component.
 ///
 /// These are created each time every time a component is used in a view, on the server.
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct SerializedComponent<T: Component> {
     pub component: T,
     pub render_context: <T as super::ClientContext>::Context,

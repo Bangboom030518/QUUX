@@ -11,7 +11,7 @@ use axum::{
     routing::get,
     Router,
 };
-use quux::prelude::Component;
+use quux::prelude::*;
 use quuxlet::pages::Set;
 use sqlx::{Pool, Sqlite};
 use std::{net::SocketAddr, time::Duration};
@@ -39,12 +39,10 @@ async fn not_found() -> (StatusCode, Html<String>) {
 async fn set(
     State(pool): State<Pool<Sqlite>>,
     Path(id): Path<String>,
-) -> Result<Route, quuxlet::pages::ServerError> {
-    Route::Set(
-        Set::new(&pool, &id)
-            .await
-            .map_err(|err| quuxlet::pages::ServerError::init(Box::new(err)))?,
-    )
+) -> Result<Set, quuxlet::pages::ServerError> {
+    Set::new(&pool, &id)
+        .await
+        .map_err(|err| quuxlet::pages::ServerError::init(Box::new(err)))
 }
 
 #[tokio::main]

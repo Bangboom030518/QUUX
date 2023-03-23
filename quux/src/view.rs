@@ -7,12 +7,18 @@ mod serialized_components;
 
 /// On the server, context is used to generate ids for sub-components.
 /// This created whenever a `view!()` macro is used.
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct ServerContext<T> {
     pub id: u64,
     // TODO: update to have own struct
     pub for_loop_id: Option<String>,
     _phantom: PhantomData<T>,
+}
+
+impl<T> Default for ServerContext<T> {
+    fn default() -> Self {
+        Self::new(0, None)
+    }
 }
 
 impl<T> ServerContext<T> {
@@ -27,7 +33,7 @@ impl<T> ServerContext<T> {
 }
 
 pub trait ClientContext {
-    type Context: Serialize + DeserializeOwned;
+    type Context: Serialize + DeserializeOwned + Clone;
 }
 
 /// The `Context` passed to the render method of a component

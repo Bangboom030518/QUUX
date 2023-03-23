@@ -174,7 +174,7 @@ pub fn generate(tree: &View) -> Output {
             type Context = ClientContext;
         }
 
-        #[derive(quux::serde::Serialize, quux::serde::Deserialize)]
+        #[derive(quux::serde::Serialize, quux::serde::Deserialize, Clone)]
         pub struct ClientContext {
             id: u64,
             for_loop_id: Option<String>,
