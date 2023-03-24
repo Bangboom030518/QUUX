@@ -24,24 +24,24 @@ impl ForLoop {
             components,
             mut for_loop_components,
         } = (*item).into();
-        for_loop_components.push((ident.clone(), components.clone()));
-        let (component_idents, component_declarations): (Vec<_>, Vec<_>) = components
-            .iter()
-            .map(|Component { name, ident, .. }| {
-                (
-                    ident.clone(),
-                    quote! {
-                        let #ident: quux::view::SerializedComponent<#name>;
-                    },
-                )
-            })
-            .unzip();
+
+        let ty = components.ty();
+        let ty: Type = parse_quote! { Vec<#ty> };
+
+        // push the the type of for loop's children to the return type so the root item may declare and use them
+        for_loop_components
+            .0
+            .push(ComponentDeclaration { ty, ident });
+
+        let declarations = components.declarations();
+        let expr = components.expr();
+
         Html {
             html: parse_quote! {{
                 let (html, components): (String, Vec<_>) = (#iterable).enumerate().map(|(index, #pattern)| {
-                    #(#component_declarations);*
+                    #declarations
 
-                    (ToString::to_string(&#html), (#(#component_idents,)*))
+                    (ToString::to_string(&#html), #expr)
                 }).unzip();
                 #ident = components;
                 html

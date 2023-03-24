@@ -70,7 +70,7 @@ pub struct ForLoop {
     pub pattern: Pat,
     pub iterable: ForLoopIterable,
     pub item: Box<Item>,
-    pub binding: Option<Ident>,
+    pub bindings: Vec<Ident>,
 }
 
 impl ForLoop {
@@ -96,7 +96,7 @@ impl Parse for ForLoop {
             pattern,
             iterable,
             item: Box::new(item.parse()?),
-            binding: None,
+            bindings: Vec::new(),
         })
     }
 }

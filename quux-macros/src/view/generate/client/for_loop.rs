@@ -1,15 +1,14 @@
 use super::super::internal::prelude::*;
 use crate::view::parse::prelude::*;
 
+// FIXME: make client side for loops work
+
 impl ForLoop {
     fn binding_code(&mut self) -> TokenStream {
         let Item::Component(Component { binding, .. }) = *self.item.clone() else {
             return TokenStream::new()
         };
-        let Some(binding) = binding else {
-            return TokenStream::new()
-        };
-        self.binding = Some(binding.clone());
+        self.bindings = Some(binding.clone());
         let binding = if self.is_reactive() {
             quote! {
                 #binding = std::rc::Rc::new(std::cell::RefCell::new(internal));
@@ -21,19 +20,18 @@ impl ForLoop {
         };
         quote! {
             {
-                todo!()
-                // let mut internal: Vec<_> = Vec::new();
-                // for child in for_loop_children.#index {
-                //     quux::component::Component::render(child.component.clone(), child.render_context);
-                //     internal.push(child.component)
-                // }
-                // #binding;
+                let mut internal: Vec<_> = Vec::new();
+                for child in for_loop_children.#index {
+                    quux::component::Component::render(child.component.clone(), child.render_context);
+                    internal.push(child.component)
+                }
+                #binding;
             }
         }
     }
 
     fn pop_code(&self, id: u64) -> TokenStream {
-        let binding_code = self.binding.as_ref().map_or_else(TokenStream::new, |_| {
+        let binding_code = self.bindings.map_or_else(TokenStream::new, |_| {
             quote! {
                 binding.borrow_mut().pop()
             }
@@ -54,7 +52,7 @@ impl ForLoop {
         );
         let pop_code = self.pop_code(id);
         let binding_code = self
-            .binding
+            .bindings
             .as_ref()
             .map_or_else(TokenStream::new, |binding| {
                 quote! {

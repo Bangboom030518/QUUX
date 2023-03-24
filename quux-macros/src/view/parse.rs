@@ -38,7 +38,7 @@ mod internal {
             braced, parenthesized,
             parse::{Parse, ParseStream},
             token::{Brace, Paren},
-            Expr, Ident, LitInt, Pat, Path, Token, Type,
+            Expr, Ident, LitInt, Pat, Path, Token, Type, TypePath,
         };
     }
 }

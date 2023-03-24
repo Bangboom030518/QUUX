@@ -31,7 +31,7 @@ impl From<Items> for Html {
                     components,
                     for_loop_components,
                 } = item.into();
-                (html, (components, for_loop_components))
+                (html, (components.0, for_loop_components.0))
             })
             .unzip();
 
@@ -39,8 +39,8 @@ impl From<Items> for Html {
             html: parse_quote! {
                 String::new() + #(&#html)+*
             },
-            components: components.concat(),
-            for_loop_components: for_loop_components.concat(),
+            components: components.concat().into(),
+            for_loop_components: for_loop_components.concat().into(),
         }
     }
 }

@@ -11,9 +11,9 @@ mod for_loop;
 pub struct Html {
     pub html: syn::Expr,
     /// The types of components for a tuple for the Children type
-    pub components: Vec<Component>,
+    pub components: ComponentDeclarations,
     /// The types of for loop components for a tuple for the ForLoopChildren type
-    pub for_loop_components: Vec<(Ident, Vec<Component>)>,
+    pub for_loop_components: ComponentDeclarations,
 }
 
 impl Default for Html {
@@ -22,8 +22,8 @@ impl Default for Html {
             html: parse_quote! {
                 String::new()
             },
-            components: Vec::new(),
-            for_loop_components: Vec::new(),
+            components: ComponentDeclarations::default(),
+            for_loop_components: ComponentDeclarations::default(),
         }
     }
 }
@@ -72,32 +72,11 @@ impl From<Expr> for Html {
             html: parse_quote! {
                 #expression.to_string()
             },
-            components: Vec::new(),
-            for_loop_components: Vec::new(),
+            components: ComponentDeclarations::default(),
+            for_loop_components: ComponentDeclarations::default(),
         }
     }
 }
-
-// An example output of a view on the server
-// ```
-// Self::Output {
-//     html: unimplemented!(),
-//     component_node: SerializedComponent {
-//         component: self,
-//         render_context: Self::ClientContext {
-//             components: Self::Children(child_a, child_b, ..),
-//             for_loop_components: Self::ForLoops(for_loop_a, for_loop_b, ..),
-//             id,
-//         },
-//     },
-// }
-// ```
-/*
-struct ClientContext {
-    pub id: u64,
-    pub components: (A, B, ..)
-}
-*/
 
 pub struct Output {
     pub client_context: TokenStream,
@@ -116,38 +95,12 @@ pub fn generate(tree: &View) -> Output {
         for_loop_components,
     } = Html::from(element.clone());
 
-    let ((component_types, component_idents), component_declarations): ((Vec<_>, Vec<_>), Vec<_>) =
-        components
-            .iter()
-            .map(|Component { name, ident, .. }| {
-                (
-                    (name, ident),
-                    quote! {
-                        let #ident: quux::view::SerializedComponent<#name>;
-                    },
-                )
-            })
-            .unzip();
-
-    let ((for_loop_types, for_loop_idents), for_loop_declarations): (
-        (Vec<Type>, Vec<Ident>),
-        Vec<TokenStream>,
-    ) = for_loop_components
-        .into_iter()
-        .map(|(ident, components)| {
-            // The types of components in the inner view of a for loop
-            let types = components.into_iter().map(|Component { name, .. }| name);
-            let ty: Type = parse_quote! {
-                Vec<(#(quux::view::SerializedComponent<#types>,)*)>
-            };
-            (
-                (ty.clone(), ident.clone()),
-                quote! {
-                    let #ident: #ty;
-                },
-            )
-        })
-        .unzip();
+    let components_type = components.ty();
+    let components_expr = components.expr();
+    let components_declarations = components.declarations();
+    let for_loops_type = for_loop_components.ty();
+    let for_loops_expr = for_loop_components.expr();
+    let for_loops_declarations = for_loop_components.declarations();
 
     let render_output = quote! {
         let context = #context;
@@ -155,16 +108,16 @@ pub fn generate(tree: &View) -> Output {
         let mut component_id = context.id;
         let for_loop_id = context.for_loop_id;
 
-        #(#component_declarations);*
-        #(#for_loop_declarations);*
+        #components_declarations
+        #for_loops_declarations
 
         quux::view::Output::new(&#html, quux::view::SerializedComponent {
             component: self,
             render_context: ClientContext {
                 id,
                 for_loop_id: None,
-                components: (#(#component_idents,)*),
-                for_loop_components: (#(#for_loop_idents,)*),
+                components: #components_expr,
+                for_loop_components: #for_loops_type,
             }
         })
     };
@@ -178,8 +131,8 @@ pub fn generate(tree: &View) -> Output {
         pub struct ClientContext {
             id: u64,
             for_loop_id: Option<String>,
-            components: (#(quux::view::SerializedComponent<#component_types>,)*),
-            for_loop_components: (#(#for_loop_types,)*),
+            components: #components_type,
+            for_loop_components: #for_loops_type,
         }
     };
 
