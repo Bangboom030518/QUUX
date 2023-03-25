@@ -31,9 +31,39 @@ impl<T> ServerContext<T> {
         }
     }
 }
+#[derive(Serialize, Deserialize, Clone)]
+pub struct ClientContext<T>
+where
+    T: Component,
+{
+    id: u64,
+    for_loop_id: Option<String>,
+    components: <T as ComponentChildren>::Components,
+    for_loop_components: <T as ComponentChildren>::ForLoopComponents,
+}
 
-pub trait ClientContext {
-    type Context: Serialize + DeserializeOwned + Clone;
+impl<T> ClientContext<T>
+where
+    T: Component,
+{
+    pub fn new(
+        id: u64,
+        for_loop_id: Option<String>,
+        components: <T as ComponentChildren>::Components,
+        for_loop_components: <T as ComponentChildren>::ForLoopComponents,
+    ) -> Self {
+        Self {
+            id,
+            for_loop_id,
+            components,
+            for_loop_components,
+        }
+    }
+}
+
+pub trait ComponentChildren {
+    type Components: Serialize + DeserializeOwned + Clone;
+    type ForLoopComponents: Serialize + DeserializeOwned + Clone;
 }
 
 /// The `Context` passed to the render method of a component
@@ -42,4 +72,4 @@ pub type Context<T> = ServerContext<T>;
 
 /// The `Context` passed to the render method of a component
 #[client]
-pub type Context<T> = <T as ClientContext>::Context;
+pub type Context<T> = ClientContext<T>;

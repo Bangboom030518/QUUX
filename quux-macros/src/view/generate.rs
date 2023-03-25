@@ -87,15 +87,6 @@ impl ComponentDeclarations {
     }
 }
 
-// .map(|(ident, components)| {
-//     let types = components.into_iter().map(|Component { name, .. }| name);
-//     // Build a tuple of all the types of component that the for loop contains
-//     let ty: Type = parse_quote! {
-//         Vec<(#(quux::view::SerializedComponent<#types>,)*)>
-//     };
-//     ComponentDeclaration { ty, ident }
-// })
-
 mod internal {
     pub mod prelude {
         pub use super::super::{ComponentDeclaration, ComponentDeclarations, Html};

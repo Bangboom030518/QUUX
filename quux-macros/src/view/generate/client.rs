@@ -4,23 +4,23 @@ use crate::view::parse::prelude::*;
 mod for_loop;
 
 /*
-                    let binding = component.binding.map_or_else(TokenStream::new, |binding| {
-                        quote! {
-                            #binding = component
-                        }
-                    });
+let binding = component.binding.map_or_else(TokenStream::new, |binding| {
+    quote! {
+        #binding = component
+    }
+});
 
-                    let component_string = component.name.to_token_stream().to_string();
-                    vec![quote! {
-                        {
-                            let child = children.#index;
-                            let mut component = child.component;
+let component_string = component.name.to_token_stream().to_string();
+vec![quote! {
+    {
+        let child = children.#index;
+        let mut component = child.component;
 
-                            // TODO: remove clone
-                            let component = component.render(child.render_context).component;
-                            #binding;
-                        }
-                    }]
+        // TODO: remove clone
+        let component = component.render(child.render_context).component;
+        #binding;
+    }
+}]
 
 */
 

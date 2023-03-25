@@ -103,6 +103,7 @@ pub fn generate(tree: &View) -> Output {
     let for_loops_declarations = for_loop_components.declarations();
 
     let render_output = quote! {
+        use quux::view::{Output, ClientContext, SerializedComponent};
         let context = #context;
         let id = context.id;
         let mut component_id = context.id;
@@ -111,28 +112,13 @@ pub fn generate(tree: &View) -> Output {
         #components_declarations
         #for_loops_declarations
 
-        quux::view::Output::new(&#html, quux::view::SerializedComponent {
-            component: self,
-            render_context: ClientContext {
-                id,
-                for_loop_id: None,
-                components: #components_expr,
-                for_loop_components: #for_loops_type,
-            }
-        })
+        Output::new(&#html, SerializedComponent::new(self, ClientContext::new(id, None, #components_expr, #for_loops_type)))
     };
     // TODO: move from server
     let client_context = quote! {
-        impl quux::view::ClientContext for Component {
-            type Context = ClientContext;
-        }
-
-        #[derive(quux::serde::Serialize, quux::serde::Deserialize, Clone)]
-        pub struct ClientContext {
-            id: u64,
-            for_loop_id: Option<String>,
-            components: #components_type,
-            for_loop_components: #for_loops_type,
+        impl quux::view::ComponentChildren for Component {
+            type Components = #components_type;
+            type ForLoopComponents = #for_loops_type;
         }
     };
 

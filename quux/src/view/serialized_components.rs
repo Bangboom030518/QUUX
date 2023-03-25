@@ -14,4 +14,8 @@ impl<T: Component> SerializedComponent<T> {
     pub fn render(self) -> Output<T> {
         self.component.render(self.render_context)
     }
+
+    pub fn new(component: T, render_context: <T as super::ClientContext>::Context) -> Self {
+        Self { component, render_context }
+    }
 }
