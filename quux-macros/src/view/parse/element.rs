@@ -17,10 +17,13 @@ pub struct Element {
 
 impl Parse for Element {
     fn parse(input: ParseStream) -> syn::Result<Self> {
+        let tag_name = input.parse()?;
+        let attributes: Attributes = input.parse()?;
+        let id = attributes.id;
         Ok(Self {
-            tag_name: input.parse()?,
-            attributes: input.parse()?,
-            children: input.parse()?,
+            tag_name,
+            attributes,
+            children: Children::parse(input, id)?,
             ..Default::default()
         })
     }

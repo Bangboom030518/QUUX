@@ -25,53 +25,97 @@ pub fn generate(tree: &View) -> TokenStream {
     }
 }
 
-#[derive(Clone)]
-pub struct ComponentDeclaration {
-    ty: Type,
-    ident: Ident,
-}
+pub trait AsDeclaration {
+    fn ty(&self) -> Type;
+    fn ident(&self) -> Ident;
 
-impl ComponentDeclaration {
     fn declaration(&self) -> syn::Stmt {
-        let Self { ty, ident } = self;
+        let ty = self.ty();
+        let ident = self.ident();
+
         parse_quote! {
             let #ident: #ty;
         }
     }
 }
 
-impl From<Component> for ComponentDeclaration {
-    fn from(Component { name, ident, .. }: Component) -> Self {
-        Self {
-            ty: parse_quote! {
-                quux::view::SerializedComponent<#name>
-            },
-            ident,
+impl AsDeclaration for ForLoop {
+    fn ty(&self) -> Type {
+        let item = self.item.clone();
+        let Html { components, .. } = (*item).into();
+
+        let ty = components.ty();
+        parse_quote! { Vec<#ty> }
+    }
+    fn ident(&self) -> Ident {
+        let id = self.id;
+        format_ident!("for_loop_components_{id}")
+    }
+}
+
+impl AsDeclaration for Component {
+    fn ty(&self) -> Type {
+        let ty = &self.name;
+        parse_quote! {
+            quux::view::SerializedComponent<#ty>
         }
+    }
+
+    fn ident(&self) -> Ident {
+        self.ident.clone()
+    }
+}
+#[derive(Clone, Default)]
+pub struct ForLoops(Vec<ForLoop>);
+
+impl AsDeclarations for ForLoops {
+    type Item = ForLoop;
+
+    fn items(&self) -> &[Self::Item] {
+        &self.0
     }
 }
 
 #[derive(Clone, Default)]
-pub struct ComponentDeclarations(Vec<ComponentDeclaration>);
+pub struct Components(Vec<Component>);
 
-impl From<Vec<ComponentDeclaration>> for ComponentDeclarations {
-    fn from(value: Vec<ComponentDeclaration>) -> Self {
-        Self(value)
+impl AsDeclarations for Components {
+    type Item = Component;
+
+    fn items(&self) -> &[Self::Item] {
+        &self.0
     }
 }
 
-impl ComponentDeclarations {
+impl Components {
+    pub fn bindings(&self) -> Vec<&Ident> {
+        self.0
+            .iter()
+            .filter_map(|component| component.binding.as_ref())
+            .collect()
+    }
+
+    pub fn types(&self) -> Vec<&syn::Path> {
+        self.0.iter().map(|component| &component.name).collect()
+    }
+}
+
+pub trait AsDeclarations {
+    type Item: AsDeclaration;
+
+    fn items(&self) -> &[Self::Item];
+
     fn ty(&self) -> Type {
-        let Self(declarations) = self;
-        let types = declarations.into_iter().map(|declaration| declaration.ty);
+        let items = self.items();
+        let types = items.iter().map(AsDeclaration::ty);
         parse_quote! {
             (#(#types,)*)
         }
     }
 
     fn expr(&self) -> Expr {
-        let Self(declarations) = self;
-        let idents = declarations.iter().map(|declaration| declaration.ident);
+        let items = self.items();
+        let idents = items.iter().map(AsDeclaration::ident);
 
         parse_quote! {
             (#(#idents,)*)
@@ -79,8 +123,8 @@ impl ComponentDeclarations {
     }
 
     fn declarations(&self) -> TokenStream {
-        let Self(declarations) = self;
-        let declarations = declarations.iter().map(ComponentDeclaration::declaration);
+        let items = self.items();
+        let declarations = items.iter().map(AsDeclaration::declaration);
         quote! {
             #(#declarations;)*
         }
@@ -89,7 +133,7 @@ impl ComponentDeclarations {
 
 mod internal {
     pub mod prelude {
-        pub use super::super::{ComponentDeclaration, ComponentDeclarations, Html};
+        pub use super::super::{AsDeclaration, AsDeclarations, Components, ForLoops, Html};
         pub use crate::view::parse::prelude::*;
         pub use proc_macro2::{Ident, TokenStream};
         pub use quote::{format_ident, quote, ToTokens};

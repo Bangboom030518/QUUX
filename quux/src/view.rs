@@ -36,17 +36,17 @@ pub struct ClientContext<T>
 where
     T: Component,
 {
-    id: u64,
-    for_loop_id: Option<String>,
-    components: <T as ComponentChildren>::Components,
-    for_loop_components: <T as ComponentChildren>::ForLoopComponents,
+    pub id: u64,
+    pub for_loop_id: Option<String>,
+    pub components: <T as ComponentChildren>::Components,
+    pub for_loop_components: <T as ComponentChildren>::ForLoopComponents,
 }
 
 impl<T> ClientContext<T>
 where
     T: Component,
 {
-    pub fn new(
+    pub const fn new(
         id: u64,
         for_loop_id: Option<String>,
         components: <T as ComponentChildren>::Components,

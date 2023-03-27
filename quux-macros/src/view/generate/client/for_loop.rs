@@ -4,45 +4,86 @@ use crate::view::parse::prelude::*;
 // FIXME: make client side for loops work
 
 impl ForLoop {
-    fn binding_code(&mut self) -> TokenStream {
-        let Item::Component(Component { binding, .. }) = *self.item.clone() else {
-            return TokenStream::new()
-        };
-        self.bindings = Some(binding.clone());
-        let binding = if self.is_reactive() {
-            quote! {
-                #binding = std::rc::Rc::new(std::cell::RefCell::new(internal));
-            }
-        } else {
-            quote! {
-                #binding = internal;
-            }
-        };
-        quote! {
-            {
-                let mut internal: Vec<_> = Vec::new();
-                for child in for_loop_children.#index {
-                    quux::component::Component::render(child.component.clone(), child.render_context);
-                    internal.push(child.component)
+    fn binding_code(&mut self, index: usize) -> TokenStream {
+        let Html {
+            components,
+            for_loop_components,
+            ..
+        } = (*self.item.clone()).into();
+
+        let index = syn::Index::from(index);
+
+        self.bindings = components.bindings().into_iter().cloned().collect();
+
+        let bindings: TokenStream = components
+            .0
+            .iter()
+            .enumerate()
+            .map(if self.is_reactive() {
+                |(index, component): (_, &Component)| {
+                    let index = syn::Index::from(index);
+                    let Some(binding) = component.binding.clone() else {
+                        return TokenStream::new()
+                    };
+                    quote! {
+                        #binding = std::rc::Rc::new(std::cell::RefCell::new(internal.#index));
+                    }
                 }
-                #binding;
+            } else {
+                |(index, component): (_, &Component)| {
+                    let index = syn::Index::from(index);
+                    let Some(binding) = component.binding.clone() else {
+                        return TokenStream::new()
+                    };
+                    quote! {
+                        #binding = internal.#index;
+                    }
+                }
+            })
+            .collect();
+
+        let types = components.types();
+        let children_type = quote! {
+            (#(Vec<#types>,)*)
+        };
+        let indices = (0..types.len()).map(syn::Index::from);
+
+        let vecs = std::iter::repeat(quote! {
+            Vec::new(),
+        })
+        .take(types.len());
+
+        quote! {{
+            let mut internal: #children_type = (#(#vecs)*);
+            for components in for_loop_components.#index {
+                #({
+                    let child = components.#indices;
+                    child.render();
+                    internal.#indices.push(child.component.clone());
+                })*
             }
-        }
+            #bindings;
+        }}
     }
 
-    fn pop_code(&self, id: u64) -> TokenStream {
-        let binding_code = self.bindings.map_or_else(TokenStream::new, |_| {
-            quote! {
-                binding.borrow_mut().pop()
-            }
-        });
+    fn pop_code(&self) -> TokenStream {
+        let id = self.id;
+        let binding_code: TokenStream = self
+            .bindings
+            .iter()
+            .map(|binding| {
+                quote! {
+                    #binding.borrow_mut().pop()
+                }
+            })
+            .collect();
         quote! {{
             quux::dom::get_reactive_for_loop_element(*id, #id, index).remove();
             #binding_code;
         }}
     }
 
-    fn list_store_code(&self, id: u64) -> TokenStream {
+    fn list_store_code(&self) -> TokenStream {
         let ForLoopIterable::Reactive(store) = self.iterable.clone() else {
             return TokenStream::new()
         };
@@ -50,19 +91,19 @@ impl ForLoop {
             !matches!(*self.item, Item::Expression(_)),
             "reactive for loops must contain either elements or components"
         );
-        let pop_code = self.pop_code(id);
-        let binding_code = self
-            .bindings
-            .as_ref()
-            .map_or_else(TokenStream::new, |binding| {
-                quote! {
-                    let binding = std::rc::Rc::clone(&#binding);
-                }
-            });
+        let pop_code = self.pop_code();
+        // let binding_code = self
+        //     .bindings
+        //     .as_ref()
+        //     .map_or_else(TokenStream::new, |binding| {
+        //         quote! {
+        //             let binding = std::rc::Rc::clone(&#binding);
+        //         }
+        //     });
         quote! {
             quux::store::List::on_change(&#store, {
                 let id = Rc::clone(&id);
-                #binding_code;
+                // #binding_code;
                 move |event| match event {
                     quux::store::list::Event::Push(_) => todo!("handle push"),
                     quux::store::list::Event::Pop(_, index) => #pop_code,
@@ -71,9 +112,9 @@ impl ForLoop {
         }
     }
 
-    pub fn reactivity(&mut self, id: u64) -> TokenStream {
-        let binding_code = self.binding_code();
-        let reactivity = self.list_store_code(id);
+    pub fn reactivity(&mut self, index: usize) -> TokenStream {
+        let binding_code = self.binding_code(index);
+        let reactivity = self.list_store_code();
         quote! {
             #binding_code;
             #reactivity;

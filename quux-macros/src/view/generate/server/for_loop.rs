@@ -2,18 +2,18 @@ use super::super::internal::prelude::*;
 use crate::view::parse::prelude::*;
 
 impl ForLoop {
-    pub fn html(self, id: u64) -> Html {
-        let ident = format_ident!("for_loop_components_{id}");
+    pub fn html(self) -> Html {
+        let ident = self.ident();
         let Self {
             pattern,
             iterable,
             mut item,
             ..
-        } = self;
+        } = self.clone();
         let iterable = match iterable {
             ForLoopIterable::Static(iterable) => quote! { #iterable },
             ForLoopIterable::Reactive(iterable) => {
-                item.insert_for_loop_id(id);
+                item.insert_for_loop_id(self.id);
                 quote! {
                     (std::cell::Ref::<Vec<_>>::from(&#iterable)).iter().cloned()
                 }
@@ -25,13 +25,8 @@ impl ForLoop {
             mut for_loop_components,
         } = (*item).into();
 
-        let ty = components.ty();
-        let ty: Type = parse_quote! { Vec<#ty> };
-
         // push the the type of for loop's children to the return type so the root item may declare and use them
-        for_loop_components
-            .0
-            .push(ComponentDeclaration { ty, ident });
+        for_loop_components.0.push(self);
 
         let declarations = components.declarations();
         let expr = components.expr();

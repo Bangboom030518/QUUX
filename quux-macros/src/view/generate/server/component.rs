@@ -54,8 +54,8 @@ impl From<Component> for Html {
         };
         Self {
             html,
-            components: ComponentDeclarations(vec![value.into()]),
-            for_loop_components: ComponentDeclarations::default(),
+            components: Components(vec![value]),
+            for_loop_components: ForLoops::default(),
         }
     }
 }

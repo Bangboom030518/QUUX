@@ -39,8 +39,8 @@ impl From<Items> for Html {
             html: parse_quote! {
                 String::new() + #(&#html)+*
             },
-            components: components.concat().into(),
-            for_loop_components: for_loop_components.concat().into(),
+            components: Components(components.concat()),
+            for_loop_components: ForLoops(for_loop_components.concat()),
         }
     }
 }
@@ -84,7 +84,7 @@ impl From<Element> for Html {
                         ..Default::default()
                     }
                 }
-                Children::ForLoop(for_loop) => for_loop.html(value.attributes.id),
+                Children::ForLoop(for_loop) => for_loop.html(),
             };
             let body = html.html;
             Self {

@@ -1,9 +1,9 @@
 use crate::{
     internal::prelude::*,
-    view::{ClientContext, SerializedComponent},
+    view::{ComponentChildren, SerializedComponent},
 };
 
-pub trait Component: Serialize + ClientContext {
+pub trait Component: Serialize + ComponentChildren {
     fn render(self, context: crate::view::Context<Self>) -> crate::view::Output<Self>
     where
         Self: Sized;

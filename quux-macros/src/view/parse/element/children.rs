@@ -37,8 +37,8 @@ pub enum Children {
     ForLoop(ForLoop),
 }
 
-impl Parse for Children {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
+impl Children {
+    pub fn parse(input: ParseStream, id: u64) -> syn::Result<Self> {
         let children;
         braced!(children in input);
         if children.peek(Token![$]) {
@@ -46,7 +46,7 @@ impl Parse for Children {
         }
 
         if children.peek(Token![for]) {
-            return Ok(Self::ForLoop(children.parse()?));
+            return Ok(Self::ForLoop(ForLoop::parse(&children, id)?));
         }
 
         Ok(Self::Items(children.parse()?))
@@ -71,16 +71,15 @@ pub struct ForLoop {
     pub iterable: ForLoopIterable,
     pub item: Box<Item>,
     pub bindings: Vec<Ident>,
+    pub id: u64,
 }
 
 impl ForLoop {
     pub const fn is_reactive(&self) -> bool {
         matches!(self.iterable, ForLoopIterable::Reactive(_))
     }
-}
 
-impl Parse for ForLoop {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
+    pub fn parse(input: ParseStream, id: u64) -> syn::Result<Self> {
         input.parse::<Token![for]>()?;
         let pattern = input.parse()?;
         input.parse::<Token![in]>()?;
@@ -92,11 +91,13 @@ impl Parse for ForLoop {
         }(input.call(Expr::parse_without_eager_brace)?);
         let item;
         braced!(item in input);
+        let item = item.parse()?;
         Ok(Self {
             pattern,
             iterable,
-            item: Box::new(item.parse()?),
+            item: Box::new(item),
             bindings: Vec::new(),
+            id,
         })
     }
 }

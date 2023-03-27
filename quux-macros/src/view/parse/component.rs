@@ -6,7 +6,7 @@ static ID: AtomicU64 = AtomicU64::new(0);
 
 #[derive(Clone)]
 pub struct Component {
-    pub name: TypePath,
+    pub name: Path,
     pub props: Props,
     pub binding: Option<Ident>,
     /// Will be updated with a for loop id if this component is used in a for loop

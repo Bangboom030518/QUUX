@@ -92,6 +92,7 @@ impl Parse for Components {
     }
 }
 
+#[allow(clippy::fallible_impl_from)]
 impl From<Components> for TokenStream {
     fn from(value: Components) -> Self {
         let enum_declaration = value.enum_declaration();

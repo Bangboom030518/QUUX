@@ -8,6 +8,7 @@ struct Data {
     components: Vec<Component>,
     /// Code to update DOM on changes - hydration
     reactivity: Vec<TokenStream>,
+    for_loops: Vec<ForLoop>,
 }
 
 impl Data {
@@ -21,7 +22,7 @@ impl From<Item> for Data {
         match item {
             Item::Component(component) => Self {
                 components: vec![component],
-                reactivity: Vec::new(),
+                ..Default::default()
             },
             Item::Element(element) => element.into(),
             Item::Expression(_) => Self::new(),
@@ -37,15 +38,14 @@ impl From<Element> for Data {
             ..
         }: Element,
     ) -> Self {
-        let mut data = Self {
-            ..Default::default()
-        };
+        let mut data = Self::default();
         data.add_event_data(attributes.clone());
         match children {
             Children::Items(children) => data.add_child_data(children),
             Children::ReactiveStore(store) => data.add_store_data(&store, attributes.id),
-            Children::ForLoop(mut for_loop) => {
-                data.reactivity.push(for_loop.reactivity(attributes.id));
+            Children::ForLoop(for_loop) => {
+                data.for_loops.push(for_loop);
+                // data.reactivity.push(for_loop.reactivity(attributes.id));
             }
         };
         data
@@ -86,10 +86,11 @@ impl Data {
             let Self {
                 mut components,
                 mut reactivity,
-                ..
+                mut for_loops,
             } = child.into();
             self.components.append(&mut components);
             self.reactivity.append(&mut reactivity);
+            self.for_loops.append(&mut for_loops);
         }
     }
 
@@ -111,8 +112,16 @@ pub fn generate(tree: &View) -> TokenStream {
     let Data {
         components,
         reactivity,
+        for_loops,
         ..
     } = element.clone().into();
+
+    let for_loop_code: TokenStream = for_loops
+        .into_iter()
+        .enumerate()
+        .map(|(index, mut for_loop)| for_loop.reactivity(index))
+        .collect();
+
     let components = components
         .into_iter()
         .enumerate()
@@ -142,6 +151,7 @@ pub fn generate(tree: &View) -> TokenStream {
         let mut for_loop_components = #context.for_loop_components;
         let id = Rc::new(#context.id);
         #(#components);*;
+        #for_loop_code;
         // for mut child in children {
         //     quux::component::Enum::render(child.component, child.render_context);
         // }

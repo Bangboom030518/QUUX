@@ -11,9 +11,9 @@ mod for_loop;
 pub struct Html {
     pub html: syn::Expr,
     /// The types of components for a tuple for the Children type
-    pub components: ComponentDeclarations,
+    pub components: Components,
     /// The types of for loop components for a tuple for the ForLoopChildren type
-    pub for_loop_components: ComponentDeclarations,
+    pub for_loop_components: ForLoops,
 }
 
 impl Default for Html {
@@ -22,8 +22,8 @@ impl Default for Html {
             html: parse_quote! {
                 String::new()
             },
-            components: ComponentDeclarations::default(),
-            for_loop_components: ComponentDeclarations::default(),
+            components: Components::default(),
+            for_loop_components: ForLoops::default(),
         }
     }
 }
@@ -72,8 +72,8 @@ impl From<Expr> for Html {
             html: parse_quote! {
                 #expression.to_string()
             },
-            components: ComponentDeclarations::default(),
-            for_loop_components: ComponentDeclarations::default(),
+            components: Components::default(),
+            for_loop_components: ForLoops::default(),
         }
     }
 }
@@ -112,7 +112,7 @@ pub fn generate(tree: &View) -> Output {
         #components_declarations
         #for_loops_declarations
 
-        Output::new(&#html, SerializedComponent::new(self, ClientContext::new(id, None, #components_expr, #for_loops_type)))
+        Output::new(&#html, SerializedComponent::new(self, ClientContext::new(id, None, #components_expr, #for_loops_expr)))
     };
     // TODO: move from server
     let client_context = quote! {
@@ -132,7 +132,8 @@ pub fn generate(tree: &View) -> Output {
                 fn context_impl() {
                     #client_context
                 }
-            }.to_string(),
+            }
+            .to_string(),
         )
         .unwrap();
     }
