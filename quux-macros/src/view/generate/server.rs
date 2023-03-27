@@ -125,7 +125,14 @@ pub fn generate(tree: &View) -> Output {
     if element.attributes.attributes.contains_key("magic") {
         std::fs::write(
             "expansion-server.rs",
-            quote! {fn main() {#render_output} fn context_impl() {#client_context}}.to_string(),
+            quote! {
+                fn main() {
+                    #render_output
+                }
+                fn context_impl() {
+                    #client_context
+                }
+            }.to_string(),
         )
         .unwrap();
     }
