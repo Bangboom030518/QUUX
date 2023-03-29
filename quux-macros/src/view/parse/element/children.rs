@@ -39,6 +39,9 @@ pub enum Children {
 
 impl Children {
     pub fn parse(input: ParseStream, id: u64) -> syn::Result<Self> {
+        if !input.peek(Brace) {
+            return Ok(Self::default());
+        }
         let children;
         braced!(children in input);
         if children.peek(Token![$]) {

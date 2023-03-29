@@ -39,7 +39,7 @@ impl ConfidenceRating {
 impl component::Init for ConfidenceRating {
     type Props = ();
 
-    fn init(props: Self::Props) -> Self {
+    fn init(_: Self::Props) -> Self {
         Self {
             is_visible: Store::new(false),
             rating: Store::new(Rating::Ok),

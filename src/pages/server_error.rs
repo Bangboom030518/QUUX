@@ -1,9 +1,19 @@
+use super::Head;
 use quux::prelude::*;
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub enum ServerError {
     Timeout,
     Internal,
+}
+
+impl ServerError {
+    const fn title(self) -> &'static str {
+        match self {
+            Self::Internal => "Unexpected Error - QUUXLET",
+            Self::Timeout => "Request Timeout - QUUXLET",
+        }
+    }
 }
 
 impl std::error::Error for ServerError {}
@@ -18,7 +28,13 @@ impl Component for ServerError {
         type Component = ServerError;
         view! {
             context,
-            h1 {{ "Internal Server Error!" }}
+            html(lang="en") {
+                @Head(self.title().to_string())
+                body {
+                    h1 {{ "Internal Server Error!" }}
+                    @InitialisationScript(include_str!("../../dist/init.js"))
+                }
+            }
         }
     }
 }
@@ -45,11 +61,3 @@ impl From<ServerError> for axum::http::StatusCode {
         }
     }
 }
-
-// #[cfg(not(target_arch = "wasm32"))]
-// impl axum::response::IntoResponse for ServerError {
-//     fn into_response(self) -> axum::response::Response {
-//         use axum::http::StatusCode;
-//         (StatusCode::from(self), self.render_to_string()).into_response()
-//     }
-// }

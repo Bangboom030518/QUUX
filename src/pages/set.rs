@@ -1,11 +1,13 @@
+#[server]
 use super::server_error::ServerError;
+use super::Head;
 use crate::{components::Flashcards, Component};
 use quux::prelude::*;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Set(super::super::Set);
 
-#[cfg(not(target_arch = "wasm32"))]
+#[server]
 impl Set {
     pub async fn new(pool: &sqlx::Pool<sqlx::Sqlite>, set_id: &str) -> Result<Self, ServerError> {
         match super::super::Set::fetch(pool, set_id).await {
@@ -21,7 +23,7 @@ impl Set {
 impl quux::component::Init for Set {
     type Props = super::super::Set;
 
-    fn init(set: super::super::Set) -> Self {
+    fn init(set: Self::Props) -> Self {
         Self(set)
     }
 }
@@ -32,15 +34,7 @@ impl Component for Set {
         view! {
             context,
             html(lang="en") {
-                head {
-                    meta(charset="UTF-8") {}
-                    meta("http-equiv"="X-UA-Compatible", content="IE=edge") {}
-                    meta(name="viewport", content="width=device-width, initial-scale=1.0") {}
-                    style {
-                        { include_str!("../../dist/output.css") }
-                    }
-                    title {{ "Document" }}
-                }
+                @Head("Flashcards - QUUX".to_string())
                 body {
                     h1 {{ "Welcome to Quuxlet" }}
                     @Flashcards(self.0.terms.clone())
