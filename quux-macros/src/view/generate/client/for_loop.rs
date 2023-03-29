@@ -58,8 +58,7 @@ impl ForLoop {
             for components in for_loop_components.#index {
                 #({
                     let child = components.#indices;
-                    child.render();
-                    internal.#indices.push(child.component.clone());
+                    internal.#indices.push(child.render().component);
                 })*
             }
             #bindings;
@@ -92,18 +91,19 @@ impl ForLoop {
             "reactive for loops must contain either elements or components"
         );
         let pop_code = self.pop_code();
-        // let binding_code = self
-        //     .bindings
-        //     .as_ref()
-        //     .map_or_else(TokenStream::new, |binding| {
-        //         quote! {
-        //             let binding = std::rc::Rc::clone(&#binding);
-        //         }
-        //     });
+        let binding_code: TokenStream = self
+            .bindings
+            .iter()
+            .map(|binding| {
+                quote! {
+                    let #binding = std::rc::Rc::clone(&#binding);
+                }
+            })
+            .collect();
         quote! {
             quux::store::List::on_change(&#store, {
                 let id = Rc::clone(&id);
-                // #binding_code;
+                #binding_code;
                 move |event| match event {
                     quux::store::list::Event::Push(_) => todo!("handle push"),
                     quux::store::list::Event::Pop(_, index) => #pop_code,
