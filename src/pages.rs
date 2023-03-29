@@ -1,10 +1,10 @@
 // pub use index::Index;
 // pub use not_found::NotFound;
-pub use server_error::ServerError;
+pub use error::ServerError;
 pub use set::Set;
+mod error;
 mod index;
 mod not_found;
-mod server_error;
 mod set;
 
 use quux::prelude::*;

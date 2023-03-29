@@ -1,5 +1,6 @@
 use super::super::internal::prelude::*;
 use crate::view::parse::prelude::*;
+use for_loop::Iterable;
 
 // FIXME: make client side for loops work
 
@@ -83,7 +84,7 @@ impl ForLoop {
     }
 
     fn list_store_code(&self) -> TokenStream {
-        let ForLoopIterable::Reactive(store) = self.iterable.clone() else {
+        let Iterable::Reactive(store) = self.iterable.clone() else {
             return TokenStream::new()
         };
         assert!(

@@ -47,6 +47,9 @@ impl From<Element> for Data {
                 data.for_loops.push(for_loop);
                 // data.reactivity.push(for_loop.reactivity(attributes.id));
             }
+            _ => {
+                // TODO: handle if and match
+            }
         };
         data
     }

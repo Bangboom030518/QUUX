@@ -1,18 +1,24 @@
 use super::Head;
+use http::Uri;
 use quux::prelude::*;
 
-#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum ServerError {
     Timeout,
     Internal,
+    PageNotFound(String),
+    SetNotFound,
 }
 
 impl ServerError {
-    const fn title(self) -> &'static str {
-        match self {
-            Self::Internal => "Unexpected Error - QUUXLET",
-            Self::Timeout => "Request Timeout - QUUXLET",
-        }
+    fn title(&self) -> String {
+        let title = match self {
+            Self::Internal => "Unexpected Error",
+            Self::Timeout => "Request Timeout",
+            Self::PageNotFound(_) => "Page Not Found",
+            Self::SetNotFound => "Set Not Found",
+        };
+        format!("{title} - QUUXLET")
     }
 }
 
@@ -29,7 +35,7 @@ impl Component for ServerError {
         view! {
             context,
             html(lang="en") {
-                @Head(self.title().to_string())
+                @Head(self.title())
                 body {
                     h1 {{ "Internal Server Error!" }}
                     @InitialisationScript(include_str!("../../dist/init.js"))
@@ -58,6 +64,7 @@ impl From<ServerError> for axum::http::StatusCode {
         match value {
             ServerError::Internal => Self::INTERNAL_SERVER_ERROR,
             ServerError::Timeout => Self::REQUEST_TIMEOUT,
+            ServerError::PageNotFound(_) | ServerError::SetNotFound => Self::NOT_FOUND,
         }
     }
 }

@@ -37,6 +37,7 @@ mod internal {
         pub use syn::{
             braced, parenthesized,
             parse::{Parse, ParseStream},
+            punctuated::Punctuated,
             token::{Brace, Paren},
             Expr, Ident, LitInt, Pat, Path, Token, Type, TypePath,
         };

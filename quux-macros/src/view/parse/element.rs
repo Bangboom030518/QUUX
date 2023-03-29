@@ -32,7 +32,7 @@ impl Parse for Element {
 pub mod prelude {
     pub use super::{
         attributes::Attributes,
-        children::{Children, ForLoop, ForLoopIterable, Items, ReactiveStore},
+        children::{for_loop, match_expr, Children, ForLoop, If, Items, Match, ReactiveStore},
         Element,
     };
 }

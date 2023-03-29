@@ -1,15 +1,15 @@
-use super::super::internal::prelude::*;
+use super::super::internal::{self, prelude::*};
 use crate::view::generate::Html;
 
-#[derive(Clone)]
-pub struct ReactiveStore(pub Box<Expr>);
+pub use for_loop::ForLoop;
+pub use if_expr::If;
+pub use match_expr::Match;
+pub use reactive_store::ReactiveStore;
 
-impl Parse for ReactiveStore {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
-        input.parse::<Token![$]>()?;
-        Ok(Self(Box::new(input.parse()?)))
-    }
-}
+pub mod for_loop;
+pub mod if_expr;
+pub mod match_expr;
+pub mod reactive_store;
 
 #[derive(Clone, Default)]
 pub struct Items {
@@ -35,6 +35,8 @@ pub enum Children {
     Items(Items),
     ReactiveStore(ReactiveStore),
     ForLoop(ForLoop),
+    If(If),
+    Match(Match),
 }
 
 impl Children {
@@ -59,48 +61,5 @@ impl Children {
 impl Default for Children {
     fn default() -> Self {
         Self::Items(Items::default())
-    }
-}
-
-#[derive(Clone)]
-pub enum ForLoopIterable {
-    Reactive(Expr),
-    Static(Expr),
-}
-
-#[derive(Clone)]
-pub struct ForLoop {
-    pub pattern: Pat,
-    pub iterable: ForLoopIterable,
-    pub item: Box<Item>,
-    pub bindings: Vec<Ident>,
-    pub id: u64,
-}
-
-impl ForLoop {
-    pub const fn is_reactive(&self) -> bool {
-        matches!(self.iterable, ForLoopIterable::Reactive(_))
-    }
-
-    pub fn parse(input: ParseStream, id: u64) -> syn::Result<Self> {
-        input.parse::<Token![for]>()?;
-        let pattern = input.parse()?;
-        input.parse::<Token![in]>()?;
-        let iterable = if input.peek(Token![$]) {
-            input.parse::<Token![$]>()?;
-            ForLoopIterable::Reactive
-        } else {
-            ForLoopIterable::Static
-        }(input.call(Expr::parse_without_eager_brace)?);
-        let item;
-        braced!(item in input);
-        let item = item.parse()?;
-        Ok(Self {
-            pattern,
-            iterable,
-            item: Box::new(item),
-            bindings: Vec::new(),
-            id,
-        })
     }
 }

@@ -13,6 +13,7 @@ quux = { path = "./quux" }
 quux-macros = { path = "./quux-macros" }
 wasm-bindgen = { workspace = true }
 serde = { workspace = true }
+http = "0.2"
 
 [target.'cfg(not(target_arch="wasm32"))'.dependencies]
 axum = { version = "0.6", features = ["headers", "macros"] }

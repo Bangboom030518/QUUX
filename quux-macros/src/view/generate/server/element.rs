@@ -85,6 +85,8 @@ impl From<Element> for Html {
                     }
                 }
                 Children::ForLoop(for_loop) => for_loop.html(),
+                Children::If(expr) => expr.html(),
+                Children::Match(expr) => expr.html(),
             };
             let body = html.html;
             Self {

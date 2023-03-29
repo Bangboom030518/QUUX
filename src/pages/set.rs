@@ -1,5 +1,5 @@
 #[server]
-use super::server_error::ServerError;
+use super::error::ServerError;
 use super::Head;
 use crate::{components::Flashcards, Component};
 use quux::prelude::*;

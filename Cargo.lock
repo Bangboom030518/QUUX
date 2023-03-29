@@ -1014,6 +1014,7 @@ dependencies = [
  "axum",
  "base64 0.20.0",
  "console_error_panic_hook",
+ "http",
  "lazy_static",
  "mime",
  "once_cell",

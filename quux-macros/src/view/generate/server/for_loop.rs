@@ -1,5 +1,6 @@
 use super::super::internal::prelude::*;
 use crate::view::parse::prelude::*;
+use for_loop::Iterable;
 
 impl ForLoop {
     pub fn html(self) -> Html {
@@ -11,8 +12,8 @@ impl ForLoop {
             ..
         } = self.clone();
         let iterable = match iterable {
-            ForLoopIterable::Static(iterable) => quote! { #iterable },
-            ForLoopIterable::Reactive(iterable) => {
+            Iterable::Static(iterable) => quote! { #iterable },
+            Iterable::Reactive(iterable) => {
                 item.insert_for_loop_id(self.id);
                 quote! {
                     (std::cell::Ref::<Vec<_>>::from(&#iterable)).iter().cloned()
