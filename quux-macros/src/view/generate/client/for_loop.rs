@@ -2,8 +2,6 @@ use super::super::internal::prelude::*;
 use crate::view::parse::prelude::*;
 use for_loop::Iterable;
 
-// FIXME: make client side for loops work
-
 impl ForLoop {
     fn binding_code(&mut self, index: usize) -> TokenStream {
         let Html {

@@ -1,5 +1,5 @@
 #[server]
-use super::error::ServerError;
+use super::error::Error;
 use super::Head;
 use crate::{components::Flashcards, Component};
 use quux::prelude::*;
@@ -9,12 +9,12 @@ pub struct Set(super::super::Set);
 
 #[server]
 impl Set {
-    pub async fn new(pool: &sqlx::Pool<sqlx::Sqlite>, set_id: &str) -> Result<Self, ServerError> {
+    pub async fn new(pool: &sqlx::Pool<sqlx::Sqlite>, set_id: &str) -> Result<Self, Error> {
         match super::super::Set::fetch(pool, set_id).await {
             Ok(set) => Ok(Self::init(set)),
             Err(error) => Err(match error {
                 sqlx::Error::RowNotFound => todo!(), // (StatusCode::NOT_FOUND, "Set not found :(".to_string()),
-                _ => ServerError::init(Box::new(error)),
+                _ => Error::init(Box::new(error)),
             }),
         }
     }

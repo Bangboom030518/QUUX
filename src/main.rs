@@ -39,10 +39,10 @@ async fn not_found() -> (StatusCode, Html<String>) {
 async fn set(
     State(pool): State<Pool<Sqlite>>,
     Path(id): Path<String>,
-) -> Result<Set, quuxlet::pages::ServerError> {
+) -> Result<Set, quuxlet::pages::Error> {
     Set::new(&pool, &id)
         .await
-        .map_err(|err| quuxlet::pages::ServerError::init(Box::new(err)))
+        .map_err(|err| quuxlet::pages::Error::init(Box::new(err)))
 }
 
 #[tokio::main]
@@ -60,7 +60,7 @@ async fn main() {
         .layer(
             ServiceBuilder::new()
                 .layer(HandleErrorLayer::new(|error| async {
-                    quuxlet::pages::ServerError::init(error)
+                    quuxlet::pages::Error::init(error)
                 }))
                 .timeout(Duration::from_secs(30)),
         )

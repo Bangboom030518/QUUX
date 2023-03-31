@@ -45,13 +45,23 @@ impl Children {
             return Ok(Self::default());
         }
         let children;
+        
         braced!(children in input);
+
         if children.peek(Token![$]) {
             return Ok(Self::ReactiveStore(children.parse()?));
         }
 
         if children.peek(Token![for]) {
             return Ok(Self::ForLoop(ForLoop::parse(&children, id)?));
+        }
+
+        if children.peek(Token![if]) {
+            return Ok(Self::If(children.parse()?))
+        }
+
+        if children.peek(Token![match]) {
+            return Ok(Self::Match(children.parse()?))
         }
 
         Ok(Self::Items(children.parse()?))

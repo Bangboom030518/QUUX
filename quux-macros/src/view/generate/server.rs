@@ -105,7 +105,7 @@ pub fn generate(tree: &View) -> Output {
     let for_loops_declarations = for_loop_components.declarations();
 
     let render_output = quote! {
-        use quux::view::{Output, ClientContext, SerializedComponent};
+        use quux::{view::{Output, ClientContext, ServerContext, SerializedComponent}, component::Component as _};
         let context = #context;
         let id = context.id;
         let mut component_id = context.id;

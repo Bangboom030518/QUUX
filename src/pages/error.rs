@@ -1,16 +1,16 @@
 use super::Head;
-use http::Uri;
 use quux::prelude::*;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub enum ServerError {
+pub enum Error {
     Timeout,
     Internal,
     PageNotFound(String),
     SetNotFound,
 }
 
-impl ServerError {
+impl Error {
+    #[server]
     fn title(&self) -> String {
         let title = match self {
             Self::Internal => "Unexpected Error",
@@ -22,22 +22,37 @@ impl ServerError {
     }
 }
 
-impl std::error::Error for ServerError {}
-impl std::fmt::Display for ServerError {
+impl std::error::Error for Error {}
+impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{self:?}")
     }
 }
 
-impl Component for ServerError {
+impl Component for Error {
     fn render(self, context: Context<Self>) -> Output<Self> {
-        type Component = ServerError;
+        type Component = Error;
         view! {
             context,
             html(lang="en") {
                 @Head(self.title())
                 body {
-                    h1 {{ "Internal Server Error!" }}
+                    main {
+                        match &self {
+                            Self::Internal => {
+                                h1 {{ "Internal Server Error!" }}
+                            },
+                            Self::Timeout => {
+                                h1 {{ "Request Timeout!" }}
+                            },
+                            Self::PageNotFound(uri) => {
+                                h1 {{ format!("Page '{uri}' not found!") }}
+                            },
+                            Self::SetNotFound => {
+                                h1 {{ "Page not found!" }}
+                            }
+                        }
+                    }
                     @InitialisationScript(include_str!("../../dist/init.js"))
                 }
             }
@@ -46,7 +61,7 @@ impl Component for ServerError {
 }
 
 #[server]
-impl component::Init for ServerError {
+impl component::Init for Error {
     type Props = tower::BoxError;
 
     fn init(error: Self::Props) -> Self {
@@ -59,12 +74,12 @@ impl component::Init for ServerError {
 }
 
 #[server]
-impl From<ServerError> for axum::http::StatusCode {
-    fn from(value: ServerError) -> Self {
+impl From<Error> for axum::http::StatusCode {
+    fn from(value: Error) -> Self {
         match value {
-            ServerError::Internal => Self::INTERNAL_SERVER_ERROR,
-            ServerError::Timeout => Self::REQUEST_TIMEOUT,
-            ServerError::PageNotFound(_) | ServerError::SetNotFound => Self::NOT_FOUND,
+            Error::Internal => Self::INTERNAL_SERVER_ERROR,
+            Error::Timeout => Self::REQUEST_TIMEOUT,
+            Error::PageNotFound(_) | Error::SetNotFound => Self::NOT_FOUND,
         }
     }
 }

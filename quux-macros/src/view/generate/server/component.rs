@@ -38,18 +38,11 @@ impl From<Component> for Html {
                 let component = <#name as quux::component::Init>::init(#props);
                 component_id += 1;
                 let id = component_id;
-                let render_context = quux::view::ServerContext::new(id.clone(), #for_loop_id);
+                let render_context = ServerContext::new(id.clone(), #for_loop_id);
                 // TODO: remove clone
-                let rendered_component = quux::component::Component::render(component.clone(), std::clone::Clone::clone(&render_context));
-                #ident = quux::view::SerializedComponent {
-                    component: component.clone(),
-                    render_context: rendered_component
-                        .component_node
-                        .render_context
-                        .clone()
-                    ,
-                };
-                rendered_component.html
+                let Output { component_node: SerializedComponent { component, render_context }, html } = component.render(render_context.clone());
+                #ident = SerializedComponent::new(component, render_context);
+                html
             }
         };
         Self {

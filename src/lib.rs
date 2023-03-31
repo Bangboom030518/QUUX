@@ -13,7 +13,7 @@ pub mod pages;
 #[derive(Serialize, Deserialize)]
 pub enum Routes {
     Set(SerializedComponent<pages::Set>),
-    ServerError(SerializedComponent<pages::ServerError>),
+    ServerError(SerializedComponent<pages::Error>),
 }
 
 impl From<SerializedComponent<pages::Set>> for Routes {
@@ -22,8 +22,8 @@ impl From<SerializedComponent<pages::Set>> for Routes {
     }
 }
 
-impl From<SerializedComponent<pages::ServerError>> for Routes {
-    fn from(value: SerializedComponent<pages::ServerError>) -> Self {
+impl From<SerializedComponent<pages::Error>> for Routes {
+    fn from(value: SerializedComponent<pages::Error>) -> Self {
         Self::ServerError(value)
     }
 }
@@ -50,7 +50,7 @@ impl axum::response::IntoResponse for pages::Set {
 }
 
 #[server]
-impl axum::response::IntoResponse for pages::ServerError {
+impl axum::response::IntoResponse for pages::Error {
     fn into_response(self) -> axum::response::Response {
         axum::response::Html::from(Routes::render_to_string(self)).into_response()
     }

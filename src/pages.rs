@@ -1,6 +1,6 @@
 // pub use index::Index;
 // pub use not_found::NotFound;
-pub use error::ServerError;
+pub use error::Error;
 pub use set::Set;
 mod error;
 mod index;
@@ -23,7 +23,7 @@ impl component::Init for Head {
 }
 
 impl Component for Head {
-    fn render(self, context: quux::view::Context<Self>) -> quux::view::Output<Self>
+    fn render(self, context: Context<Self>) -> Output<Self>
     where
         Self: Sized,
     {

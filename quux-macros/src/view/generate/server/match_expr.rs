@@ -5,7 +5,7 @@ impl Match {
     pub fn html(&self) -> Html {
         let Self { scrutinee, arms } = &self;
         let arms: TokenStream = arms
-            .into_iter()
+            .iter()
             .map(|Arm { pattern, item }| {
                 let item = Html::from(item.clone());
                 quote! {
