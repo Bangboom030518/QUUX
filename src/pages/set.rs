@@ -4,19 +4,29 @@ use super::Head;
 use crate::{components::Flashcards, Component};
 use quux::prelude::*;
 
+#[derive(thiserror::Error, Debug)]
+#[error("set not found")]
+pub struct NotFound;
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Set(super::super::Set);
 
 #[server]
+impl From<sqlx::Error> for Error {
+    fn from(value: sqlx::Error) -> Self {
+        match value {
+            sqlx::Error::RowNotFound => Error::SetNotFound,
+            error => Error::Internal {
+                message: error.to_string(),
+            },
+        }
+    }
+}
+
+#[server]
 impl Set {
     pub async fn new(pool: &sqlx::Pool<sqlx::Sqlite>, set_id: &str) -> Result<Self, Error> {
-        match super::super::Set::fetch(pool, set_id).await {
-            Ok(set) => Ok(Self::init(set)),
-            Err(error) => Err(match error {
-                sqlx::Error::RowNotFound => todo!(), // (StatusCode::NOT_FOUND, "Set not found :(".to_string()),
-                _ => Error::init(Box::new(error)),
-            }),
-        }
+        Ok(Self::init(super::super::Set::fetch(pool, set_id).await?))
     }
 }
 

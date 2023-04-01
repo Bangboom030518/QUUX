@@ -6,13 +6,6 @@ pub enum ServerError {
     Internal,
 }
 
-impl std::error::Error for ServerError {}
-impl std::fmt::Display for ServerError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{self:?}")
-    }
-}
-
 impl Component for ServerError {
     fn render(self, context: Context<Self>) -> Output<Self> {
         type Component = ServerError;

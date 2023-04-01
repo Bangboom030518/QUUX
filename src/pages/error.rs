@@ -1,11 +1,12 @@
 use super::Head;
 use quux::prelude::*;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, thiserror::Error)]
+#[error("{self:?}")]
 pub enum Error {
     Timeout,
-    Internal,
-    PageNotFound(String),
+    Internal { message: String },
+    PageNotFound { uri: String },
     SetNotFound,
 }
 
@@ -13,19 +14,12 @@ impl Error {
     #[server]
     fn title(&self) -> String {
         let title = match self {
-            Self::Internal => "Unexpected Error",
+            Self::Internal { .. } => "Unexpected Error",
             Self::Timeout => "Request Timeout",
-            Self::PageNotFound(_) => "Page Not Found",
+            Self::PageNotFound { .. } => "Page Not Found",
             Self::SetNotFound => "Set Not Found",
         };
         format!("{title} - QUUXLET")
-    }
-}
-
-impl std::error::Error for Error {}
-impl std::fmt::Display for Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{self:?}")
     }
 }
 
@@ -39,13 +33,14 @@ impl Component for Error {
                 body {
                     main {
                         match &self {
-                            Self::Internal => {
+                            Self::Internal { message } => {
                                 h1 {{ "Internal Server Error!" }}
+                                p {{ "message" }}
                             },
                             Self::Timeout => {
                                 h1 {{ "Request Timeout!" }}
                             },
-                            Self::PageNotFound(uri) => {
+                            Self::PageNotFound { uri } => {
                                 h1 {{ format!("Page '{uri}' not found!") }}
                             },
                             Self::SetNotFound => {
@@ -61,25 +56,12 @@ impl Component for Error {
 }
 
 #[server]
-impl component::Init for Error {
-    type Props = tower::BoxError;
-
-    fn init(error: Self::Props) -> Self {
-        if error.is::<tower::timeout::error::Elapsed>() {
-            Self::Timeout
-        } else {
-            Self::Internal
-        }
-    }
-}
-
-#[server]
 impl From<Error> for axum::http::StatusCode {
     fn from(value: Error) -> Self {
         match value {
-            Error::Internal => Self::INTERNAL_SERVER_ERROR,
+            Error::Internal { .. } => Self::INTERNAL_SERVER_ERROR,
             Error::Timeout => Self::REQUEST_TIMEOUT,
-            Error::PageNotFound(_) | Error::SetNotFound => Self::NOT_FOUND,
+            Error::PageNotFound { .. } | Error::SetNotFound => Self::NOT_FOUND,
         }
     }
 }

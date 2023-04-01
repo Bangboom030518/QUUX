@@ -1,13 +1,12 @@
-// pub use index::Index;
-// pub use not_found::NotFound;
 pub use error::Error;
 pub use set::Set;
-mod error;
-mod index;
-mod not_found;
-mod set;
 
 use quux::prelude::*;
+
+mod create;
+mod error;
+mod index;
+mod set;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Head {

@@ -40,9 +40,7 @@ async fn set(
     State(pool): State<Pool<Sqlite>>,
     Path(id): Path<String>,
 ) -> Result<Set, quuxlet::pages::Error> {
-    Set::new(&pool, &id)
-        .await
-        .map_err(|err| quuxlet::pages::Error::init(Box::new(err)))
+    Set::new(&pool, &id).await
 }
 
 #[tokio::main]
@@ -59,8 +57,14 @@ async fn main() {
         .fallback(not_found)
         .layer(
             ServiceBuilder::new()
-                .layer(HandleErrorLayer::new(|error| async {
-                    quuxlet::pages::Error::init(error)
+                .layer(HandleErrorLayer::new(|error: tower::BoxError| async move {
+                    if error.is::<tower::timeout::error::Elapsed>() {
+                        return quuxlet::pages::Error::Timeout;
+                    }
+
+                    quuxlet::pages::Error::Internal {
+                        message: error.to_string(),
+                    }
                 }))
                 .timeout(Duration::from_secs(30)),
         )
@@ -72,7 +76,6 @@ async fn main() {
             ),
         )
         .with_state(pool);
-
     let address = SocketAddr::from(([127, 0, 0, 1], 3000));
     println!("listening on http://{address}");
     axum::Server::bind(&address)

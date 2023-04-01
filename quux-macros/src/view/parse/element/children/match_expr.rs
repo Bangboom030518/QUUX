@@ -4,7 +4,7 @@ use super::internal::prelude::*;
 #[derive(Clone)]
 pub struct Arm {
     pub pattern: Pat,
-    pub item: Item,
+    pub item: Items,
 }
 
 impl Parse for Arm {
