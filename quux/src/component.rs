@@ -1,7 +1,4 @@
-use crate::{
-    internal::prelude::*,
-    view::{ComponentChildren, SerializedComponent},
-};
+use crate::internal::prelude::*;
 
 pub trait Component: Serialize + ComponentChildren {
     fn render(self, context: crate::view::Context<Self>) -> crate::view::Output<Self>
@@ -14,22 +11,15 @@ pub trait Init {
     fn init(props: Self::Props) -> Self;
 }
 
-// #[client]
-// impl<T: Component> SerializePostcard for T {}
-
-/// Recursively hydrates the dom, starting at the root app component.
-/// Applies a console panic hook for better debugging.
-/// # Errors
-/// - If there is no init script in the dom (`QUUXInitialise`)
-/// - If the init script doesn't have a shadow tree attached
-/// - If the shadow tree is unparseable
-
 pub trait Routes: Serialize + DeserializeOwned {
+    /// Recursively hydrates the dom, starting at the root app component.
+    /// Applies a console panic hook for better debugging.
+    /// # Errors
+    /// - If there is no init script in the dom (`QUUXInitialise`)
+    /// - If the init script doesn't have a shadow tree attached
+    /// - If the shadow tree is unparseable
     #[client]
-    fn init_app() -> Result<(), errors::InitApp>
-    where
-        Self: DeserializeOwned,
-    {
+    fn init_app() -> Result<(), errors::InitApp> {
         std::panic::set_hook(Box::new(console_error_panic_hook::hook));
 
         let init_script = crate::dom::document()
@@ -41,8 +31,8 @@ pub trait Routes: Serialize + DeserializeOwned {
             .map_or_else(|| Err(errors::InitApp::NoTreeOnInitScript), Ok)?;
 
         let tree = Self::deserialize_base64(&tree).map_err(errors::InitApp::InvalidTree)?;
-
-        Ok(tree.render())
+        tree.render();
+        Ok(())
     }
 
     #[client]

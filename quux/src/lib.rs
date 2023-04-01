@@ -29,6 +29,8 @@ pub trait SerializePostcard: Serialize {
         base64::encode(bytes)
     }
 
+    /// # Errors
+    /// - If the string is unparseable
     fn deserialize_base64(string: &str) -> Result<Self, errors::ClientParse>
     where
         Self: DeserializeOwned + Sized,
@@ -44,6 +46,7 @@ mod internal {
         pub use super::super::{
             errors::{self, MapInternal},
             prelude::*,
+            view::{SerializedComponent, ComponentChildren},
             SerializePostcard,
         };
         pub use std::{
@@ -60,7 +63,7 @@ pub mod prelude {
     #[client]
     pub use super::dom::console_log;
     pub use super::{
-        component::{self, Component, Routes as _, Init as _},
+        component::{self, Component, Init as _, Routes as _},
         initialisation_script::InitialisationScript,
         store::{self, Store},
         view::{Context, Output},

@@ -1,4 +1,3 @@
-use super::SerializedComponent;
 use crate::internal::prelude::*;
 
 #[server]
@@ -37,7 +36,7 @@ impl<T> Output<T>
 where
     T: Component,
 {
-    pub fn new(component: T) -> Self {
+    pub const fn new(component: T) -> Self {
         Self { component }
     }
 }
