@@ -44,7 +44,7 @@ impl Component for Error {
                                 h1 {{ format!("Page '{uri}' not found!") }}
                             },
                             Self::SetNotFound => {
-                                h1 {{ "Page not found!" }}
+                                h1 {{ "Set not found!" }}
                             }
                         }
                     }

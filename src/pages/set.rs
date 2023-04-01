@@ -4,10 +4,6 @@ use super::Head;
 use crate::{components::Flashcards, Component};
 use quux::prelude::*;
 
-#[derive(thiserror::Error, Debug)]
-#[error("set not found")]
-pub struct NotFound;
-
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Set(super::super::Set);
 

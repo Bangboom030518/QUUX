@@ -1,6 +1,7 @@
 pub use create::Create;
 pub use error::Error;
 pub use set::Set;
+pub use index::Index;
 
 use quux::prelude::*;
 

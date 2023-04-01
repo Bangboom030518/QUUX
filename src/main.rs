@@ -4,33 +4,30 @@
 #![cfg(not(target_arch = "wasm32"))]
 
 use axum::{
+    body::Body,
     error_handling::HandleErrorLayer,
     extract::{Path, State},
-    http::{StatusCode, Request},
+    http::Request,
     response::Html,
     routing::get,
-    body::Body,
     Router,
 };
-use quux::prelude::*;
-use quuxlet::pages::{Error, Set, Create};
+use quuxlet::pages::{Create, Error, Set, Index};
 use sqlx::{Pool, Sqlite};
 use std::{net::SocketAddr, time::Duration};
 use tower::ServiceBuilder;
 use tower_http::services::ServeFile;
 
 #[axum::debug_handler]
-async fn root() -> Html<String> {
-    "
-        <h1>Welcome to QUUXlet</h1>
-    "
-    .to_string()
-    .into()
+async fn root() -> Index {
+    Index
 }
 
 #[axum::debug_handler]
 async fn not_found(request: Request<Body>) -> Error {
-    Error::PageNotFound { uri: request.uri().to_string() }
+    Error::PageNotFound {
+        uri: request.uri().to_string(),
+    }
 }
 
 #[axum::debug_handler]
@@ -42,7 +39,7 @@ async fn create() -> Create {
 async fn set(
     State(pool): State<Pool<Sqlite>>,
     Path(id): Path<String>,
-) -> Result<Set, quuxlet::pages::Error> {
+) -> Result<Set, Error> {
     Set::new(&pool, &id).await
 }
 
@@ -63,10 +60,9 @@ async fn main() {
             ServiceBuilder::new()
                 .layer(HandleErrorLayer::new(|error: tower::BoxError| async move {
                     if error.is::<tower::timeout::error::Elapsed>() {
-                        return quuxlet::pages::Error::Timeout;
+                        return Error::Timeout;
                     }
-
-                    quuxlet::pages::Error::Internal {
+                    Error::Internal {
                         message: error.to_string(),
                     }
                 }))
