@@ -6,18 +6,20 @@
 use axum::{
     error_handling::HandleErrorLayer,
     extract::{Path, State},
-    http::StatusCode,
+    http::{StatusCode, Request},
     response::Html,
     routing::get,
+    body::Body,
     Router,
 };
 use quux::prelude::*;
-use quuxlet::pages::Set;
+use quuxlet::pages::{Error, Set, Create};
 use sqlx::{Pool, Sqlite};
 use std::{net::SocketAddr, time::Duration};
 use tower::ServiceBuilder;
 use tower_http::services::ServeFile;
 
+#[axum::debug_handler]
 async fn root() -> Html<String> {
     "
         <h1>Welcome to QUUXlet</h1>
@@ -26,13 +28,14 @@ async fn root() -> Html<String> {
     .into()
 }
 
-async fn not_found() -> (StatusCode, Html<String>) {
-    let html = "
-        <h1>Page not found!</h1>
-    "
-    .to_string()
-    .into();
-    (StatusCode::NOT_FOUND, html)
+#[axum::debug_handler]
+async fn not_found(request: Request<Body>) -> Error {
+    Error::PageNotFound { uri: request.uri().to_string() }
+}
+
+#[axum::debug_handler]
+async fn create() -> Create {
+    Create
 }
 
 #[axum::debug_handler]
@@ -54,6 +57,7 @@ async fn main() {
     let app = Router::new()
         .route("/", get(root))
         .route("/set/:set_id", get(set))
+        .route("/create", get(create))
         .fallback(not_found)
         .layer(
             ServiceBuilder::new()

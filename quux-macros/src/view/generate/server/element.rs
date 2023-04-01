@@ -65,7 +65,7 @@ impl From<Element> for Html {
         let tag_name = value.tag_name.clone();
         if is_self_closing(&tag_name) {
             assert!(
-                !matches!(&value.children, Children::Items(items) if items.items.is_empty()),
+                matches!(&value.children, Children::Items(items) if items.items.is_empty()),
                 "Self-closing elements cannot contain children"
             );
             Self {

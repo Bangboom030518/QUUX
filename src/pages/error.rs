@@ -35,7 +35,7 @@ impl Component for Error {
                         match &self {
                             Self::Internal { message } => {
                                 h1 {{ "Internal Server Error!" }}
-                                p {{ "message" }}
+                                p {{ message }}
                             },
                             Self::Timeout => {
                                 h1 {{ "Request Timeout!" }}

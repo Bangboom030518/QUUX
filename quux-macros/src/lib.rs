@@ -3,7 +3,7 @@
 use proc_macro::TokenStream;
 use quote::quote;
 
-mod init_components;
+mod routes;
 mod view;
 
 // TODO: document
@@ -13,8 +13,8 @@ pub fn view(input: TokenStream) -> TokenStream {
 }
 
 #[proc_macro]
-pub fn init_components(input: TokenStream) -> TokenStream {
-    init_components::init_components(input)
+pub fn routes(input: TokenStream) -> TokenStream {
+    routes::routes(input)
 }
 
 /// Includes the item only on the server build. Equivalent to `#[cfg(not(target_arch = "wasm32"))]`
@@ -24,7 +24,8 @@ pub fn server(_attribute: TokenStream, item: TokenStream) -> TokenStream {
     quote! {
         #[cfg(not(target_arch = "wasm32"))]
         #item
-    }.into()
+    }
+    .into()
 }
 /// Includes the item only on the client build. Equivalent to `#[cfg(target_arch = "wasm32")]`
 #[proc_macro_attribute]
@@ -33,5 +34,6 @@ pub fn client(_attribute: TokenStream, item: TokenStream) -> TokenStream {
     quote! {
         #[cfg(target_arch = "wasm32")]
         #item
-    }.into()
+    }
+    .into()
 }

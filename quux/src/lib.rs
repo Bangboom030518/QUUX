@@ -46,7 +46,7 @@ mod internal {
         pub use super::super::{
             errors::{self, MapInternal},
             prelude::*,
-            view::{SerializedComponent, ComponentChildren},
+            view::{ComponentChildren, SerializedComponent},
             SerializePostcard,
         };
         pub use std::{
@@ -68,6 +68,6 @@ pub mod prelude {
         store::{self, Store},
         view::{Context, Output},
     };
-    pub use quux_macros::{client, init_components, server, view};
+    pub use quux_macros::{client, routes, server, view};
     pub use serde::{de::DeserializeOwned, Deserialize, Serialize};
 }
