@@ -1030,7 +1030,6 @@ dependencies = [
 name = "quux"
 version = "0.1.0"
 dependencies = [
- "axum-core",
  "base64 0.20.0",
  "cfg-if",
  "console_error_panic_hook",
@@ -1039,6 +1038,7 @@ dependencies = [
  "quux-macros",
  "serde",
  "uuid",
+ "warp",
  "wasm-bindgen",
  "web-sys",
 ]

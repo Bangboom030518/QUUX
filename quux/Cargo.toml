@@ -14,11 +14,11 @@ quux-macros = { path = "../quux-macros/" }
 [target.'cfg(not(target_arch="wasm32"))'.dependencies]
 uuid = { version = "1.2", features = ["v4"] }
 lazy_static = { workspace = true }
-axum-core = { version = "0.3", optional = true} 
+warp = { version = "0.3", optional = true} 
 
 [target.'cfg(target_arch="wasm32")'.dependencies]
 web-sys = { workspace = true }
 console_error_panic_hook = "0.1"
 
 [features]
-axum = ["dep:axum-core"]
+warp = ["dep:warp"]

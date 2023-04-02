@@ -1,8 +1,11 @@
 #![warn(clippy::pedantic, clippy::nursery)]
 
+#[cfg(all(feature = "warp", not(target_arch = "wasm32")))]
+pub use warp;
 pub use cfg_if;
 use internal::prelude::*;
 pub use postcard;
+pub use quux_macros as macros;
 
 pub mod component;
 pub mod errors;
@@ -68,6 +71,18 @@ pub mod prelude {
         store::{self, Store},
         view::{Context, Output},
     };
-    pub use quux_macros::{client, routes, server, view};
+    #[cfg(feature = "warp")]
+    #[macro_export]
+    macro_rules! routes {
+        ($($tokens:tt)*) => {
+            quux::macros::routes!(#warp $($tokens)*);
+        };
+    }
+    #[cfg(feature = "warp")]
+    pub use routes;
+    #[cfg(not(feature = "warp"))]
+    pub use quux_macros::routes;
+
+    pub use quux_macros::{client, server, view};
     pub use serde::{de::DeserializeOwned, Deserialize, Serialize};
 }

@@ -13,13 +13,6 @@ pub mod pages;
 routes!(pages::Set, pages::Error, pages::Create, pages::Index);
 
 #[server]
-impl warp::Reply for pages::Set {
-    fn into_response(self) -> warp::reply::Response {
-        warp::reply::html(Routes::render_to_string(self)).into_response()
-    }
-}
-
-#[server]
 impl axum::response::IntoResponse for pages::Set {
     fn into_response(self) -> axum::response::Response {
         axum::response::Html::from(Routes::render_to_string(self)).into_response()
