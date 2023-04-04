@@ -1,6 +1,31 @@
 use super::Head;
 use quux::prelude::*;
 
+#[derive(Debug)]
+pub enum Database {
+    NotFound,
+    Internal(Box<dyn std::error::Error + Send + Sync>),
+}
+
+#[server]
+impl From<sqlx::Error> for Database {
+    fn from(value: sqlx::Error) -> Self {
+        match value {
+            sqlx::Error::RowNotFound => Self::NotFound,
+            error => Self::Internal(Box::new(error)),
+        }
+    }
+}
+
+#[server]
+impl warp::reject::Reject for Database {}
+
+#[derive(Debug)]
+pub struct NotFound(pub http::Uri);
+
+#[server]
+impl warp::reject::Reject for NotFound {}
+
 #[derive(Clone, Debug, Serialize, Deserialize, thiserror::Error)]
 #[error("{self:?}")]
 pub enum Error {
@@ -10,8 +35,8 @@ pub enum Error {
     SetNotFound,
 }
 
+#[server]
 impl Error {
-    #[server]
     fn title(&self) -> String {
         let title = match self {
             Self::Internal { .. } => "Unexpected Error",
@@ -55,8 +80,7 @@ impl Component for Error {
     }
 }
 
-#[server]
-impl From<Error> for axum::http::StatusCode {
+impl From<Error> for http::StatusCode {
     fn from(value: Error) -> Self {
         match value {
             Error::Internal { .. } => Self::INTERNAL_SERVER_ERROR,
@@ -65,3 +89,31 @@ impl From<Error> for axum::http::StatusCode {
         }
     }
 }
+
+#[server]
+impl From<warp::Rejection> for Error {
+    fn from(value: warp::Rejection) -> Self {
+        // TODO: internal errors + not found?
+        if let Some(error) = value.find::<Database>() {
+            return match error {
+                Database::Internal(error) => Self::Internal {
+                    message: error.to_string(),
+                },
+                Database::NotFound => Self::SetNotFound,
+            };
+        }
+
+        if let Some(NotFound(uri)) = value.find::<NotFound>() {
+            return Self::PageNotFound {
+                uri: uri.to_string(),
+            };
+        }
+
+        Self::Internal {
+            message: format!("{value:?}"),
+        }
+    }
+}
+
+#[server]
+impl warp::reject::Reject for Error {}

@@ -1,12 +1,12 @@
 pub use create::Create;
 pub use error::Error;
-pub use set::Set;
 pub use index::Index;
+pub use set::Set;
 
 use quux::prelude::*;
 
 mod create;
-mod error;
+pub mod error;
 mod index;
 mod set;
 

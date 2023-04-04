@@ -18,12 +18,12 @@ http = "0.2"
 thiserror = "1.0"
 
 [target.'cfg(not(target_arch="wasm32"))'.dependencies]
-axum = { version = "0.6", features = ["headers", "macros"] }
 tokio = { workspace = true }
 sqlx = { version = "0.6", features = ["runtime-tokio-native-tls", "sqlite"] }
-tower = { version = "0.4", features = ["timeout"] }
-tower-http = { version = "0.4", features = ["fs"] }
-mime = "0.3"
+# tower = { version = "0.4", features = ["timeout"] }
+# tower-http = { version = "0.4", features = ["fs"] }
+# mime = "0.3"
+# axum = { version = "0.6", features = ["headers", "macros"] }
 warp = "0.3"
 
 [target.'cfg(target_arch="wasm32")'.dependencies]

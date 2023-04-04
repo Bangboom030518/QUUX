@@ -81,6 +81,23 @@ impl ForLoop {
         }}
     }
 
+    fn push_code(&self) -> TokenStream {
+        let id = self.id;
+        let binding_code: TokenStream = self
+            .bindings
+            .iter()
+            .map(|binding| {
+                quote! {
+                    #binding.borrow_mut().push(component.clone())
+                }
+            })
+            .collect();
+        quote! {{
+            quux::dom::get_reactive_for_loop_element(*id, #id, index).remove();
+            #binding_code;
+        }}
+    }
+
     fn list_store_code(&self) -> TokenStream {
         let Iterable::Reactive(store) = self.iterable.clone() else {
             return TokenStream::new()
@@ -90,6 +107,7 @@ impl ForLoop {
             "reactive for loops must contain either elements or components"
         );
         let pop_code = self.pop_code();
+        let push_code = self.push_code();
         let binding_code: TokenStream = self
             .bindings
             .iter()
@@ -104,7 +122,7 @@ impl ForLoop {
                 let id = Rc::clone(&id);
                 #binding_code;
                 move |event| match event {
-                    quux::store::list::Event::Push(_) => todo!("handle push"),
+                    quux::store::list::Event::Push(_) => #push_code,
                     quux::store::list::Event::Pop(_, index) => #pop_code,
                 }
             })

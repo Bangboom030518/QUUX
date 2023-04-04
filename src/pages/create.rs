@@ -50,6 +50,10 @@ impl Component for Create {
                                 @Card(term)
                             }
                         }
+                        button("type"="button", class="btn btn-primary btn-outline w-full", on:click={
+                            let terms = terms.clone();
+                            move || terms.push(Term::new("", ""))
+                        }) {{ "New Card" }}
                         button(class="btn btn-primary w-full") {{ "Create" }}
                     }
                     @InitialisationScript(include_str!("../../dist/init.js"))

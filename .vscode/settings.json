@@ -11,7 +11,7 @@
   "files.associations": {
     "*.css": "postcss"
   },
-  "editor.lineNumbers": "on",
+  // "editor.lineNumbers": "on",
   "postcss.validate": false,
   "editor.quickSuggestions": {
     "strings": true

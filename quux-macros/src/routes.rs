@@ -1,6 +1,11 @@
 use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote};
-use syn::{parse::{Parse, ParseStream}, parse_macro_input, punctuated::Punctuated, Token, Type};
+use syn::{
+    parse::{Parse, ParseStream},
+    parse_macro_input,
+    punctuated::Punctuated,
+    Token, Type,
+};
 
 struct Route {
     ty: Type,
@@ -17,14 +22,18 @@ impl Route {
 
     fn implementations(&self, warp: bool) -> TokenStream {
         let Self { ty, variant_name } = self;
-        let warp_code = warp.then(|| quote! {
-            #[quux::prelude::server]
-            impl quux::warp::Reply for #ty {
-                fn into_response(self) -> warp::reply::Response {
-                    warp::reply::html(Routes::render_to_string(self)).into_response()
+        let warp_code = warp
+            .then(|| {
+                quote! {
+                    #[quux::prelude::server]
+                    impl quux::warp::Reply for #ty {
+                        fn into_response(self) -> warp::reply::Response {
+                            warp::reply::html(Routes::render_to_string(self)).into_response()
+                        }
+                    }
                 }
-            }
-        }).unwrap_or_default();
+            })
+            .unwrap_or_default();
         quote! {
             #warp_code
 
@@ -39,7 +48,7 @@ impl Route {
 
 struct Routes {
     routes: Vec<Route>,
-    warp: bool
+    warp: bool,
 }
 
 impl Routes {
@@ -79,10 +88,10 @@ impl Routes {
 
 fn include_warp(input: &mut ParseStream) -> bool {
     if input.parse::<Token![#]>().is_err() {
-        return false
+        return false;
     }
     if let Ok(ident) = input.parse::<Ident>() {
-        return ident == "warp"
+        return ident == "warp";
     }
     false
 }

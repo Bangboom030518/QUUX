@@ -17,7 +17,9 @@ pub fn get_reactive_for_loop_element(
     for_loop_id: u64,
     index: usize,
 ) -> web_sys::Element {
-    query_selector(&format!("[data-quux-for-id='{parent_id}.{for_loop_id}.{index}']"))
+    query_selector(&format!(
+        "[data-quux-for-id='{parent_id}.{for_loop_id}.{index}']"
+    ))
 }
 
 #[must_use]
@@ -40,6 +42,13 @@ pub fn document() -> web_sys::Document {
 #[must_use]
 pub fn as_html_element(element: web_sys::Element) -> web_sys::HtmlElement {
     wasm_bindgen::JsCast::dyn_into(element).expect_internal("cast `Element` to `HTMLElement`")
+}
+
+#[must_use]
+pub fn create_element(tag_name: &str) -> web_sys::Element {
+    document()
+        .create_element(tag_name)
+        .expect_internal("create element")
 }
 
 #[wasm_bindgen]

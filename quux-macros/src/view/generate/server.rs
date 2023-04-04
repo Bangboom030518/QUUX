@@ -118,6 +118,14 @@ pub fn generate(tree: &View) -> Output {
     };
     // TODO: move from server
     let client_context = quote! {
+        #[quux::prelude::client]
+        let render_server = {
+            let #context = #context.clone();
+            move || {{
+                #render_output
+            }}
+        }
+
         impl quux::view::ComponentChildren for Component {
             type Components = #components_type;
             type ForLoopComponents = #for_loops_type;
