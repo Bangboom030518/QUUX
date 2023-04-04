@@ -38,7 +38,7 @@ impl Component for InitialisationScript {
         type Component = InitialisationScript;
         view! {
             context,
-            script("type"="module", id="__quux_init_script__", data-quux-tree = *crate::TREE_INTERPOLATION_ID) {
+            script("type"="module", id="__quux_init_script__", data-quux-tree = "$$QUUX_TREE_INTERPOLATION$$", magic=true) {
                 {self.init_script}
             }
         }

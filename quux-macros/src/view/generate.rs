@@ -12,7 +12,7 @@ pub fn generate(tree: &View) -> TokenStream {
         client_context,
     } = server::generate(tree);
     let client = client::generate(tree);
-    quote! {
+    let tokens = quote! {
         {
             #client_context;
             quux::cfg_if::cfg_if! {
@@ -23,7 +23,18 @@ pub fn generate(tree: &View) -> TokenStream {
                 }
             }
         }
-    }
+    };
+    // if tree.element.attributes.attributes.contains_key("magic") {
+        std::fs::write(
+            "expansion.rs",
+            quote! {
+                fn main() {
+                    #tokens
+                }
+            }.to_string()
+        ).unwrap();
+    // }
+    tokens
 }
 
 mod internal {

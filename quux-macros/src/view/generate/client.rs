@@ -117,7 +117,7 @@ pub fn generate(tree: &View) -> TokenStream {
         reactivity,
         for_loops,
         ..
-    } = element.clone().into();
+    } = element.into();
 
     let for_loop_code: TokenStream = for_loops
         .into_iter()
@@ -155,18 +155,8 @@ pub fn generate(tree: &View) -> TokenStream {
         let id = Rc::new(#context.id);
         #(#components);*;
         #for_loop_code;
-        // for mut child in children {
-        //     quux::component::Enum::render(child.component, child.render_context);
-        // }
         #({ #reactivity });*;
-        quux::view::Output::new(self)
+        quux::view::output::Client::new(self)
     };
-    if element.attributes.attributes.contains_key("magic") {
-        std::fs::write(
-            "expansion-client.rs",
-            quote! {fn main() {#tokens}}.to_string(),
-        )
-        .unwrap();
-    }
     tokens
 }

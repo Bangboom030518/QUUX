@@ -1,7 +1,6 @@
 use crate::internal::prelude::*;
 
-#[server]
-pub struct Output<T>
+pub struct Server<T>
 where
     T: Component,
 {
@@ -9,8 +8,7 @@ where
     pub component_node: SerializedComponent<T>,
 }
 
-#[server]
-impl<T> Output<T>
+impl<T> Server<T>
 where
     T: Component,
 {
@@ -22,17 +20,15 @@ where
     }
 }
 
-#[client]
 #[derive(Default)]
-pub struct Output<T>
+pub struct Client<T>
 where
     T: Component,
 {
     pub component: T,
 }
 
-#[client]
-impl<T> Output<T>
+impl<T> Client<T>
 where
     T: Component,
 {
@@ -40,3 +36,9 @@ where
         Self { component }
     }
 }
+
+#[client]
+pub type Output<T> = Client<T>;
+
+#[server]
+pub type Output<T> = Server<T>;

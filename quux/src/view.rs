@@ -2,7 +2,7 @@ use crate::internal::prelude::*;
 pub use output::Output;
 pub use serialized_components::SerializedComponent;
 
-mod output;
+pub mod output;
 mod serialized_components;
 
 /// On the server, context is used to generate ids for sub-components.

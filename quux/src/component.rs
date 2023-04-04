@@ -54,7 +54,7 @@ pub trait Routes: Serialize + DeserializeOwned {
         let component_node = base64::encode(bytes);
         format!(
             "<!DOCTYPE html>{}",
-            html.replace(&crate::TREE_INTERPOLATION_ID.to_string(), &component_node)
+            html.replace("$$QUUX_TREE_INTERPOLATION$$", &component_node)
         )
     }
 }

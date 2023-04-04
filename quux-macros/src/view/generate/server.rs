@@ -95,7 +95,7 @@ pub fn generate(tree: &View) -> Output {
         html,
         components,
         for_loop_components,
-    } = Html::from(element.clone());
+    } = Html::from(element);
 
     let components_type = components.ty();
     let components_expr = components.expr();
@@ -105,7 +105,7 @@ pub fn generate(tree: &View) -> Output {
     let for_loops_declarations = for_loop_components.declarations();
 
     let render_output = quote! {
-        use quux::{view::{Output, ClientContext, ServerContext, SerializedComponent}, component::Component as _};
+        use quux::{view::{output, ClientContext, ServerContext, SerializedComponent}, component::Component as _};
         let context = #context;
         let id = context.id;
         let mut component_id = context.id;
@@ -114,39 +114,26 @@ pub fn generate(tree: &View) -> Output {
         #components_declarations
         #for_loops_declarations
 
-        Output::new(&#html, SerializedComponent::new(self, ClientContext::new(id, None, #components_expr, #for_loops_expr)))
+       output::Server::new(&#html, SerializedComponent::new(__self, ClientContext::new(id, None, #components_expr, #for_loops_expr)))
     };
     // TODO: move from server
     let client_context = quote! {
-        #[quux::prelude::client]
+        let __self = self.clone();
+
+        #[cfg(target_arch = "wasm32")]
         let render_server = {
             let #context = #context.clone();
+            let __self = __self.clone();
             move || {{
                 #render_output
             }}
-        }
+        };
 
         impl quux::view::ComponentChildren for Component {
             type Components = #components_type;
             type ForLoopComponents = #for_loops_type;
         }
     };
-
-    if element.attributes.attributes.contains_key("magic") {
-        std::fs::write(
-            "expansion-server.rs",
-            quote! {
-                fn main() {
-                    #render_output
-                }
-                fn context_impl() {
-                    #client_context
-                }
-            }
-            .to_string(),
-        )
-        .unwrap();
-    }
     Output {
         client_context,
         render_output,
