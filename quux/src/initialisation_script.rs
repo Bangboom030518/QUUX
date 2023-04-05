@@ -22,7 +22,6 @@ pub struct InitialisationScript {
     // _phantom: std::marker::PhantomData<T>,
 }
 
-#[server]
 impl component::Init for InitialisationScript {
     type Props = &'static str;
 
@@ -38,7 +37,7 @@ impl Component for InitialisationScript {
         type Component = InitialisationScript;
         view! {
             context,
-            script("type"="module", id="__quux_init_script__", data-quux-tree = "$$QUUX_TREE_INTERPOLATION$$", magic=true) {
+            script("type"="module", id="__quux_init_script__", data-quux-tree = "$$QUUX_TREE_INTERPOLATION$$") {
                 {self.init_script}
             }
         }

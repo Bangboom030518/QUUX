@@ -107,5 +107,5 @@ pub trait Declarations {
 }
 
 pub mod prelude {
-    pub use super::{Declaration, Declarations, Components, ForLoops};
+    pub use super::{Components, Declaration, Declarations, ForLoops};
 }

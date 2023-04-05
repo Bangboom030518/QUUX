@@ -3,8 +3,8 @@ use internal::prelude::*;
 pub use server::Html;
 
 mod client;
-mod server;
 mod declarations;
+mod server;
 
 pub fn generate(tree: &View) -> TokenStream {
     let server::Output {
@@ -24,16 +24,9 @@ pub fn generate(tree: &View) -> TokenStream {
             }
         }
     };
-    // if tree.element.attributes.attributes.contains_key("magic") {
-        std::fs::write(
-            "expansion.rs",
-            quote! {
-                fn main() {
-                    #tokens
-                }
-            }.to_string()
-        ).unwrap();
-    // }
+    if tree.element.attributes.attributes.contains_key("magic") {
+        std::fs::write("expansion.rs", tokens.to_string()).unwrap();
+    }
     tokens
 }
 

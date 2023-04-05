@@ -67,7 +67,6 @@ pub enum ClientParse {
     PostcardDecode(postcard::Error),
 }
 
-
 impl Display for ClientParse {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
@@ -85,7 +84,6 @@ pub enum InitApp {
     NoTreeOnInitScript,
     InvalidTree(ClientParse),
 }
-
 
 impl Display for InitApp {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

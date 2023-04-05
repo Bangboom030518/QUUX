@@ -122,7 +122,8 @@ pub fn generate(tree: &View) -> Output {
 
         #[cfg(target_arch = "wasm32")]
         let render_server = {
-            let #context = #context.clone();
+            use quux::view::ServerContext;
+            let #context = ServerContext::<Self>::new(#context.id, #context.for_loop_id.clone());
             let __self = __self.clone();
             move || {{
                 #render_output
@@ -136,6 +137,8 @@ pub fn generate(tree: &View) -> Output {
     };
     Output {
         client_context,
-        render_output,
+        render_output: quote! {
+            render_server()
+        },
     }
 }

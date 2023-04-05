@@ -74,7 +74,7 @@ impl Component for Flashcards {
         let flashcards: Rc<RefCell<Vec<Flashcard>>>;
         view! {
             context,
-            div(class = "grid place-items-center gap-4", magic = true) {
+            div(class = "grid place-items-center gap-4") {
                 div(class = "flashcard-stack") {
                     for term in $self.terms {
                         @Flashcard(term): flashcards

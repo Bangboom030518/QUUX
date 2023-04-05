@@ -45,7 +45,7 @@ impl Children {
             return Ok(Self::default());
         }
         let children;
-        
+
         braced!(children in input);
 
         if children.peek(Token![$]) {
@@ -57,11 +57,11 @@ impl Children {
         }
 
         if children.peek(Token![if]) {
-            return Ok(Self::If(children.parse()?))
+            return Ok(Self::If(children.parse()?));
         }
 
         if children.peek(Token![match]) {
-            return Ok(Self::Match(children.parse()?))
+            return Ok(Self::Match(children.parse()?));
         }
 
         Ok(Self::Items(children.parse()?))

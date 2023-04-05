@@ -1,7 +1,7 @@
 use super::super::internal::prelude::*;
-use syn::parse_quote;
-use std::{sync::atomic::Ordering::Relaxed, collections::HashMap};
 use super::ID;
+use std::{collections::HashMap, sync::atomic::Ordering::Relaxed};
+use syn::parse_quote;
 
 #[derive(Clone)]
 struct Attribute {

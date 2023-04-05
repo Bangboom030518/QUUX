@@ -1,5 +1,5 @@
-pub use list::List;
 use crate::internal::prelude::*;
+pub use list::List;
 
 pub mod list;
 
@@ -71,8 +71,7 @@ impl<T: Display> Display for Store<T> {
 }
 
 impl<T: Debug> Debug for Store<T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
-    {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{:?}", self.get())
     }
 }

@@ -1,11 +1,11 @@
 #![warn(clippy::pedantic, clippy::nursery)]
 
-#[cfg(all(feature = "warp", not(target_arch = "wasm32")))]
-pub use warp;
 pub use cfg_if;
 use internal::prelude::*;
 pub use postcard;
 pub use quux_macros as macros;
+#[cfg(all(feature = "warp", not(target_arch = "wasm32")))]
+pub use warp;
 
 pub mod component;
 pub mod errors;
@@ -16,6 +16,7 @@ pub use serde;
 
 #[cfg(target_arch = "wasm32")]
 pub mod dom;
+mod tree;
 
 pub trait SerializePostcard: Serialize {
     fn serialize_bytes(&self) -> Vec<u8> {
@@ -73,10 +74,10 @@ pub mod prelude {
             quux::macros::routes!(#warp $($tokens)*);
         };
     }
-    #[cfg(feature = "warp")]
-    pub use routes;
     #[cfg(not(feature = "warp"))]
     pub use quux_macros::routes;
+    #[cfg(feature = "warp")]
+    pub use routes;
 
     pub use quux_macros::{client, server, view};
     pub use serde::{de::DeserializeOwned, Deserialize, Serialize};
