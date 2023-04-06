@@ -59,15 +59,6 @@ impl Element {
     }
 }
 
-impl ToTokens for Element {
-    fn to_tokens(&self, tokens: &mut TokenStream) {
-        let Self { tag_name, .. } = self;
-        quote! {
-            quux::tree::Element::new(#tag_name, todo!(), todo!(), todo!())
-        }.to_tokens(tokens);
-    }
-}
-
 impl From<Element> for Html {
     fn from(mut value: Element) -> Self {
         let attributes = value.attributes.clone();

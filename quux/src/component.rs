@@ -43,18 +43,15 @@ pub trait Routes: Serialize + DeserializeOwned {
     where
         Self: Sized + From<SerializedComponent<T>>,
     {
-        let crate::view::Output {
-            html,
-            component_node,
-            ..
-        } = component.render(crate::view::Context::new(0, None));
-        let component_node = Self::from(component_node);
+        let Output { element, component } = component.render(crate::view::Context::new(0, None));
+
+        let component_node = Self::from(component);
         let bytes =
             postcard::to_stdvec(&component_node).expect_internal("serialize `RenderContext`");
         let component_node = base64::encode(bytes);
         format!(
             "<!DOCTYPE html>{}",
-            html.replace("$$QUUX_TREE_INTERPOLATION$$", &component_node)
+            element.to_string().replace("$$QUUX_TREE_INTERPOLATION$$", &component_node)
         )
     }
 }

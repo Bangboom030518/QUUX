@@ -47,6 +47,7 @@ mod internal {
             prelude::*,
             view::{ComponentChildren, SerializedComponent},
             SerializePostcard,
+            tree::prelude::*,
         };
         pub use std::{
             cell::{Ref, RefCell},
@@ -54,6 +55,7 @@ mod internal {
             marker::PhantomData,
             rc::Rc,
             str::FromStr,
+            collections::HashMap,
         };
     }
 }
@@ -78,7 +80,6 @@ pub mod prelude {
     pub use quux_macros::routes;
     #[cfg(feature = "warp")]
     pub use routes;
-
     pub use quux_macros::{client, server, view};
     pub use serde::{de::DeserializeOwned, Deserialize, Serialize};
 }

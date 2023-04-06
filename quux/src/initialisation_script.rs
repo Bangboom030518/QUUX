@@ -31,15 +31,25 @@ impl component::Init for InitialisationScript {
 }
 
 impl Component for InitialisationScript {
-    fn render(self, context: crate::view::Context<Self>) -> crate::view::Output<Self> {
-        use crate as quux;
+    fn render(self, _: crate::view::Context<Self>) -> crate::view::Output<Self> {
 
-        type Component = InitialisationScript;
-        view! {
-            context,
-            script("type"="module", id="__quux_init_script__", data-quux-tree = "$$QUUX_TREE_INTERPOLATION$$") {
-                {self.init_script}
-            }
+        impl ComponentChildren for InitialisationScript {
+            type Components = ();
+            type ForLoopComponents = ();
         }
+
+        // type Component = InitialisationScript;
+        // view! {
+        //     context,
+        //     script("type"="module", id="__quux_init_script__", data-quux-tree = "$$QUUX_TREE_INTERPOLATION$$") {
+        //         {self.init_script}
+        //     }
+        // }
+        crate::view::Output::new(Element::new(
+            "div",
+            Attributes::default(),
+            Children::default(),
+            &(),
+        ), SerializedComponent::new(self, Context::new(0, None)))
     }
 }

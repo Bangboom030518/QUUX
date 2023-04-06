@@ -6,16 +6,15 @@ use crate::internal::prelude::*;
 #[derive(Serialize, Deserialize, Clone)]
 pub struct SerializedComponent<T: Component> {
     pub component: T,
-    pub render_context: super::ClientContext<T>,
+    pub render_context: super::Context<T>,
 }
 
 impl<T: Component> SerializedComponent<T> {
-    #[client]
     pub fn render(self) -> Output<T> {
         self.component.render(self.render_context)
     }
 
-    pub const fn new(component: T, render_context: super::ClientContext<T>) -> Self {
+    pub const fn new(component: T, render_context: super::Context<T>) -> Self {
         Self {
             component,
             render_context,
