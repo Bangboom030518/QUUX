@@ -1,21 +1,32 @@
-pub use element::Element;
 pub use attributes::Attributes;
+pub use element::Element;
 pub use item::Item;
-pub use items::Items;
-pub use components::Components;
-pub use children::Children;
+// pub use components::Components;
 use crate::internal::prelude::*;
+pub use children::Children;
 
-mod element;
 mod attributes;
-mod item;
-mod items;
 mod children;
-mod components;
+mod element;
+mod item;
+// mod components;
+
+pub trait ToString2 {
+    fn to_string(&self) -> String;
+}
+
+impl<T: ToString> ToString2 for T {
+    fn to_string(&self) -> String {
+        self.to_string()
+    }
+}
+
+pub trait Hydrate {
+    fn hydrate(&self) {}
+}
 
 type DisplayStore = Store<Box<dyn Display>>;
-type BoxedComponents = Box<dyn Components>;
 
 pub mod prelude {
-    pub use super::{Element, Attributes, Children, Item, Items, Components};
+    pub use super::{Attributes, Children, Element, Item};
 }

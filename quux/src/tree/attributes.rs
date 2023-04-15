@@ -7,8 +7,15 @@ pub struct Attributes {
     pub reactive_attributes: HashMap<String, DisplayStore>,
 }
 
+impl Attributes {
+    #[must_use]
+    pub fn new(attributes: HashMap<String, String>, reactive_attributes: HashMap<String, DisplayStore>) -> Self {
+        Self { attributes, reactive_attributes }
+    }
+}
+
 impl Display for Attributes {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for (key, value) in &self.attributes {
             write!(f, "{key}=\"{}\"", value.replace('"', r#"\""#))?;
         }

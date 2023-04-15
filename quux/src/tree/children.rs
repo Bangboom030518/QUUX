@@ -1,41 +1,61 @@
+use super::DisplayStore;
 use crate::internal::prelude::*;
-use super::{DisplayStore, BoxedComponents};
 
-#[derive(Clone)]
-pub enum Children {
-    Items(Items),
-    ReactiveStore(DisplayStore),
-    SelfClosing, // ForLoop(ForLoop),
+pub trait Children {
+    const SELF_CLOSING: bool = false;
+
+    fn to_string(&self) -> String;
+
+    fn hydrate(&self);
 }
 
-impl Display for Children {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Self::Items(items) => write!(f, "{items}"),
-            Self::ReactiveStore(store) => write!(f, "{}", store.get()),
-            Self::SelfClosing => Ok(()),
-        }
+impl Children for DisplayStore {
+    fn to_string(&self) -> String {
+        ToString::to_string(self)
+    }
+
+    fn hydrate(&self) {
+        todo!()
     }
 }
 
-fn components() -> impl Components {
-}
+pub struct SelfClosing;
 
-impl Children {
-    pub const fn is_self_closing(&self) -> bool {
-        matches!(self, Self::SelfClosing)
+impl Children for SelfClosing {
+    const SELF_CLOSING: bool = true;
+
+    fn to_string(&self) -> String {
+        String::new()
     }
 
-    pub fn components(&self) -> BoxedComponents {
-        match self {
-            Children::Items(items) => Box::new(items.components()),
-            Children::ReactiveStore(_) | Children::SelfClosing => Box::new(()),
-        }
+    fn hydrate(&self) {}
+}
+
+impl Children for () {
+    fn to_string(&self) -> String {
+        String::new()
+    }
+
+    fn hydrate(&self) {}
+}
+
+impl<A: Item> Children for (A,) {
+    fn to_string(&self) -> String {
+        self.0.to_string()
+    }
+
+    fn hydrate(&self) {
+        self.0.hydrate();
     }
 }
 
-impl Default for Children {
-    fn default() -> Self {
-        Self::Items(Items::default())
+impl<A: Item, B: Item> Children for (A, B) {
+    fn to_string(&self) -> String {
+        self.0.to_string() + &self.1.to_string()
+    }
+
+    fn hydrate(&self) {
+        self.0.hydrate();
+        self.1.hydrate();
     }
 }

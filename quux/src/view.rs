@@ -19,6 +19,7 @@ impl<T> Context<T>
 where
     T: Component,
 {
+    #[must_use]
     pub const fn new(
         id: u64,
         for_loop_id: Option<String>,
@@ -32,6 +33,5 @@ where
 }
 
 pub trait ComponentChildren {
-    type Components: Serialize + DeserializeOwned + Clone + crate::tree::Components;
-    type ForLoopComponents: Serialize + DeserializeOwned + Clone;
+    type Children: crate::tree::Children;
 }

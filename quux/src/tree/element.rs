@@ -1,42 +1,40 @@
+use super::Hydrate;
 use crate::internal::prelude::*;
 
-use super::BoxedComponents;
-
 #[derive(Default, Clone)]
-pub struct Element {
+pub struct Element<T: Children> {
     pub tag_name: String,
     pub attributes: Attributes,
-    pub children: Children,
+    pub children: T,
 }
 
-impl Display for Element {
+impl<T: Children> Display for Element<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if self.children.is_self_closing() {
+        if T::SELF_CLOSING {
             return write!(f, "<{} {} />", self.tag_name, self.attributes);
         }
         write!(
             f,
             "<{0} {1}>{2}</{0}>",
-            self.tag_name, self.attributes, self.children
+            self.tag_name,
+            self.attributes,
+            self.children.to_string()
         )
     }
 }
 
-impl Element {
-    pub fn hydrate(&self) {
-        self.components().hydrate();
+impl<T: Children> Hydrate for Element<T> {
+    fn hydrate(&self) {
+        self.children.hydrate();
     }
+}
 
-    pub fn components(&self) -> BoxedComponents {
-        self.children.components()
-    }
-
-    pub fn new(tag_name: &str, attributes: Attributes, children: Children) -> Self {
+impl<T: Children> Element<T> {
+    pub fn new(tag_name: &str, attributes: Attributes, children: T) -> Self {
         Self {
             tag_name: tag_name.to_string(),
             attributes,
             children,
-            // components: Rc::new(components.clone()),
         }
     }
 }

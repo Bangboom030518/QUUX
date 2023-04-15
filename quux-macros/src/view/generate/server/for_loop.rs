@@ -4,7 +4,7 @@ use for_loop::Iterable;
 
 impl ForLoop {
     pub fn html(self) -> Html {
-        let ident = self.ident();
+        let ident: Ident = self.ident();
         let Self {
             pattern,
             iterable,
@@ -45,5 +45,45 @@ impl ForLoop {
             for_loop_components,
             ..Default::default()
         }
+    }
+}
+
+impl ToTokens for ForLoop {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let ident: Ident = self.ident();
+        let Self {
+            pattern,
+            iterable,
+            mut item,
+            ..
+        } = self.clone();
+        let iterable = match iterable {
+            Iterable::Static(iterable) => quote! { #iterable },
+            Iterable::Reactive(iterable) => {
+                item.insert_for_loop_id(self.id);
+                quote! {
+                    (std::cell::Ref::<Vec<_>>::from(&#iterable)).iter().cloned()
+                }
+            }
+        };
+        // let Html {
+        //     html,
+        //     components,
+        //     mut for_loop_components,
+        // } = (*item).into();
+
+
+        // let declarations = components.declarations();
+        // let expr = components.expr();
+
+        parse_quote! {{
+            let (html, components): (String, Vec<_>) = (#iterable).enumerate().map(|(index, #pattern)| {
+                // #declarations
+
+                (ToString::to_string(&#item), #expr)
+            }).unzip();
+            #ident = components;
+            html
+        }}
     }
 }

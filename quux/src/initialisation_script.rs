@@ -34,8 +34,7 @@ impl Component for InitialisationScript {
     fn render(self, _: crate::view::Context<Self>) -> crate::view::Output<Self> {
 
         impl ComponentChildren for InitialisationScript {
-            type Components = ();
-            type ForLoopComponents = ();
+            type Children = ();
         }
 
         // type Component = InitialisationScript;
@@ -48,8 +47,7 @@ impl Component for InitialisationScript {
         crate::view::Output::new(Element::new(
             "div",
             Attributes::default(),
-            Children::default(),
-            &(),
+            (),
         ), SerializedComponent::new(self, Context::new(0, None)))
     }
 }

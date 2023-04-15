@@ -16,7 +16,7 @@ pub use serde;
 
 #[cfg(target_arch = "wasm32")]
 pub mod dom;
-mod tree;
+pub mod tree;
 
 pub trait SerializePostcard: Serialize {
     fn serialize_bytes(&self) -> Vec<u8> {

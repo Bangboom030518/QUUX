@@ -1,26 +1,19 @@
-use super::BoxedComponents;
+use super::{Hydrate, ToString2};
 use crate::internal::prelude::*;
 
-#[derive(Clone)]
-pub enum Item {
-    Element(Element),
-    Expression(String),
-}
+pub trait Item: ToString2 + Hydrate {}
 
-impl Item {
-    pub fn components(&self) -> BoxedComponents {
-        match self {
-            Self::Element(element) => element.components(),
-            Self::Expression(_) => Box::new(()),
-        }
-    }
-}
+// impl<T: Component> Item for Output<T> {
+//     fn hydrate(&self) {
+//         self.element.hydrate()
+//     }
 
-impl Display for Item {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Self::Element(element) => write!(f, "{element}"),
-            Self::Expression(expression) => write!(f, "{expression}"),
-        }
-    }
-}
+//     fn to_string(&self) -> String {
+//         ToString::to_string(&self.element)
+//     }
+// }
+
+impl<T: Children> Item for Element<T> {}
+
+impl Item for String {}
+impl Hydrate for String {}

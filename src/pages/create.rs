@@ -1,6 +1,8 @@
+use std::collections::HashMap;
+
 use super::Head;
 use crate::components::flashcards::Term;
-use quux::prelude::*;
+use quux::{prelude::*, tree::prelude::*};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Card {
@@ -10,16 +12,31 @@ pub struct Card {
 impl Component for Card {
     fn render(self, context: quux::view::Context<Self>) -> quux::view::Output<Self> {
         type Component = Card;
-        view! {
-            context,
-            fieldset(class="card card-bordered shadow") {
-                legend(class="badge") {{ "Card" }}
-                div(class="card-body grid gap-2 grid-cols-2") {
-                    input("type"="text", class="input input-bordered input-primary w-full", placeholder="Term", value=self.term.term)
-                    input("type"="text", class="input input-bordered input-primary w-full", placeholder="Definition", value=self.term.definition)
-                }
-            }
-        }
+        // view! {
+        //     context,
+        //     fieldset(class="card card-bordered shadow") {
+        //         legend(class="badge") {{ "Card" }}
+        //         div(class="card-body grid gap-2 grid-cols-2") {
+        //             input("type"="text", class="input input-bordered input-primary w-full", placeholder="Term", value=self.term.term)
+        //             input("type"="text", class="input input-bordered input-primary w-full", placeholder="Definition", value=self.term.definition)
+        //         }
+        //     }
+        // }
+        Element::new(
+            "fieldset",
+            Attributes::new(
+                HashMap::from([("class".to_string(), "card card-bordered shadow")]),
+                HashMap::new(),
+            ),
+            (Element::new(
+                "legend",
+                Attributes::new(
+                    HashMap::from([("class".to_string(), "badge".to_string())]),
+                    HashMap::new(),
+                ),
+                ("Card".to_string(),),
+            ),),
+        )
     }
 }
 

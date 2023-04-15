@@ -15,6 +15,18 @@ impl ToTokens for Item {
     }
 }
 
+impl ToTokens for Children {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        match self {
+            Self::ForLoop(for_loop) => for_loop.to_tokens(tokens),
+            Self::If(if_expr) => if_expr.to_tokens(tokens),
+            Self::Items(items) => items.to_tokens(tokens),
+            Self::Match(match_expr) => match_expr.to_tokens(tokens),
+            Self::ReactiveStore(store) => store.to_tokens(tokens)
+        }
+    }
+}
+
 impl From<Items> for Html {
     fn from(value: Items) -> Self {
         if value.items.is_empty() {
@@ -61,10 +73,16 @@ impl Element {
 
 impl ToTokens for Element {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        let Self { tag_name, .. } = self;
+        let Self {
+            tag_name,
+            attributes,
+            children,
+            ..
+        } = self;
         quote! {
-            quux::tree::Element::new(#tag_name, todo!(), todo!(), todo!())
-        }.to_tokens(tokens);
+            quux::tree::Element::new(#tag_name, #attributes, #children)
+        }
+        .to_tokens(tokens);
     }
 }
 
