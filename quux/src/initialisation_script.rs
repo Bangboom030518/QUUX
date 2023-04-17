@@ -31,22 +31,10 @@ impl component::Init for InitialisationScript {
 }
 
 impl Component for InitialisationScript {
-    fn render(self, _: crate::view::Context<Self>) -> crate::view::Output<Self> {
-        impl ComponentChildren for InitialisationScript {
-            type Children = children::Empty;
-        }
-
-        // type Component = InitialisationScript;
-        // view! {
-        //     context,
-        //     script("type"="module", id="__quux_init_script__", data-quux-tree = "$$QUUX_TREE_INTERPOLATION$$") {
-        //         {self.init_script}
-        //     }
-        // }
-        crate::view::Output::new(
-            Element::new("div"),
-            // Element::new("div", Attributes::default(), ()),
-            SerializedComponent::new(self, Context::new(0, None)),
-        )
+    fn render(self, _: crate::view::Context<Self>) -> impl Item {
+        Element::new("script")
+            .attribute("type", "module")
+            .attribute("id", "__quux_init_script__")
+            .attribute("data-quux-tree", "$$QUUX_TREE_INTERPOLATION$$")
     }
 }

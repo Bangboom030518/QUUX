@@ -40,7 +40,7 @@ impl Element<children::Empty> {
 
 impl<T: Children> Element<T> {
     #[must_use]
-    pub fn attribute<V: ToString>(mut self, key: &str, value: &V) -> Self {
+    pub fn attribute<V: ToString>(mut self, key: &str, value: V) -> Self {
         self.attributes
             .attributes
             .insert(key.to_string(), value.to_string());

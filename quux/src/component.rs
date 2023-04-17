@@ -1,7 +1,7 @@
 use crate::internal::prelude::*;
 
-pub trait Component: Serialize + ComponentChildren {
-    fn render(self, context: crate::view::Context<Self>) -> crate::view::Output<Self>
+pub trait Component: Serialize /* + ComponentChildren */ {
+    fn render(self, context: crate::view::Context<Self>) -> impl Item
     where
         Self: Sized;
 }
@@ -43,7 +43,7 @@ pub trait Routes: Serialize + DeserializeOwned {
     where
         Self: Sized + From<SerializedComponent<T>>,
     {
-        let Output { element, component } = component.render(crate::view::Context::new(0, None));
+        let element = component.render(crate::view::Context::new(0, None));
 
         let component_node = Self::from(component);
         let bytes =

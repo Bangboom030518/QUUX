@@ -1,4 +1,5 @@
 #![warn(clippy::pedantic, clippy::nursery)]
+#![feature(return_position_impl_trait_in_trait)]
 
 pub use cfg_if;
 use internal::prelude::*;
@@ -67,7 +68,7 @@ pub mod prelude {
         component::{self, Component, Init as _, Routes as _},
         initialisation_script::InitialisationScript,
         store::{self, Store},
-        view::{Context, Output},
+        view::Context,
     };
     #[cfg(feature = "warp")]
     #[macro_export]

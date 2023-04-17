@@ -12,31 +12,13 @@ pub struct Card {
 impl Component for Card {
     fn render(self, context: quux::view::Context<Self>) -> quux::view::Output<Self> {
         type Component = Card;
-        // view! {
-        //     context,
-        //     fieldset(class="card card-bordered shadow") {
-        //         legend(class="badge") {{ "Card" }}
-        //         div(class="card-body grid gap-2 grid-cols-2") {
-        //             input("type"="text", class="input input-bordered input-primary w-full", placeholder="Term", value=self.term.term)
-        //             input("type"="text", class="input input-bordered input-primary w-full", placeholder="Definition", value=self.term.definition)
-        //         }
-        //     }
-        // }
-        Element::new(
-            "fieldset",
-            Attributes::new(
-                HashMap::from([("class".to_string(), "card card-bordered shadow")]),
-                HashMap::new(),
-            ),
-            (Element::new(
-                "legend",
-                Attributes::new(
-                    HashMap::from([("class".to_string(), "badge".to_string())]),
-                    HashMap::new(),
-                ),
-                ("Card".to_string(),),
-            ),),
-        )
+        Element::new("fieldset")
+            .attribute("class", "card card-bordered shadow")
+            .child(
+                Element::new("legend")
+                    .attribute("class", "badge")
+                    .child("Card"),
+            );
     }
 }
 
@@ -51,9 +33,11 @@ impl component::Init for Card {
 pub struct Create;
 
 impl Component for Create {
-    fn render(self, context: Context<Self>) -> Output<Self> {
+    fn render(self, context: Context<Self>) -> impl Item {
         type Component = Create;
         let terms = store::List::<Term>::new(vec![Term::new("", ""), Term::new("", "")]);
+        Element::new("html").attribute("lang", "en").child(Head::init("Flashcards - QUUX".to_string()).render(context))
+
         view! {
             context,
             html(lang="en") {
