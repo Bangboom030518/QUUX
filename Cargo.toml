@@ -20,10 +20,6 @@ thiserror = "1.0"
 [target.'cfg(not(target_arch="wasm32"))'.dependencies]
 tokio = { workspace = true }
 sqlx = { version = "0.6", features = ["runtime-tokio-native-tls", "sqlite"] }
-# tower = { version = "0.4", features = ["timeout"] }
-# tower-http = { version = "0.4", features = ["fs"] }
-# mime = "0.3"
-# axum = { version = "0.6", features = ["headers", "macros"] }
 warp = "0.3"
 
 [target.'cfg(target_arch="wasm32")'.dependencies]
@@ -45,5 +41,6 @@ web-sys = { version = "0.3", features = ["Document", "Element", "HtmlElement", "
 [workspace]
 members = [
     "quux-macros",
-    "quux"
+    "quux",
+    "tag-parser"
 ]

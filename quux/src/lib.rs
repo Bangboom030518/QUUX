@@ -69,6 +69,7 @@ pub mod prelude {
         initialisation_script::InitialisationScript,
         store::{self, Store},
         view::Context,
+        tree::element::html::prelude::*,
     };
     #[cfg(feature = "warp")]
     #[macro_export]

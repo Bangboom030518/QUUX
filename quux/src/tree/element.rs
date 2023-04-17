@@ -1,6 +1,8 @@
 use super::{DisplayStore, Hydrate};
 use crate::internal::prelude::*;
 
+pub mod html;
+
 #[derive(Default, Clone)]
 pub struct Element<T: Children> {
     pub tag_name: String,
@@ -40,10 +42,28 @@ impl Element<children::Empty> {
 
 impl<T: Children> Element<T> {
     #[must_use]
-    pub fn attribute<V: ToString>(mut self, key: &str, value: V) -> Self {
+    pub fn attribute<V: Display>(mut self, key: &str, value: V) -> Self {
         self.attributes
             .attributes
             .insert(key.to_string(), value.to_string());
+        self
+    }
+
+    #[must_use]
+    pub fn id<V: Display>(mut self, value: V) -> Self {
+        self.attribute("id", value);
+        self
+    }
+
+    #[must_use]
+    pub fn class<V: Display>(mut self, value: V) -> Self {
+        self.attribute("class", value);
+        self
+    }
+
+    #[must_use]
+    pub fn data_attribute<V: Display>(mut self, key: &str, value: V) -> Self {
+        self.attribute(&format!("data-{key}"), value);
         self
     }
 

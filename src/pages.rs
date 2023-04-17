@@ -15,6 +15,14 @@ pub struct Head {
     title: String,
 }
 
+impl Head {
+    pub fn new(title: &str) -> Self {
+        Self {
+            title: title.to_string(),
+        }
+    }
+}
+
 impl component::Init for Head {
     type Props = String;
 

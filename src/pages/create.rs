@@ -12,13 +12,9 @@ pub struct Card {
 impl Component for Card {
     fn render(self, context: quux::view::Context<Self>) -> quux::view::Output<Self> {
         type Component = Card;
-        Element::new("fieldset")
-            .attribute("class", "card card-bordered shadow")
-            .child(
-                Element::new("legend")
-                    .attribute("class", "badge")
-                    .child("Card"),
-            );
+        fieldset()
+            .class("card card-bordered shadow")
+            .child(legend().class("badge").child("Card"));
     }
 }
 
@@ -36,7 +32,9 @@ impl Component for Create {
     fn render(self, context: Context<Self>) -> impl Item {
         type Component = Create;
         let terms = store::List::<Term>::new(vec![Term::new("", ""), Term::new("", "")]);
-        Element::new("html").attribute("lang", "en").child(Head::init("Flashcards - QUUX".to_string()).render(context))
+        html()
+            .attribute("lang", "en")
+            .child(Head::new("Flashcards - QUUX").render(context));
 
         view! {
             context,

@@ -7,7 +7,7 @@ pub use children::Children;
 
 mod attributes;
 pub mod children;
-mod element;
+pub mod element;
 mod item;
 mod component;
 

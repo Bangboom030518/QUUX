@@ -32,7 +32,7 @@ impl component::Init for InitialisationScript {
 
 impl Component for InitialisationScript {
     fn render(self, _: crate::view::Context<Self>) -> impl Item {
-        Element::new("script")
+        script()
             .attribute("type", "module")
             .attribute("id", "__quux_init_script__")
             .attribute("data-quux-tree", "$$QUUX_TREE_INTERPOLATION$$")
