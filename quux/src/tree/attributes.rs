@@ -1,5 +1,5 @@
-use crate::internal::prelude::*;
 use super::DisplayStore;
+use crate::internal::prelude::*;
 
 #[derive(Default, Clone)]
 pub struct Attributes {
@@ -9,8 +9,14 @@ pub struct Attributes {
 
 impl Attributes {
     #[must_use]
-    pub fn new(attributes: HashMap<String, String>, reactive_attributes: HashMap<String, DisplayStore>) -> Self {
-        Self { attributes, reactive_attributes }
+    pub fn new(
+        attributes: HashMap<String, String>,
+        reactive_attributes: HashMap<String, DisplayStore>,
+    ) -> Self {
+        Self {
+            attributes,
+            reactive_attributes,
+        }
     }
 }
 

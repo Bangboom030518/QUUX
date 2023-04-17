@@ -45,17 +45,17 @@ mod internal {
         pub use super::super::{
             errors::{self, MapInternal},
             prelude::*,
+            tree::prelude::*,
             view::{ComponentChildren, SerializedComponent},
             SerializePostcard,
-            tree::prelude::*,
         };
         pub use std::{
             cell::{Ref, RefCell},
+            collections::HashMap,
             fmt::{self, Debug, Display},
             marker::PhantomData,
             rc::Rc,
             str::FromStr,
-            collections::HashMap,
         };
     }
 }
@@ -78,8 +78,8 @@ pub mod prelude {
     }
     #[cfg(not(feature = "warp"))]
     pub use quux_macros::routes;
+    pub use quux_macros::{client, server, view};
     #[cfg(feature = "warp")]
     pub use routes;
-    pub use quux_macros::{client, server, view};
     pub use serde::{de::DeserializeOwned, Deserialize, Serialize};
 }

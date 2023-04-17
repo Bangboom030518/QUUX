@@ -9,7 +9,10 @@ impl<T> Output<T>
 where
     T: Component,
 {
-    pub const fn new(element: crate::tree::Element<<T as ComponentChildren>::Children>, component: SerializedComponent<T>) -> Self {
+    pub const fn new(
+        element: crate::tree::Element<<T as ComponentChildren>::Children>,
+        component: SerializedComponent<T>,
+    ) -> Self {
         Self { element, component }
     }
 }

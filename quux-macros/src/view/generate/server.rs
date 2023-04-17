@@ -12,10 +12,13 @@ mod match_expr;
 #[derive(Clone)]
 pub struct Html {
     pub html: syn::Expr,
-    /// The types of components for a tuple for the Children type
-    pub components: Components,
-    /// The types of for loop components for a tuple for the ForLoopChildren type
-    pub for_loop_components: ForLoops,
+    pub ty: syn::Type,
+}
+
+impl Html {
+    pub fn new(html: syn::Expr, ty: syn::Type) -> Self {
+        Self { html, ty }
+    }
 }
 
 impl Default for Html {
@@ -24,8 +27,9 @@ impl Default for Html {
             html: parse_quote! {
                 String::new()
             },
-            components: Components::default(),
-            for_loop_components: ForLoops::default(),
+            ty: parse_quote! {
+                ()
+            },
         }
     }
 }
@@ -74,8 +78,9 @@ impl From<Expr> for Html {
             html: parse_quote! {
                 #expression.to_string()
             },
-            components: Components::default(),
-            for_loop_components: ForLoops::default(),
+            ty: parse_quote! {
+                String
+            },
         }
     }
 }
@@ -91,18 +96,7 @@ pub fn generate(tree: &View) -> Output {
         mut element,
     } = tree.clone();
     element.attributes.is_root = true;
-    let Html {
-        html,
-        components,
-        for_loop_components,
-    } = Html::from(element);
-
-    let components_type = components.ty();
-    let components_expr = components.expr();
-    let components_declarations = components.declarations();
-    let for_loops_type = for_loop_components.ty();
-    let for_loops_expr = for_loop_components.expr();
-    let for_loops_declarations = for_loop_components.declarations();
+    let Html { html, ty } = Html::from(element);
 
     let render_output = quote! {
         use quux::{view::{output, ClientContext, ServerContext, SerializedComponent}, component::Component as _};
@@ -110,9 +104,6 @@ pub fn generate(tree: &View) -> Output {
         let id = context.id;
         let mut component_id = context.id;
         let for_loop_id = context.for_loop_id;
-
-        #components_declarations
-        #for_loops_declarations
 
        output::Server::new(&#html, SerializedComponent::new(__self, ClientContext::new(id, None, #components_expr, #for_loops_expr)))
     };
@@ -131,8 +122,7 @@ pub fn generate(tree: &View) -> Output {
         };
 
         impl quux::view::ComponentChildren for Component {
-            type Components = #components_type;
-            type ForLoopComponents = #for_loops_type;
+            type Children = #ty;
         }
     };
     Output {

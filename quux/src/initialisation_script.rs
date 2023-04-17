@@ -32,9 +32,8 @@ impl component::Init for InitialisationScript {
 
 impl Component for InitialisationScript {
     fn render(self, _: crate::view::Context<Self>) -> crate::view::Output<Self> {
-
         impl ComponentChildren for InitialisationScript {
-            type Children = ();
+            type Children = children::Empty;
         }
 
         // type Component = InitialisationScript;
@@ -44,10 +43,10 @@ impl Component for InitialisationScript {
         //         {self.init_script}
         //     }
         // }
-        crate::view::Output::new(Element::new(
-            "div",
-            Attributes::default(),
-            (),
-        ), SerializedComponent::new(self, Context::new(0, None)))
+        crate::view::Output::new(
+            Element::new("div"),
+            // Element::new("div", Attributes::default(), ()),
+            SerializedComponent::new(self, Context::new(0, None)),
+        )
     }
 }

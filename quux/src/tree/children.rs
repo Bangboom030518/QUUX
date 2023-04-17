@@ -1,61 +1,59 @@
-use super::DisplayStore;
+use super::Hydrate;
 use crate::internal::prelude::*;
 
-pub trait Children {
+pub trait Children: Display + Hydrate {
     const SELF_CLOSING: bool = false;
-
-    fn to_string(&self) -> String;
-
-    fn hydrate(&self);
 }
 
-impl Children for DisplayStore {
-    fn to_string(&self) -> String {
-        ToString::to_string(self)
-    }
-
+impl<T: Display> Hydrate for Store<T> {
     fn hydrate(&self) {
         todo!()
     }
 }
 
+impl<T: Item> Children for T {}
+
 pub struct SelfClosing;
+
+impl Display for SelfClosing {
+    fn fmt(&self, _: &mut fmt::Formatter) -> fmt::Result {
+        Ok(())
+    }
+}
+
+impl Hydrate for SelfClosing {}
 
 impl Children for SelfClosing {
     const SELF_CLOSING: bool = true;
-
-    fn to_string(&self) -> String {
-        String::new()
-    }
-
-    fn hydrate(&self) {}
 }
 
-impl Children for () {
-    fn to_string(&self) -> String {
-        String::new()
-    }
+pub struct Empty;
 
-    fn hydrate(&self) {}
-}
-
-impl<A: Item> Children for (A,) {
-    fn to_string(&self) -> String {
-        self.0.to_string()
-    }
-
-    fn hydrate(&self) {
-        self.0.hydrate();
+impl Display for Empty {
+    fn fmt(&self, _: &mut fmt::Formatter) -> fmt::Result {
+        Ok(())
     }
 }
 
-impl<A: Item, B: Item> Children for (A, B) {
-    fn to_string(&self) -> String {
-        self.0.to_string() + &self.1.to_string()
-    }
+impl Hydrate for Empty {}
 
+impl Children for Empty {}
+
+pub struct Pair<A: Children, B: Children>(pub A, pub B);
+
+impl<A: Children, B: Children> Hydrate for Pair<A, B> {
     fn hydrate(&self) {
         self.0.hydrate();
         self.1.hydrate();
     }
 }
+
+impl<A: Children, B: Children> Display for Pair<A, B> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.0.fmt(f)?;
+        self.1.fmt(f)?;
+        Ok(())
+    }
+}
+
+impl<A: Children, B: Children> Children for Pair<A, B> {}

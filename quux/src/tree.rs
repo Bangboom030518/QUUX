@@ -6,20 +6,10 @@ use crate::internal::prelude::*;
 pub use children::Children;
 
 mod attributes;
-mod children;
+pub mod children;
 mod element;
 mod item;
 // mod components;
-
-pub trait ToString2 {
-    fn to_string(&self) -> String;
-}
-
-impl<T: ToString> ToString2 for T {
-    fn to_string(&self) -> String {
-        self.to_string()
-    }
-}
 
 pub trait Hydrate {
     fn hydrate(&self) {}
@@ -28,5 +18,8 @@ pub trait Hydrate {
 type DisplayStore = Store<Box<dyn Display>>;
 
 pub mod prelude {
-    pub use super::{Attributes, Children, Element, Item};
+    pub use super::{
+        children::{self, Pair},
+        Attributes, Children, Element, Item,
+    };
 }

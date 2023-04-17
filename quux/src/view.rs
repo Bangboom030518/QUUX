@@ -20,14 +20,11 @@ where
     T: Component,
 {
     #[must_use]
-    pub const fn new(
-        id: u64,
-        for_loop_id: Option<String>,
-    ) -> Self {
+    pub const fn new(id: u64, for_loop_id: Option<String>) -> Self {
         Self {
             id,
             for_loop_id,
-            _phantom: PhantomData
+            _phantom: PhantomData,
         }
     }
 }

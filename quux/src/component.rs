@@ -51,7 +51,9 @@ pub trait Routes: Serialize + DeserializeOwned {
         let component_node = base64::encode(bytes);
         format!(
             "<!DOCTYPE html>{}",
-            element.to_string().replace("$$QUUX_TREE_INTERPOLATION$$", &component_node)
+            element
+                .to_string()
+                .replace("$$QUUX_TREE_INTERPOLATION$$", &component_node)
         )
     }
 }
