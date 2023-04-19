@@ -1,13 +1,43 @@
+use std::sync::atomic::{AtomicU64, Ordering::Relaxed};
+
 use super::{DisplayStore, Hydrate};
 use crate::internal::prelude::*;
 
 pub mod html;
 
+#[derive(Clone)]
+pub struct Event {
+    name: String,
+    callback: js_sys::Function,
+}
+
+impl Event {
+    pub fn new<F>(name: &str, callback: F) -> Self
+    where
+        F: FnMut(),
+    {
+        use wasm_bindgen::prelude::*;
+
+        let closure = Closure::wrap(Box::new(callback) as Box<dyn FnMut()>);
+        let callback = *closure.as_ref().unchecked_ref();
+        closure.forget();
+        Self {
+            name: name.to_string(),
+            callback,
+        }
+    }
+}
+
+// TODO: consider caching web sys elements in this struct
+
 #[derive(Default, Clone)]
 pub struct Element<T: Children> {
-    pub tag_name: String,
-    pub attributes: Attributes,
-    pub children: T,
+    tag_name: String,
+    id: u64,
+    attributes: Attributes,
+    children: T,
+    #[cfg(target_arch = "wasm32")]
+    events: Vec<Event>,
 }
 
 impl<T: Children> Display for Element<T> {
@@ -22,9 +52,17 @@ impl<T: Children> Display for Element<T> {
         )
     }
 }
+// TODO: move `Hydrate` trait to client only
 
 impl<T: Children> Hydrate for Element<T> {
+    #[client]
     fn hydrate(&self) {
+        for event in self.events {
+            crate::dom::get_reactive_element(self.id)
+                .add_event_listener_with_callback(&event.name, &event.callback)
+                .expect_internal("add event");
+        }
+
         self.children.hydrate();
     }
 }
@@ -32,13 +70,33 @@ impl<T: Children> Hydrate for Element<T> {
 impl Element<children::Empty> {
     #[must_use]
     pub fn new(tag_name: &str) -> Self {
+        static ID: AtomicU64 = AtomicU64::new(0);
+
         Self {
             tag_name: tag_name.to_string(),
             attributes: Attributes::default(),
             children: children::Empty,
+            id: ID.fetch_add(1, Relaxed),
+            #[cfg(target_arch = "wasm32")]
+            events: Vec::new(),
         }
     }
 }
+
+#[macro_export]
+macro_rules! event_function {
+    ($closure:expr) => {
+        quux::cfg_if! {
+            if #[cfg(target_arch = "wasm32")] {
+                $closure
+            } else {
+                ()
+            }
+        }
+    };
+}
+
+pub use event_function;
 
 impl<T: Children> Element<T> {
     #[must_use]
@@ -80,7 +138,27 @@ impl<T: Children> Element<T> {
         Element {
             tag_name: self.tag_name,
             attributes: self.attributes,
+            id: self.id,
             children: Pair(self.children, child),
+            #[cfg(target_arch = "wasm32")]
+            events: self.events,
         }
+    }
+
+    #[server]
+    pub fn on<F>(self, event: &str) -> Self
+    where
+        F: FnMut(),
+    {
+        self
+    }
+
+    #[client]
+    pub fn on<F>(mut self, event: &str, callback: F) -> Self
+    where
+        F: FnMut(),
+    {
+        self.events.push(Event::new(event, callback));
+        self
     }
 }

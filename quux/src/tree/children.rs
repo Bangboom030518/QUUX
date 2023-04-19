@@ -3,6 +3,7 @@ use crate::internal::prelude::*;
 
 pub trait Children: Display + Hydrate {
     const SELF_CLOSING: bool = false;
+    const EMPTY: bool = false;
 }
 
 impl<T: Display> Hydrate for Store<T> {
@@ -37,7 +38,9 @@ impl Display for Empty {
 
 impl Hydrate for Empty {}
 
-impl Children for Empty {}
+impl Children for Empty {
+    const EMPTY: bool = true;
+}
 
 pub struct Pair<A: Children, B: Children>(pub A, pub B);
 

@@ -34,30 +34,43 @@ impl Component for Create {
         let terms = store::List::<Term>::new(vec![Term::new("", ""), Term::new("", "")]);
         html()
             .attribute("lang", "en")
-            .child(Head::new("Flashcards - QUUX").render(context));
+            .child(Head::new("Flashcards - QUUX"))
+            .child(
+                body().child(h1().child("Create Set")).child(
+                    form()
+                        .class("grid gap-4")
+                        .child(
+                            input()
+                                .attribute("type", "text")
+                                .attribute("placeholder", "Set Name")
+                                .class("input input-bordered input-primary w-full"),
+                        )
+                        .child(fieldset().class("grid gap-4").child(todo!("for loop")))
+                        .child(
+                            button()
+                                .attribute("type", "button")
+                                .class("btn btn-primary btn-outline w-full")
+                                .child("New Card")
+                                .on("click"),
+                        )
+                        .child(button().class("btn btn-primary w-full").child("Create")),
+                ),
+            )
+            .child(InitialisationScript::init(include_str!(
+                "../../dist/init.js"
+            )))
 
-        view! {
-            context,
-            html(lang="en") {
-                @Head("Flashcards - QUUX".to_string())
-                body {
-                    h1 {{ "Create Set" }}
-                    form(class="grid gap-4") {
-                        input("type"="text", class="input input-bordered input-primary w-full", placeholder="Set Name")
-                        fieldset(class="grid gap-4") {
-                            for term in $terms {
-                                @Card(term)
-                            }
-                        }
-                        button("type"="button", class="btn btn-primary btn-outline w-full", on:click={
-                            let terms = terms.clone();
-                            move || terms.push(Term::new("", ""))
-                        }) {{ "New Card" }}
-                        button(class="btn btn-primary w-full") {{ "Create" }}
-                    }
-                    @InitialisationScript(include_str!("../../dist/init.js"))
-                }
-            }
-        }
+        // view! {
+        //     context,
+        //     fieldset(class="grid gap-4") {
+        //         for term in $terms {
+        //             @Card(term)
+        //         }
+        //     }
+        //     button("type"="button", class="btn btn-primary btn-outline w-full", on:click={
+        //         let terms = terms.clone();
+        //         move || terms.push(Term::new("", ""))
+        //     }) {{ "New Card" }}
+        // }
     }
 }

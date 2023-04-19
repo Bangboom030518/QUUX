@@ -5,8 +5,8 @@ use wasm_bindgen::prelude::*;
 /// If the element does not exist, it will panic.
 /// It is up to the caller to ensure this is not the case.
 #[must_use]
-pub fn get_reactive_element(parent_id: u64, child_id: u64) -> web_sys::Element {
-    query_selector(&format!("[data-quux-id='{parent_id}.{child_id}']"))
+pub fn get_reactive_element(id: u64) -> web_sys::Element {
+    query_selector(&format!("[data-quux-id='{id}']"))
 }
 
 /// # Panics
