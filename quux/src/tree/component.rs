@@ -1,7 +1,7 @@
 use super::Hydrate;
 use crate::internal::prelude::*;
 
-pub struct ComponentNode<T: Component>(T);
+pub struct ComponentNode<T: Component>(pub T);
 
 impl<T: Component + Clone> Display for ComponentNode<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -9,8 +9,9 @@ impl<T: Component + Clone> Display for ComponentNode<T> {
     }
 }
 
+#[client]
 impl<T: Component + Clone> Hydrate for ComponentNode<T> {
-    fn hydrate(&self) {
-        self.0.clone().render(todo!()).hydrate()
+    fn hydrate(self) {
+        self.0.render(todo!()).hydrate();
     }
 }

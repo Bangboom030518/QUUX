@@ -35,7 +35,6 @@ pub enum Error {
     SetNotFound,
 }
 
-#[server]
 impl Error {
     fn title(&self) -> String {
         let title = match self {
@@ -49,34 +48,25 @@ impl Error {
 }
 
 impl Component for Error {
-    fn render(self, context: Context<Self>) -> Output<Self> {
+    fn render(self, context: Context<Self>) -> impl Item {
         type Component = Error;
-        view! {
-            context,
-            html(lang="en") {
-                @Head(self.title())
-                body {
-                    main {
-                        match &self {
-                            Self::Internal { message } => {
-                                h1 {{ "Internal Server Error!" }}
-                                p {{ message }}
-                            },
-                            Self::Timeout => {
-                                h1 {{ "Request Timeout!" }}
-                            },
-                            Self::PageNotFound { uri } => {
-                                h1 {{ format!("Page '{uri}' not found!") }}
-                            },
-                            Self::SetNotFound => {
-                                h1 {{ "Set not found!" }}
-                            }
-                        }
-                    }
-                    @InitialisationScript(include_str!("../../dist/init.js"))
+        html()
+            .attribute("lang", "en")
+            .component(Head::new(&self.title()))
+            .child(body().child(main().child(match self {
+                Self::Internal { message } => Branch4::A(children((
+                    h1().text("Internal Server Error!"),
+                    p().text(message),
+                ))),
+                Self::Timeout => Branch::B(h1().text("Request Timeout!")),
+                Self::PageNotFound { uri } => {
+                    Branch::C(h1().text(format!("Page '{uri}' not found!")))
                 }
-            }
-        }
+                Self::SetNotFound => Branch::D(h1().text("Set not found!")),
+            })))
+            .component(InitialisationScript::init(include_str!(
+                "../../dist/init.js"
+            )))
     }
 }
 

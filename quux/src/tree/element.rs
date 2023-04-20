@@ -1,48 +1,40 @@
-use std::sync::atomic::{AtomicU64, Ordering::Relaxed};
-
-use super::{DisplayStore, Hydrate};
+use super::DisplayStore;
 use crate::internal::prelude::*;
 
 pub mod html;
 
-#[derive(Clone)]
-pub struct Event {
-    name: String,
-    callback: js_sys::Function,
-}
-
-impl Event {
-    pub fn new<F>(name: &str, callback: F) -> Self
-    where
-        F: FnMut(),
-    {
-        use wasm_bindgen::prelude::*;
-
-        let closure = Closure::wrap(Box::new(callback) as Box<dyn FnMut()>);
-        let callback = *closure.as_ref().unchecked_ref();
-        closure.forget();
-        Self {
-            name: name.to_string(),
-            callback,
-        }
-    }
-}
-
-// TODO: consider caching web sys elements in this struct
-
-#[derive(Default, Clone)]
+#[derive(Default)]
 pub struct Element<T: Children> {
     tag_name: String,
     id: u64,
     attributes: Attributes,
     children: T,
     #[cfg(target_arch = "wasm32")]
+    dom_element: Option<web_sys::Element>,
+    #[cfg(target_arch = "wasm32")]
     events: Vec<Event>,
+}
+
+pub struct Event {
+    name: String,
+    callback: Box<dyn FnMut() + 'static>,
+}
+
+impl Event {
+    pub fn new<F>(name: &str, callback: F) -> Self
+    where
+        F: FnMut() + 'static,
+    {
+        Self {
+            name: name.to_string(),
+            callback: Box::new(callback),
+        }
+    }
 }
 
 impl<T: Children> Display for Element<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if T::SELF_CLOSING {
+        if self.children.is_self_closing() {
             return write!(f, "<{} {} />", self.tag_name, self.attributes);
         }
         write!(
@@ -53,14 +45,23 @@ impl<T: Children> Display for Element<T> {
     }
 }
 // TODO: move `Hydrate` trait to client only
+#[client]
+impl<T: Children> super::Hydrate for Element<T> {
+    fn hydrate(self) {
+        let dom_element = self
+            .dom_element
+            .unwrap_or_else(|| crate::dom::get_reactive_element(self.id));
 
-impl<T: Children> Hydrate for Element<T> {
-    #[client]
-    fn hydrate(&self) {
         for event in self.events {
-            crate::dom::get_reactive_element(self.id)
-                .add_event_listener_with_callback(&event.name, &event.callback)
+            use wasm_bindgen::prelude::*;
+
+            let closure = Closure::wrap(event.callback as Box<dyn FnMut()>);
+
+            dom_element
+                .add_event_listener_with_callback(&event.name, closure.as_ref().unchecked_ref())
                 .expect_internal("add event");
+
+            closure.forget();
         }
 
         self.children.hydrate();
@@ -68,8 +69,9 @@ impl<T: Children> Hydrate for Element<T> {
 }
 
 impl Element<children::Empty> {
-    #[must_use]
     pub fn new(tag_name: &str) -> Self {
+        use std::sync::atomic::{AtomicU64, Ordering::Relaxed};
+
         static ID: AtomicU64 = AtomicU64::new(0);
 
         Self {
@@ -78,25 +80,12 @@ impl Element<children::Empty> {
             children: children::Empty,
             id: ID.fetch_add(1, Relaxed),
             #[cfg(target_arch = "wasm32")]
+            dom_element: None,
+            #[cfg(target_arch = "wasm32")]
             events: Vec::new(),
         }
     }
 }
-
-#[macro_export]
-macro_rules! event_function {
-    ($closure:expr) => {
-        quux::cfg_if! {
-            if #[cfg(target_arch = "wasm32")] {
-                $closure
-            } else {
-                ()
-            }
-        }
-    };
-}
-
-pub use event_function;
 
 impl<T: Children> Element<T> {
     #[must_use]
@@ -108,21 +97,18 @@ impl<T: Children> Element<T> {
     }
 
     #[must_use]
-    pub fn id<V: Display>(mut self, value: V) -> Self {
-        self.attribute("id", value);
-        self
+    pub fn id<V: Display>(self, value: V) -> Self {
+        self.attribute("id", value)
     }
 
     #[must_use]
-    pub fn class<V: Display>(mut self, value: V) -> Self {
-        self.attribute("class", value);
-        self
+    pub fn class<V: Display>(self, value: V) -> Self {
+        self.attribute("class", value)
     }
 
     #[must_use]
-    pub fn data_attribute<V: Display>(mut self, key: &str, value: V) -> Self {
-        self.attribute(&format!("data-{key}"), value);
-        self
+    pub fn data_attribute<V: Display>(self, key: &str, value: V) -> Self {
+        self.attribute(&format!("data-{key}"), value)
     }
 
     #[must_use]
@@ -142,23 +128,57 @@ impl<T: Children> Element<T> {
             children: Pair(self.children, child),
             #[cfg(target_arch = "wasm32")]
             events: self.events,
+            #[cfg(target_arch = "wasm32")]
+            dom_element: self.dom_element,
         }
     }
 
-    #[server]
-    pub fn on<F>(self, event: &str) -> Self
+    pub fn text<S>(self, text: S) -> Element<Pair<T, String>>
     where
-        F: FnMut(),
+        S: Display,
     {
+        self.child(text.to_string())
+    }
+
+    pub fn component<C>(self, component: C) -> Element<Pair<T, ComponentNode<C>>>
+    where
+        C: Component + Clone,
+    {
+        self.child(ComponentNode(component))
+    }
+
+    #[server]
+    pub fn on(self, _: &str, _: ()) -> Self {
         self
     }
 
+    #[must_use]
     #[client]
     pub fn on<F>(mut self, event: &str, callback: F) -> Self
     where
-        F: FnMut(),
+        F: FnMut() + 'static,
     {
         self.events.push(Event::new(event, callback));
         self
     }
 }
+
+#[cfg(not(target_arch = "wasm32"))]
+mod server;
+#[server]
+pub use server::Element;
+
+#[macro_export]
+macro_rules! event {
+    ($closure:expr) => {
+        $crate::cfg_if::cfg_if! {
+            if #[cfg(target_arch = "wasm32")] {
+                $closure
+            } else {
+                ()
+            }
+        }
+    };
+}
+
+pub use event;

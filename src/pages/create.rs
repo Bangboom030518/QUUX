@@ -10,11 +10,11 @@ pub struct Card {
 }
 
 impl Component for Card {
-    fn render(self, context: quux::view::Context<Self>) -> quux::view::Output<Self> {
+    fn render(self, context: quux::view::Context<Self>) -> impl Item {
         type Component = Card;
         fieldset()
             .class("card card-bordered shadow")
-            .child(legend().class("badge").child("Card"));
+            .child(legend().class("badge").text("Card"))
     }
 }
 
@@ -34,9 +34,9 @@ impl Component for Create {
         let terms = store::List::<Term>::new(vec![Term::new("", ""), Term::new("", "")]);
         html()
             .attribute("lang", "en")
-            .child(Head::new("Flashcards - QUUX"))
+            .component(Head::new("Flashcards - QUUX"))
             .child(
-                body().child(h1().child("Create Set")).child(
+                body().child(h1().text("Create Set")).child(
                     form()
                         .class("grid gap-4")
                         .child(
@@ -45,18 +45,21 @@ impl Component for Create {
                                 .attribute("placeholder", "Set Name")
                                 .class("input input-bordered input-primary w-full"),
                         )
-                        .child(fieldset().class("grid gap-4").child(todo!("for loop")))
+                        .child(
+                            // TODO: for loop!
+                            fieldset().class("grid gap-4"),
+                        )
                         .child(
                             button()
                                 .attribute("type", "button")
                                 .class("btn btn-primary btn-outline w-full")
-                                .child("New Card")
-                                .on("click"),
+                                .text("New Card")
+                                .on("click", event!(|| { panic!("LOLZ!!!!!!!!") })),
                         )
-                        .child(button().class("btn btn-primary w-full").child("Create")),
+                        .child(button().class("btn btn-primary w-full").text("Create")),
                 ),
             )
-            .child(InitialisationScript::init(include_str!(
+            .component(InitialisationScript::init(include_str!(
                 "../../dist/init.js"
             )))
 

@@ -12,8 +12,13 @@ pub mod element;
 mod item;
 
 // TODO: gobble gobble gobble?
+#[client]
 pub trait Hydrate {
-    fn hydrate(&self) {}
+    fn hydrate(self)
+    where
+        Self: Sized,
+    {
+    }
 }
 
 type DisplayStore = Store<Box<dyn Display>>;
@@ -22,6 +27,7 @@ pub mod prelude {
     pub use super::{
         children::{self, Pair},
         component::ComponentNode,
+        element::event,
         Attributes, Children, Element, Item,
     };
 }
