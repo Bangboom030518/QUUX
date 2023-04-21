@@ -35,7 +35,6 @@ impl Display for SelfClosing {
     }
 }
 
-#[client]
 impl Hydrate for SelfClosing {}
 
 impl Children for SelfClosing {
@@ -52,7 +51,6 @@ impl Display for Empty {
     }
 }
 
-#[client]
 impl Hydrate for Empty {}
 
 impl Children for Empty {
@@ -63,7 +61,6 @@ impl Children for Empty {
 
 pub struct Pair<A: Children, B: Children>(pub A, pub B);
 
-#[client]
 impl<A: Children, B: Children> Hydrate for Pair<A, B> {
     fn hydrate(self) {
         self.0.hydrate();
@@ -94,15 +91,15 @@ where
 // TODO: consider the Branch enum futher
 
 macro_rules! branch_decl {
-    ($($types:ident),*) => {
-        pub enum Branch<$($types = Empty),*>
+    ($name:ident, $($types:ident),*) => {
+        pub enum $name<$($types),*>
         where
             $($types: Children),*
         {
             $($types($types)),*
         }
 
-        impl<$($types),*> Hydrate for Branch<$($types),*>
+        impl<$($types),*> Hydrate for $name<$($types),*>
         where
             $($types: Children),*
         {
@@ -111,23 +108,23 @@ macro_rules! branch_decl {
                 Self: Sized,
             {
                 match self {
-                    $(Branch::$types(child) => child.hydrate()),*
+                    $($name::$types(child) => child.hydrate()),*
                 }
             }
         }
 
-        impl<$($types),*> Display for Branch<$($types),*>
+        impl<$($types),*> Display for $name<$($types),*>
         where
             $($types: Children),*
         {
             fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
                 match self {
-                    $(Branch::$types(child) => child.fmt(f)),*
+                    $($name::$types(child) => child.fmt(f)),*
                 }
             }
         }
 
-        impl<$($types),*> Item for Branch<$($types),*>
+        impl<$($types),*> Item for $name<$($types),*>
         where
             $($types: Children),*
         {
@@ -135,13 +132,14 @@ macro_rules! branch_decl {
     };
 }
 
-branch_decl! {
-    A, B, C, D, E, F
-}
-
 // TODO: macroify this
-pub type Branch2<A, B> = Branch<A, B, Empty, Empty, Empty, Empty>;
-pub type Branch3<A, B, C> = Branch<A, B, C, Empty, Empty, Empty>;
-pub type Branch4<A, B, C, D> = Branch<A, B, C, D, Empty, Empty>;
-pub type Branch5<A, B, C, D, E> = Branch<A, B, C, D, E, Empty>;
-pub type Branch6<A, B, C, D, E, F> = Branch<A, B, C, D, E, F>;
+
+branch_decl! { Branch2, A, B }
+
+branch_decl! { Branch3, A, B, C }
+
+branch_decl! { Branch4, A, B, C, D }
+
+branch_decl! { Branch5, A, B, C, D, E }
+
+branch_decl! { Branch6, A, B, C, D, E, F }

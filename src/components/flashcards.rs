@@ -68,44 +68,48 @@ impl component::Init for Flashcards {
 }
 
 impl Component for Flashcards {
-    fn render(self, context: Context<Self>) -> Output<Self> {
+    fn render(self, context: Context<Self>) -> impl Item {
         type Component = Flashcards;
-        let confidence_rating: ConfidenceRating;
-        let flashcards: Rc<RefCell<Vec<Flashcard>>>;
-        view! {
-            context,
-            div(class = "grid place-items-center gap-4") {
-                div(class = "flashcard-stack") {
-                    for term in $self.terms {
-                        @Flashcard(term): flashcards
-                    }
-                }
-                button(class = "btn", on:click = {
-                    let rating = confidence_rating.get_rating_store();
-                    let flashcards = Rc::clone(&flashcards);
-                    let terms = self.terms.clone();
-                    let confidence_rating = Rc::new(confidence_rating);
+        let confidence_rating: ConfidenceRating = todo!();
+        let flashcards: Rc<RefCell<Vec<Flashcard>>> = todo!();
 
-                    rating.on_change({
-                        let confidence_rating = Rc::clone(&confidence_rating);
-                        move |_, _| {
-                            terms.pop();
-                            confidence_rating.hide();
-                        }
-                    });
+        // TODO: for term in $self.terms { @Flashcard(term): flashcards }
 
-                    move || {
-                        let flashcards = flashcards.borrow();
-                        let Some(flashcard) = flashcards.last() else {
-                            quux::console_log!("No flashcards found");
-                            return
-                        };
-                        flashcard.flip();
-                        confidence_rating.show();
-                    }
-                }) {{"flip"}}
-                @ConfidenceRating: confidence_rating
-            }
-        }
+        div()
+            .class("grid place-items-center gap-4")
+            .child(div().class("flashcard-stack").text("todo!"))
+            .child(
+                button()
+                    .class("btn")
+                    .on(
+                        "click",
+                        event! {{
+                            let rating = confidence_rating.get_rating_store();
+                            let flashcards = Rc::clone(&flashcards);
+                            let terms = self.terms.clone();
+                            let confidence_rating = Rc::new(confidence_rating);
+
+                            rating.on_change({
+                                let confidence_rating = Rc::clone(&confidence_rating);
+                                move |_, _| {
+                                    terms.pop();
+                                    confidence_rating.hide();
+                                }
+                            });
+
+                            move || {
+                                let flashcards = flashcards.borrow();
+                                let Some(flashcard) = flashcards.last() else {
+                                    quux::console_log!("No flashcards found");
+                                    return
+                                };
+                                flashcard.flip();
+                                confidence_rating.show();
+                            }
+                        }},
+                    )
+                    .text("flip"),
+            )
+            .component(ConfidenceRating::init(()))
     }
 }

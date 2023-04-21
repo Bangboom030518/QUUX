@@ -1,6 +1,6 @@
 use crate::internal::prelude::*;
 
-pub trait Component: Serialize /* + ComponentChildren */ {
+pub trait Component: Serialize {
     fn render(self, context: crate::view::Context<Self>) -> impl Item
     where
         Self: Sized;
@@ -41,20 +41,22 @@ pub trait Routes: Serialize + DeserializeOwned {
     #[server]
     fn render_to_string<T: Component>(component: T) -> String
     where
-        Self: Sized + From<SerializedComponent<T>>,
+        Self: Sized,
     {
-        let element = component.render(crate::view::Context::new(0, None));
-
-        let component_node = Self::from(component);
-        let bytes =
-            postcard::to_stdvec(&component_node).expect_internal("serialize `RenderContext`");
-        let component_node = base64::encode(bytes);
-        format!(
-            "<!DOCTYPE html>{}",
-            element
-                .to_string()
-                .replace("$$QUUX_TREE_INTERPOLATION$$", &component_node)
-        )
+        // let crate::view::Output {
+        //     html,
+        //     component_node,
+        //     ..
+        // } = component.render(crate::view::Context::new(0, None));
+        // let component_node = Self::from(component_node);
+        // let bytes =
+        //     postcard::to_stdvec(&component_node).expect_internal("serialize `RenderContext`");
+        // let component_node = base64::encode(bytes);
+        // format!(
+        //     "<!DOCTYPE html>{}",
+        //     html.replace("$$QUUX_TREE_INTERPOLATION$$", &component_node)
+        // )
+        todo!()
     }
 }
 

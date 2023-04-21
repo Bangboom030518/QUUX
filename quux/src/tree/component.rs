@@ -9,8 +9,8 @@ impl<T: Component + Clone> Display for ComponentNode<T> {
     }
 }
 
-#[client]
 impl<T: Component + Clone> Hydrate for ComponentNode<T> {
+    #[client]
     fn hydrate(self) {
         self.0.render(todo!()).hydrate();
     }

@@ -62,30 +62,35 @@ impl component::Init for Flashcard {
 }
 
 impl Component for Flashcard {
-    fn render(self, context: Context<Self>) -> Output<Self> {
-        type Component = Flashcard;
-        view! {
-            context,
-            article(class = "grid place-items-center gap-4 text-center", class:active-when = (&self.is_visible, |visible: bool| !visible, "hidden")) {
-                div(class = "relative min-w-[60ch] min-h-[40ch]") {
-                    div(
-                        class = "card bg-base-200 shadow term absolute top-0 left-0 w-full h-full grid place-items-center transition-[opacity,transform] duration-300",
-                        class:active-when = (&self.side, |side| side != Side::Term, "flashcard-hidden")
-                    ) {
-                        div(class = "card-body") {
-                            p {{ self.term.term }}
-                        }
-                    }
-                    div(
-                        class = "card bg-base-200 shadow definition absolute top-0 left-0 w-full h-full grid place-items-center transition-[opacity,transform] duration-300 flashcard-hidden",
-                        class:active-when = (&self.side, |side| side != Side::Definition, "flashcard-hidden")
-                    ) {
-                        div(class = "card-body") {
-                            p {{ self.term.definition }}
-                        }
-                    }
-                }
-            }
-        }
+    fn render(self, context: Context<Self>) -> impl Item {
+        // TODO: class:active-when = (&self.is_visible, |visible: bool| !visible, "hidden")
+
+        article().class("grid place-items-center gap-4 text-center").child(
+            div().class("card bg-base-200 shadow definition absolute top-0 left-0 w-full h-full grid place-items-center transition-[opacity,transform] duration-300 flashcard-hidden")
+        )
+
+        // view! {
+        //     context,
+        //     article(class = "grid place-items-center gap-4 text-center", class:active-when = (&self.is_visible, |visible: bool| !visible, "hidden")) {
+        //         div(class = "relative min-w-[60ch] min-h-[40ch]") {
+        //             div(
+        //                 class = "card bg-base-200 shadow term absolute top-0 left-0 w-full h-full grid place-items-center transition-[opacity,transform] duration-300",
+        //                 class:active-when = (&self.side, |side| side != Side::Term, "flashcard-hidden")
+        //             ) {
+        //                 div(class = "card-body") {
+        //                     p {{ self.term.term }}
+        //                 }
+        //             }
+        //             div(
+        //                 class = "card bg-base-200 shadow definition absolute top-0 left-0 w-full h-full grid place-items-center transition-[opacity,transform] duration-300 flashcard-hidden",
+        //                 class:active-when = (&self.side, |side| side != Side::Definition, "flashcard-hidden")
+        //             ) {
+        //                 div(class = "card-body") {
+        //                     p {{ self.term.definition }}
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
     }
 }

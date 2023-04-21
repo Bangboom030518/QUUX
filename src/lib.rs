@@ -19,5 +19,5 @@ routes!(pages::Set, pages::Error, pages::Create, pages::Index);
 #[client]
 #[wasm_bindgen(start)]
 pub fn init_app() {
-    Routes::init_app().unwrap();
+    // Routes::init_app().unwrap();
 }

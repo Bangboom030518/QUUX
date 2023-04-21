@@ -45,8 +45,8 @@ impl<T: Children> Display for Element<T> {
     }
 }
 // TODO: move `Hydrate` trait to client only
-#[client]
 impl<T: Children> super::Hydrate for Element<T> {
+    #[client]
     fn hydrate(self) {
         let dom_element = self
             .dom_element
@@ -163,22 +163,18 @@ impl<T: Children> Element<T> {
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
-mod server;
-#[server]
-pub use server::Element;
-
 #[macro_export]
 macro_rules! event {
-    ($closure:expr) => {
-        $crate::cfg_if::cfg_if! {
-            if #[cfg(target_arch = "wasm32")] {
-                $closure
-            } else {
-                ()
-            }
+    ($closure:expr) => {{
+        #[cfg(target_arch = "wasm32")]
+        {
+            $closure
         }
-    };
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            ()
+        }
+    }};
 }
 
 pub use event;

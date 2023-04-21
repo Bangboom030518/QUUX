@@ -66,10 +66,11 @@ pub mod prelude {
     pub use super::dom::console_log;
     pub use super::{
         component::{self, Component, Init as _, Routes as _},
+        event,
         initialisation_script::InitialisationScript,
         store::{self, Store},
         tree::{
-            children::{children, Branch, Branch2, Branch3, Branch4, Branch5, Branch6},
+            children::{children, Branch2, Branch3, Branch4, Branch5, Branch6},
             element::html::prelude::*,
             Children as _, Item,
         },

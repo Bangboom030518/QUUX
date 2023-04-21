@@ -58,11 +58,11 @@ impl Component for Error {
                     h1().text("Internal Server Error!"),
                     p().text(message),
                 ))),
-                Self::Timeout => Branch::B(h1().text("Request Timeout!")),
+                Self::Timeout => Branch4::B(h1().text("Request Timeout!")),
                 Self::PageNotFound { uri } => {
-                    Branch::C(h1().text(format!("Page '{uri}' not found!")))
+                    Branch4::C(h1().text(format!("Page '{uri}' not found!")))
                 }
-                Self::SetNotFound => Branch::D(h1().text("Set not found!")),
+                Self::SetNotFound => Branch4::D(h1().text("Set not found!")),
             })))
             .component(InitialisationScript::init(include_str!(
                 "../../dist/init.js"

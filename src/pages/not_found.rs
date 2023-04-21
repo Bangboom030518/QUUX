@@ -8,11 +8,12 @@ pub enum ServerError {
 
 impl Component for ServerError {
     fn render(self, context: Context<Self>) -> Output<Self> {
-        type Component = ServerError;
-        view! {
-            context,
-            h1 {{ "Internal Server Error!" }}
-        }
+        // type Component = ServerError;
+        // view! {
+        //     context,
+        //     h1 {{ "Internal Server Error!" }}
+        // }
+        h1().text("Internal Server Error!")
     }
 }
 

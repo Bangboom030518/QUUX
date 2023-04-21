@@ -12,7 +12,6 @@ pub mod element;
 mod item;
 
 // TODO: gobble gobble gobble?
-#[client]
 pub trait Hydrate {
     fn hydrate(self)
     where

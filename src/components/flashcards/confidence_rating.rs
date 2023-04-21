@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use quux::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -13,6 +15,12 @@ pub enum Rating {
 impl Default for Rating {
     fn default() -> Self {
         Self::Ok
+    }
+}
+
+impl Display for Rating {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{self:?}")
     }
 }
 
@@ -47,43 +55,52 @@ impl component::Init for ConfidenceRating {
     }
 }
 
+// TODO: make `.text()` escape the basement
+
+fn rating_button(store: Store<Rating>, rating: Rating, svg: &str) -> impl Item {
+    button()
+        .class(format!(
+            "tooltip btn btn-icon btn-{}",
+            rating.to_string().to_lowercase()
+        ))
+        .on("click", event!(move || store.set(rating)))
+        .data_attribute("tip", rating)
+        .attribute("title", rating)
+        .text(svg)
+}
+
 impl Component for ConfidenceRating {
-    fn render(self, context: Context<Self>) -> Output<Self> {
+    fn render(self, context: Context<Self>) -> impl Item {
         type Component = ConfidenceRating;
-        view! {
-            context,
-            div(class = "flashcard-hidden btn-group", "class:active-when" = (&self.is_visible, |visible: bool| !visible, "flashcard-hidden")) {
-                button(class = "tooltip btn btn-icon btn-terrible", on:click = {
-                    let rating = self.rating.clone();
-                    move || rating.set(Rating::Terrible)
-                }, data-tip="Terrible", title="Terrible") {
-                    {include_str!("../../../assets/terrible.svg")}
-                }
-                button(class = "tooltip btn btn-icon btn-bad", on:click = {
-                    let rating = self.rating.clone();
-                    move || rating.set(Rating::Bad)
-                }, data-tip = "Bad", title = "Bad") {
-                    {include_str!("../../../assets/bad.svg")}
-                }
-                button(class = "tooltip btn btn-icon btn-ok", on:click = {
-                    let rating = self.rating.clone();
-                    move || rating.set(Rating::Ok)
-                }, data-tip = "Ok", title = "Ok") {
-                    {include_str!("../../../assets/ok.svg")}
-                }
-                button(class = "tooltip btn btn-icon btn-good", on:click = {
-                    let rating = self.rating.clone();
-                    move || rating.set(Rating::Good)
-                }, data-tip = "Good", title = "Good") {
-                    {include_str!("../../../assets/good.svg")}
-                }
-                button(class = "tooltip btn btn-icon btn-perfect", on:click = {
-                    let rating = self.rating.clone();
-                    move || rating.set(Rating::Perfect)
-                }, data-tip = "Perfect", title = "Perfect") {
-                    {include_str!("../../../assets/perfect.svg")}
-                }
-            }
-        }
+
+        div()
+            .class("flashcard-hidden btn-group")
+            .child(rating_button(
+                self.rating.clone(),
+                Rating::Terrible,
+                include_str!("../../../assets/terrible.svg"),
+            ))
+            .child(rating_button(
+                self.rating.clone(),
+                Rating::Bad,
+                include_str!("../../../assets/bad.svg"),
+            ))
+            .child(rating_button(
+                self.rating.clone(),
+                Rating::Ok,
+                include_str!("../../../assets/ok.svg"),
+            ))
+            .child(rating_button(
+                self.rating.clone(),
+                Rating::Good,
+                include_str!("../../../assets/good.svg"),
+            ))
+            .child(rating_button(
+                self.rating.clone(),
+                Rating::Perfect,
+                include_str!("../../../assets/perfect.svg"),
+            ))
+
+        // TODO: class:active-when" = (&self.is_visible, |visible: bool| !visible, "flashcard-hidden")
     }
 }
