@@ -31,7 +31,7 @@ impl component::Init for InitialisationScript {
 }
 
 impl Component for InitialisationScript {
-    fn render(self, _: crate::view::Context<Self>) -> impl Item {
+    fn render(self, _: crate::context::Context<Self>) -> impl Item {
         script()
             .attribute("type", "module")
             .attribute("id", "__quux_init_script__")

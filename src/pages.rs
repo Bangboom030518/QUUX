@@ -49,6 +49,6 @@ impl Component for Head {
                     .attribute("content", "width=device-width, initial-scale=1.0"),
             )
             .child(style().text(include_str!("../dist/output.css")))
-            .child(self.title)
+            .child(title().text(self.title))
     }
 }

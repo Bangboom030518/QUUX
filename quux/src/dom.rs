@@ -1,6 +1,8 @@
 use super::errors::MapInternal;
 use wasm_bindgen::prelude::*;
 
+// TODO: consider moving these functions to more relevant locations
+
 /// # Panics
 /// If the element does not exist, it will panic.
 /// It is up to the caller to ensure this is not the case.

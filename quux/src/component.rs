@@ -1,7 +1,7 @@
 use crate::internal::prelude::*;
 
 pub trait Component: Serialize {
-    fn render(self, context: crate::view::Context<Self>) -> impl Item
+    fn render(self, context: crate::context::Context<Self>) -> impl Item
     where
         Self: Sized;
 }
@@ -43,20 +43,17 @@ pub trait Routes: Serialize + DeserializeOwned {
     where
         Self: Sized,
     {
-        // let crate::view::Output {
-        //     html,
-        //     component_node,
-        //     ..
-        // } = component.render(crate::view::Context::new(0, None));
+        let tree = component.render(crate::view::Context::new());
+        let html = tree.to_string();
+        // TODO: serialize component
         // let component_node = Self::from(component_node);
         // let bytes =
-        //     postcard::to_stdvec(&component_node).expect_internal("serialize `RenderContext`");
+        // postcard::to_stdvec(&component_node).expect_internal("serialize `RenderContext`");
         // let component_node = base64::encode(bytes);
-        // format!(
-        //     "<!DOCTYPE html>{}",
-        //     html.replace("$$QUUX_TREE_INTERPOLATION$$", &component_node)
-        // )
-        todo!()
+        format!(
+            "<!DOCTYPE html>{}",
+            html.replace("$$QUUX_TREE_INTERPOLATION$$", "TODO!!!!")
+        )
     }
 }
 

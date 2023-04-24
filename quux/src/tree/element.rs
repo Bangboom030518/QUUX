@@ -1,5 +1,6 @@
 use super::DisplayStore;
 use crate::internal::prelude::*;
+use event::Event;
 
 pub mod html;
 
@@ -15,23 +16,6 @@ pub struct Element<T: Children> {
     events: Vec<Event>,
 }
 
-pub struct Event {
-    name: String,
-    callback: Box<dyn FnMut() + 'static>,
-}
-
-impl Event {
-    pub fn new<F>(name: &str, callback: F) -> Self
-    where
-        F: FnMut() + 'static,
-    {
-        Self {
-            name: name.to_string(),
-            callback: Box::new(callback),
-        }
-    }
-}
-
 impl<T: Children> Display for Element<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if self.children.is_self_closing() {
@@ -44,27 +28,29 @@ impl<T: Children> Display for Element<T> {
         )
     }
 }
+
 // TODO: move `Hydrate` trait to client only
 impl<T: Children> super::Hydrate for Element<T> {
     #[client]
-    fn hydrate(self) {
-        let dom_element = self
-            .dom_element
-            .unwrap_or_else(|| crate::dom::get_reactive_element(self.id));
+    fn hydrate(mut self) {
+        let dom_element = self.dom_element().clone();
 
         for event in self.events {
-            use wasm_bindgen::prelude::*;
-
-            let closure = Closure::wrap(event.callback as Box<dyn FnMut()>);
-
-            dom_element
-                .add_event_listener_with_callback(&event.name, closure.as_ref().unchecked_ref())
-                .expect_internal("add event");
-
-            closure.forget();
+            event.apply(&dom_element);
         }
 
         self.children.hydrate();
+    }
+}
+
+#[client]
+impl<T: Children> Element<T> {
+    #[allow(clippy::missing_panics_doc)]
+    pub fn dom_element(&mut self) -> &web_sys::Element {
+        self.dom_element
+            .get_or_insert_with(|| crate::dom::get_reactive_element(self.id));
+
+        self.dom_element.as_ref().unwrap()
     }
 }
 
@@ -162,19 +148,3 @@ impl<T: Children> Element<T> {
         self
     }
 }
-
-#[macro_export]
-macro_rules! event {
-    ($closure:expr) => {{
-        #[cfg(target_arch = "wasm32")]
-        {
-            $closure
-        }
-        #[cfg(not(target_arch = "wasm32"))]
-        {
-            ()
-        }
-    }};
-}
-
-pub use event;

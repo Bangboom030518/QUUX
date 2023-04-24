@@ -9,10 +9,10 @@ pub use quux_macros as macros;
 pub use warp;
 
 pub mod component;
+pub mod context;
 pub mod errors;
 pub mod initialisation_script;
 pub mod store;
-pub mod view;
 pub use serde;
 
 #[cfg(target_arch = "wasm32")]
@@ -47,7 +47,6 @@ mod internal {
             errors::{self, MapInternal},
             prelude::*,
             tree::prelude::*,
-            view::ComponentChildren, // view::SerializedComponent
             SerializePostcard,
         };
         pub use std::{
@@ -66,6 +65,7 @@ pub mod prelude {
     pub use super::dom::console_log;
     pub use super::{
         component::{self, Component, Init as _, Routes as _},
+        context::Context,
         event,
         initialisation_script::InitialisationScript,
         store::{self, Store},
@@ -74,13 +74,12 @@ pub mod prelude {
             element::html::prelude::*,
             Children as _, Item,
         },
-        view::Context,
     };
     #[cfg(feature = "warp")]
     #[macro_export]
     macro_rules! routes {
         ($($tokens:tt)*) => {
-            // quux::macros::routes!(#warp $($tokens)*);
+            quux::macros::routes!(#warp $($tokens)*);
         };
     }
     #[cfg(not(feature = "warp"))]

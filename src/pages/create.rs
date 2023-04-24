@@ -10,7 +10,7 @@ pub struct Card {
 }
 
 impl Component for Card {
-    fn render(self, context: quux::view::Context<Self>) -> impl Item {
+    fn render(self, context: Context<Self>) -> impl Item {
         type Component = Card;
         fieldset()
             .class("card card-bordered shadow")

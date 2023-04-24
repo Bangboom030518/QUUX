@@ -5,13 +5,13 @@ pub struct ComponentNode<T: Component>(pub T);
 
 impl<T: Component + Clone> Display for ComponentNode<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.0.clone().render(todo!()).fmt(f)
+        self.0.clone().render(Context::new()).fmt(f)
     }
 }
 
 impl<T: Component + Clone> Hydrate for ComponentNode<T> {
     #[client]
     fn hydrate(self) {
-        self.0.render(todo!()).hydrate();
+        self.0.render(Context::new()).hydrate();
     }
 }
