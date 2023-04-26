@@ -5,8 +5,7 @@ use quux::prelude::*;
 pub struct Index;
 
 impl Component for Index {
-    fn render(self, context: Context<Self>) -> impl Item {
-        type Component = Index;
+    fn render(self, _: Context<Self>) -> impl Item {
         html()
             .attribute("lang", "en")
             .component(Head::new("QUUXLET - like Quizlet but gud"))

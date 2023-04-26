@@ -70,9 +70,7 @@ fn rating_button(store: Store<Rating>, rating: Rating, svg: &str) -> impl Item {
 }
 
 impl Component for ConfidenceRating {
-    fn render(self, context: Context<Self>) -> impl Item {
-        type Component = ConfidenceRating;
-
+    fn render(self, _: Context<Self>) -> impl Item {
         div()
             .class("flashcard-hidden btn-group")
             .child(rating_button(
@@ -96,7 +94,7 @@ impl Component for ConfidenceRating {
                 include_str!("../../../assets/good.svg"),
             ))
             .child(rating_button(
-                self.rating.clone(),
+                self.rating,
                 Rating::Perfect,
                 include_str!("../../../assets/perfect.svg"),
             ))

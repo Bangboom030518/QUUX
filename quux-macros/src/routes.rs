@@ -37,11 +37,11 @@ impl Route {
         quote! {
             #warp_code
 
-            // impl From<SerializedComponent<#ty>> for Routes {
-            //     fn from(value: SerializedComponent<#ty>) -> Self {
-            //         Self::#variant_name(value)
-            //     }
-            // }
+            impl From<#ty> for Routes {
+                fn from(value: #ty) -> Self {
+                    Self::#variant_name(value)
+                }
+            }
         }
     }
 }
@@ -74,10 +74,10 @@ impl Routes {
 
             impl quux::component::Routes for Routes {
                 #[quux::prelude::client]
-                fn render(self) {
+                fn hydrate(self) {
                     match self {
                         #(Self::#variants(component) => {
-                            quux::component::Component::render(component);
+                            quux::tree::Hydrate::hydrate(quux::component::Component::render(component, quux::context::Context::new()));
                         }),*
                     };
                 }

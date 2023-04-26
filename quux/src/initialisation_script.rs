@@ -36,5 +36,6 @@ impl Component for InitialisationScript {
             .attribute("type", "module")
             .attribute("id", "__quux_init_script__")
             .attribute("data-quux-tree", "$$QUUX_TREE_INTERPOLATION$$")
+            .text(self.init_script)
     }
 }

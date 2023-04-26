@@ -31,28 +31,27 @@ pub trait Routes: Serialize + DeserializeOwned {
             .map_or_else(|| Err(errors::InitApp::NoTreeOnInitScript), Ok)?;
 
         let tree = Self::deserialize_base64(&tree).map_err(errors::InitApp::InvalidTree)?;
-        tree.render();
+        tree.hydrate();
         Ok(())
     }
 
     #[client]
-    fn render(self);
+    fn hydrate(self);
 
     #[server]
-    fn render_to_string<T: Component>(component: T) -> String
+    fn render_to_string<T: Component + Clone>(component: T) -> String
     where
-        Self: Sized,
+        Self: Sized + From<T>,
     {
-        let tree = component.render(crate::view::Context::new());
+        let tree = component.clone().render(crate::context::Context::new());
         let html = tree.to_string();
         // TODO: serialize component
-        // let component_node = Self::from(component_node);
-        // let bytes =
-        // postcard::to_stdvec(&component_node).expect_internal("serialize `RenderContext`");
-        // let component_node = base64::encode(bytes);
+        let component = Self::from(component);
+        let bytes = postcard::to_stdvec(&component).expect_internal("serialize `RenderContext`");
+        let tree = base64::encode(bytes);
         format!(
             "<!DOCTYPE html>{}",
-            html.replace("$$QUUX_TREE_INTERPOLATION$$", "TODO!!!!")
+            html.replace("$$QUUX_TREE_INTERPOLATION$$", &tree)
         )
     }
 }

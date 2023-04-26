@@ -15,3 +15,5 @@ impl<T: Component + Clone> Hydrate for ComponentNode<T> {
         self.0.render(Context::new()).hydrate();
     }
 }
+
+impl<T: Component + Clone> Item for ComponentNode<T> {}

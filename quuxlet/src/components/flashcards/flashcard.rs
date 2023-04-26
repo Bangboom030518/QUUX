@@ -29,7 +29,7 @@ pub struct Flashcard {
     term: Term,
     side: Store<Side>,
     flipped: Store<bool>,
-    is_visible: Store<bool>,
+    is_hidden: Store<bool>,
 }
 
 impl Flashcard {
@@ -40,11 +40,11 @@ impl Flashcard {
     }
 
     pub fn show(&self) {
-        self.is_visible.set(true);
+        self.is_hidden.set(false);
     }
 
     pub fn hide(&self) {
-        self.is_visible.set(false);
+        self.is_hidden.set(true);
     }
 }
 
@@ -56,23 +56,60 @@ impl component::Init for Flashcard {
             term,
             side: Store::new(Side::Term),
             flipped: Store::new(false),
-            is_visible: Store::new(true),
+            is_hidden: Store::new(false),
         }
     }
 }
 
 impl Component for Flashcard {
-    fn render(self, context: Context<Self>) -> impl Item {
+    fn render(self, _: Context<Self>) -> impl Item {
         // TODO: class:active-when = (&self.is_visible, |visible: bool| !visible, "hidden")
+        let term_hidden = Store::new(true);
+        // let side = self.side.clone();
+        let definition_hidden = Store::new(false);
+        self.side.on_change({
+            let term_hidden = term_hidden.clone();
+            let definition_hidden = definition_hidden.clone();
+            move |_, side| {
+                if side == &Side::Term {
+                    term_hidden.set(false);
+                    definition_hidden.set(true);
+                } else {
+                    term_hidden.set(true);
+                    definition_hidden.set(false);
+                }
+            }
+        });
 
-        article().class("grid place-items-center gap-4 text-center").child(
-            div().class("card bg-base-200 shadow definition absolute top-0 left-0 w-full h-full grid place-items-center transition-[opacity,transform] duration-300 flashcard-hidden")
-        )
-
-        // view! {
-        //     context,
-        //     article(class = "grid place-items-center gap-4 text-center", class:active-when = (&self.is_visible, |visible: bool| !visible, "hidden")) {
-        //         div(class = "relative min-w-[60ch] min-h-[40ch]") {
+        article()
+            .class("grid place-items-center gap-4 text-center")
+            .reactive_class("hidden", &self.is_hidden)
+            .child(div().class("relative min-w-[60ch] min-h-[40ch]")
+                .child(
+                    div()
+                        .class("card bg-base-200 shadow definition absolute top-0 left-0 w-full h-full grid place-items-center transition-[opacity,transform] duration-300")
+                        .reactive_class("flashcard-hidden", &term_hidden)
+                        .child(
+                            div()
+                                .class("card-body")
+                                .child(
+                                    p().text(self.term.term)
+                                )
+                        )
+                )
+                .child(
+                    div()
+                        .class("card bg-base-200 shadow definition absolute top-0 left-0 w-full h-full grid place-items-center transition-[opacity,transform] duration-300 flashcard-hidden")
+                        .reactive_class("flashcard-hidden", &definition_hidden)
+                        .child(
+                            div()
+                                .class("card-body")
+                                .child(
+                                    p().text(self.term.definition)
+                                )
+                        )
+                )
+            )
         //             div(
         //                 class = "card bg-base-200 shadow term absolute top-0 left-0 w-full h-full grid place-items-center transition-[opacity,transform] duration-300",
         //                 class:active-when = (&self.side, |side| side != Side::Term, "flashcard-hidden")
@@ -89,8 +126,5 @@ impl Component for Flashcard {
         //                     p {{ self.term.definition }}
         //                 }
         //             }
-        //         }
-        //     }
-        // }
     }
 }

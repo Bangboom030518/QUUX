@@ -5,7 +5,7 @@ use event::Event;
 pub mod html;
 
 #[derive(Default)]
-pub struct Element<T: Children> {
+pub struct Element<T: Item> {
     tag_name: String,
     id: u64,
     attributes: Attributes,
@@ -16,7 +16,7 @@ pub struct Element<T: Children> {
     events: Vec<Event>,
 }
 
-impl<T: Children> Display for Element<T> {
+impl<T: Item> Display for Element<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if self.children.is_self_closing() {
             return write!(f, "<{} {} />", self.tag_name, self.attributes);
@@ -30,7 +30,7 @@ impl<T: Children> Display for Element<T> {
 }
 
 // TODO: move `Hydrate` trait to client only
-impl<T: Children> super::Hydrate for Element<T> {
+impl<T: Item> super::Hydrate for Element<T> {
     #[client]
     fn hydrate(mut self) {
         let dom_element = self.dom_element().clone();
@@ -44,27 +44,30 @@ impl<T: Children> super::Hydrate for Element<T> {
 }
 
 #[client]
-impl<T: Children> Element<T> {
-    #[allow(clippy::missing_panics_doc)]
-    pub fn dom_element(&mut self) -> &web_sys::Element {
+impl<T: Item> Element<T> {
+    pub fn dom_element(&mut self) -> web_sys::Element {
         self.dom_element
-            .get_or_insert_with(|| crate::dom::get_reactive_element(self.id));
-
-        self.dom_element.as_ref().unwrap()
+            .get_or_insert_with(|| crate::dom::get_reactive_element(self.id))
+            .clone()
     }
 }
 
-impl Element<children::Empty> {
+impl Element<item::Empty> {
     pub fn new(tag_name: &str) -> Self {
         use std::sync::atomic::{AtomicU64, Ordering::Relaxed};
 
         static ID: AtomicU64 = AtomicU64::new(0);
 
+        let id = ID.fetch_add(1, Relaxed);
+
         Self {
             tag_name: tag_name.to_string(),
-            attributes: Attributes::default(),
-            children: children::Empty,
-            id: ID.fetch_add(1, Relaxed),
+            attributes: Attributes::new(
+                HashMap::from([("data-quux-id".to_string(), id.to_string())]),
+                HashMap::new(),
+            ),
+            children: item::Empty,
+            id,
             #[cfg(target_arch = "wasm32")]
             dom_element: None,
             #[cfg(target_arch = "wasm32")]
@@ -73,7 +76,9 @@ impl Element<children::Empty> {
     }
 }
 
-impl<T: Children> Element<T> {
+impl<T: Item> Item for Element<T> {}
+
+impl<T: Item> Element<T> {
     #[must_use]
     pub fn attribute<V: Display>(mut self, key: &str, value: V) -> Self {
         self.attributes
@@ -145,6 +150,30 @@ impl<T: Children> Element<T> {
         F: FnMut() + 'static,
     {
         self.events.push(Event::new(event, callback));
+        self
+    }
+
+    #[server]
+    pub fn reactive_class(self, class: &str, _: &Store<bool>) -> Self {
+        self
+    }
+
+    #[client]
+    #[must_use]
+    /// # Panics
+    /// if it fails to toggle the class in the dom
+    pub fn reactive_class(mut self, class: &str, store: &Store<bool>) -> Self {
+        let dom_element = self.dom_element();
+        let class = class.to_string();
+        // TODO: simpler method?
+        store.on_change(move |_, &enabled| {
+            let class_list = dom_element.class_list();
+            if enabled {
+                class_list.add_1(&class).unwrap();
+            } else {
+                class_list.remove_1(&class).unwrap();
+            }
+        });
         self
     }
 }

@@ -48,8 +48,7 @@ impl Error {
 }
 
 impl Component for Error {
-    fn render(self, context: Context<Self>) -> impl Item {
-        type Component = Error;
+    fn render(self, _: Context<Self>) -> impl Item {
         html()
             .attribute("lang", "en")
             .component(Head::new(&self.title()))

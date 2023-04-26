@@ -5,6 +5,7 @@ pub use cfg_if;
 use internal::prelude::*;
 pub use postcard;
 pub use quux_macros as macros;
+pub use serde;
 #[cfg(all(feature = "warp", not(target_arch = "wasm32")))]
 pub use warp;
 
@@ -13,11 +14,10 @@ pub mod context;
 pub mod errors;
 pub mod initialisation_script;
 pub mod store;
-pub use serde;
+pub mod tree;
 
 #[cfg(target_arch = "wasm32")]
 pub mod dom;
-pub mod tree;
 
 pub trait SerializePostcard: Serialize {
     fn serialize_bytes(&self) -> Vec<u8> {
@@ -46,7 +46,7 @@ mod internal {
         pub use super::super::{
             errors::{self, MapInternal},
             prelude::*,
-            tree::prelude::*,
+            tree::{prelude::*, Hydrate},
             SerializePostcard,
         };
         pub use std::{
@@ -70,11 +70,12 @@ pub mod prelude {
         initialisation_script::InitialisationScript,
         store::{self, Store},
         tree::{
-            children::{children, Branch2, Branch3, Branch4, Branch5, Branch6},
             element::html::prelude::*,
-            Children as _, Item,
+            item::{branch::prelude::*, children, Many},
+            Item,
         },
     };
+
     #[cfg(feature = "warp")]
     #[macro_export]
     macro_rules! routes {
@@ -82,10 +83,12 @@ pub mod prelude {
             quux::macros::routes!(#warp $($tokens)*);
         };
     }
-    #[cfg(not(feature = "warp"))]
-    pub use quux_macros::routes;
-    pub use quux_macros::{client, server, view};
     #[cfg(feature = "warp")]
     pub use routes;
+
+    #[cfg(not(feature = "warp"))]
+    pub use quux_macros::routes;
+
+    pub use quux_macros::{client, server, view};
     pub use serde::{de::DeserializeOwned, Deserialize, Serialize};
 }

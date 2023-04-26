@@ -13,6 +13,8 @@ pub struct Store<T> {
     listeners: RcCell<Vec<Callback<T>>>,
 }
 
+// TODO: derived stores with map
+
 impl<T> Store<T> {
     /// Creates a new store.
     pub fn new(value: T) -> Self {

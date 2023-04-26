@@ -1,8 +1,6 @@
-use std::collections::HashMap;
-
 use super::Head;
 use crate::components::flashcards::Term;
-use quux::{prelude::*, tree::prelude::*};
+use quux::prelude::*;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Card {
@@ -10,8 +8,7 @@ pub struct Card {
 }
 
 impl Component for Card {
-    fn render(self, context: Context<Self>) -> impl Item {
-        type Component = Card;
+    fn render(self, _: Context<Self>) -> impl Item {
         fieldset()
             .class("card card-bordered shadow")
             .child(legend().class("badge").text("Card"))
@@ -29,8 +26,7 @@ impl component::Init for Card {
 pub struct Create;
 
 impl Component for Create {
-    fn render(self, context: Context<Self>) -> impl Item {
-        type Component = Create;
+    fn render(self, _: Context<Self>) -> impl Item {
         let terms = store::List::<Term>::new(vec![Term::new("", ""), Term::new("", "")]);
         html()
             .attribute("lang", "en")

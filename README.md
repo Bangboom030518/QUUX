@@ -1,3 +1,12 @@
+# Aims
+
+- Full Stack (like Next.js, Nuxt and SvelteKit)
+- Hello World has 0kb of script
+- ⚡⚡⚡ Blazingly fast ⚡⚡⚡
+- Teeny tiny scripts
+- Uses Rust for both server and _CLIENT_ logic
+- https://www.elephantsql.com/plans.htm
+
 # TODO
 
 - HOW COMPONENTS MANAGE STATE
@@ -6,17 +15,16 @@
   - Server Side Static Rendering
   - Client Side Dynamic Rendering
 - HOW THEY INTERACT WITH THE DOM TREE
+
   - Child -> Parent Communication
   - Parent -> Child Communication
 
 - Do we optimise the generated Rust before compiling to WASM?
 - How do we store state in the html?
 - [Module splitting](https://emscripten.org/docs/optimizing/Module-Splitting.html#module-splitting)?
-https://www.arewewebyet.org/topics/frameworks/
-
+  https://www.arewewebyet.org/topics/frameworks/
 
 ## Template Syntax
-
 
 ## Component Struct Interface
 

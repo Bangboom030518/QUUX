@@ -41,15 +41,14 @@ impl quux::component::Init for Set {
 }
 
 impl Component for Set {
-    fn render(self, context: Context<Self>) -> impl Item {
-        type Component = Set;
+    fn render(self, _: Context<Self>) -> impl Item {
         html()
             .attribute("lang", "en")
             .component(Head::new("Flashcards - QUUX"))
             .child(
                 body()
                     .child(h1().text("Welcome to QUUXLET"))
-                    .component(Flashcards::init(self.0.terms.clone()))
+                    .component(Flashcards::init(self.0.terms))
                     .component(InitialisationScript::init(include_str!(
                         "../../dist/init.js"
                     ))),

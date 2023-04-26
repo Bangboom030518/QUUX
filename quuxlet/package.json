@@ -5,7 +5,7 @@
   "main": "tailwind.config.js",
   "scripts": {
     "start": "postcss ./src/style.css -o ./dist/output.css && wasm-pack build --target web --out-dir dist && esbuild init.ts --bundle=true --allow-overwrite --minify --outdir=dist --format=esm && cargo run",
-    "migrate": "atlas schema apply -u \"sqlite://src/database/data.db\" -f src/database/schema.hcl",
+    "migrate": "atlas schema apply -u \"sqlite://quuxlet/src/database/data.db\" -f quuxlet/src/database/schema.hcl",
     "test": "cargo test"
   },
   "repository": {
