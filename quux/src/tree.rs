@@ -7,7 +7,6 @@ use crate::internal::prelude::*;
 mod attributes;
 mod component;
 pub mod element;
-pub mod event;
 pub mod item;
 
 // TODO: gobble gobble gobble?
@@ -23,7 +22,7 @@ type DisplayStore = Store<Box<dyn Display>>;
 
 pub mod prelude {
     pub use super::{
-        event,
+        element::event,
         item::{self, Many, Pair},
         Attributes, Element, Item,
     };

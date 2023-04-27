@@ -64,6 +64,14 @@ impl<T> List<T> {
     }
 }
 
+impl<T: Clone> IntoIterator for List<T> {
+    type Item = T;
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+    fn into_iter(self) -> Self::IntoIter {
+        self.value.borrow().into_iter()
+    }
+}
+
 impl<'a, T> From<&'a List<T>> for std::cell::Ref<'a, Vec<T>> {
     fn from(value: &'a List<T>) -> Self {
         value.value.borrow()

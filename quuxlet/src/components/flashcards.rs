@@ -81,9 +81,12 @@ impl<T, I: Item> Component for ForLoop<T, I> {
     where
         Self: Sized,
     {
-        div().child(Many::from_iter(
-            Ref::<_>::from(&self.list).iter().map(self.mapping),
-        ))
+        div().child(
+            Ref::<_>::from(&self.list)
+                .iter()
+                .map(self.mapping)
+                .collect::<Many<_>>(),
+        )
     }
 }
 

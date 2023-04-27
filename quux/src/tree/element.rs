@@ -1,41 +1,12 @@
 use super::DisplayStore;
 use crate::internal::prelude::*;
-use event::Event;
+pub use reactivity::event;
+use reactivity::Event;
 
 pub mod html;
+pub mod reactivity;
 
-#[derive(Clone)]
-pub struct ReactiveClass {
-    class: String,
-    store: Store<bool>,
-}
-
-impl ReactiveClass {
-    fn new(class: &str, store: Store<bool>) -> Self {
-        Self {
-            class: class.to_string(),
-            store,
-        }
-    }
-
-    #[client]
-    fn apply(&self, element: Rc<web_sys::Element>) {
-        let class = self.class.to_string();
-        // let element = element;
-        // TODO: simpler method?
-        self.store.on_change(move |_, &enabled| {
-            let class_list = element.class_list();
-            if enabled {
-                class_list.add_1(&class).unwrap();
-            } else {
-                class_list.remove_1(&class).unwrap();
-            }
-        });
-    }
-}
-
-#[derive(Default)]
-pub struct Element<T: Item> {
+pub struct Element<'a, T: Item> {
     tag_name: String,
     id: Option<u64>,
     attributes: Attributes,
@@ -43,12 +14,10 @@ pub struct Element<T: Item> {
     #[cfg(target_arch = "wasm32")]
     dom_element: Option<Rc<web_sys::Element>>,
     #[cfg(target_arch = "wasm32")]
-    events: Vec<Event>,
-    #[cfg(target_arch = "wasm32")]
-    reactive_classes: Vec<ReactiveClass>,
+    reactivity: Vec<Box<dyn reactivity::Reactivity + 'a>>,
 }
 
-impl<T: Item> Display for Element<T> {
+impl<'a, T: Item> Display for Element<'a, T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if self.children.is_self_closing() {
             return write!(f, "<{} {} />", self.tag_name, self.attributes);
@@ -62,34 +31,24 @@ impl<T: Item> Display for Element<T> {
 }
 
 // TODO: move `Hydrate` trait to client only
-impl<T: Item> super::Hydrate for Element<T> {
+impl<'a, T: Item> super::Hydrate for Element<'a, T> {
     #[client]
     fn hydrate(mut self) {
         let dom_element = self.dom_element();
 
-        for reactive_class in self.reactive_classes {
-            reactive_class.apply(Rc::clone(&dom_element));
+        for reactivity in self.reactivity {
+            reactivity.apply(Rc::clone(&dom_element));
         }
 
-        for event in self.events {
-            event.apply(Rc::clone(&dom_element));
-        }
+        // for event in self.events {
+        //     event.apply(Rc::clone(&dom_element));
+        // }
 
         self.children.hydrate();
     }
 }
 
-#[client]
-impl<T: Item> Element<T> {
-    pub fn dom_element(&mut self) -> Rc<web_sys::Element> {
-        Rc::clone(self.dom_element.get_or_insert_with(|| {
-            Rc::new(crate::dom::get_reactive_element(
-                self.id.expect_internal("get reactive element"),
-            ))
-        }))
-    }
-}
-impl Element<item::Empty> {
+impl<'a> Element<'a, item::Empty> {
     #[must_use]
     pub fn new(tag_name: &str) -> Self {
         Self {
@@ -100,14 +59,12 @@ impl Element<item::Empty> {
             #[cfg(target_arch = "wasm32")]
             dom_element: None,
             #[cfg(target_arch = "wasm32")]
-            events: Vec::new(),
-            #[cfg(target_arch = "wasm32")]
-            reactive_classes: Vec::new(),
+            reactivity: Vec::new(),
         }
     }
 }
 
-impl<T: Item> Item for Element<T> {
+impl<'a, T: Item> Item for Element<'a, T> {
     fn insert_id(&mut self, id: u64) -> u64 {
         self.id = Some(id);
         self.attributes
@@ -117,7 +74,7 @@ impl<T: Item> Item for Element<T> {
     }
 }
 
-impl<T: Item> Element<T> {
+impl<'a, T: Item> Element<'a, T> {
     #[must_use]
     pub fn attribute<V: Display>(mut self, key: &str, value: V) -> Self {
         self.attributes
@@ -150,29 +107,27 @@ impl<T: Item> Element<T> {
     }
 
     #[allow(clippy::missing_const_for_fn)]
-    pub fn child<I: Item>(self, child: I) -> Element<Pair<T, I>> {
+    pub fn child<I: Item>(self, child: I) -> Element<'a, Pair<T, I>> {
         Element {
             tag_name: self.tag_name,
             attributes: self.attributes,
             id: self.id,
             children: Pair(self.children, child),
             #[cfg(target_arch = "wasm32")]
-            events: self.events,
+            reactivity: self.reactivity,
             #[cfg(target_arch = "wasm32")]
             dom_element: self.dom_element,
-            #[cfg(target_arch = "wasm32")]
-            reactive_classes: Vec::new(),
         }
     }
 
-    pub fn text<S>(self, text: S) -> Element<Pair<T, String>>
+    pub fn text<S>(self, text: S) -> Element<'a, Pair<T, String>>
     where
         S: Display,
     {
         self.child(text.to_string())
     }
 
-    pub fn component<C>(self, component: C) -> Element<Pair<T, impl Item>>
+    pub fn component<C>(self, component: C) -> Element<'a, Pair<T, impl Item>>
     where
         C: Component + Clone,
     {
@@ -191,7 +146,7 @@ impl<T: Item> Element<T> {
     where
         F: FnMut() + 'static,
     {
-        self.events.push(Event::new(event, callback));
+        self.reactivity.push(Box::new(Event::new(event, callback)));
         self
     }
 
@@ -206,7 +161,41 @@ impl<T: Item> Element<T> {
     /// # Panics
     /// if it fails to toggle the class in the dom
     pub fn reactive_class(mut self, class: &str, store: Store<bool>) -> Self {
-        self.reactive_classes.push(ReactiveClass::new(class, store));
+        self.reactivity
+            .push(Box::new(reactivity::Class::new(class, store)));
         self
+    }
+
+    pub fn reactive_many<E, F, I>(mut self, list: store::List<E>, mut mapping: F) -> impl Item
+    where
+        E: Clone + 'a,
+        I: Item + 'a,
+        F: FnMut(&E) -> Element<I> + 'a,
+    {
+        // TODO: what??
+        let items = list
+            .clone()
+            .into_iter()
+            .collect::<Vec<_>>()
+            .iter()
+            .map(&mut mapping)
+            .collect::<Many<_>>();
+
+        #[cfg(target_arch = "wasm32")]
+        {
+            let parent = self.dom_element();
+            let many = reactivity::Many::new(parent, list, mapping);
+            self.reactivity.push(Box::new(many))
+        }
+
+        self.child(items)
+    }
+    #[client]
+    pub fn dom_element(&mut self) -> Rc<web_sys::Element> {
+        Rc::clone(self.dom_element.get_or_insert_with(|| {
+            Rc::new(crate::dom::get_reactive_element(
+                self.id.expect_internal("get reactive element"),
+            ))
+        }))
     }
 }
