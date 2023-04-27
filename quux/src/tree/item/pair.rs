@@ -17,4 +17,9 @@ impl<A: Item, B: Item> Display for Pair<A, B> {
     }
 }
 
-impl<A: Item, B: Item> Item for Pair<A, B> {}
+impl<A: Item, B: Item> Item for Pair<A, B> {
+    fn insert_id(&mut self, id: u64) {
+        self.0.insert_id(id);
+        self.1.insert_id(id + 1)
+    }
+}

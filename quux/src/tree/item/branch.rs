@@ -36,6 +36,11 @@ macro_rules! branch_decl {
         where
             $($types: Item),*
         {
+            fn insert_id(&mut self, id: u64) {
+                match self {
+                    $($name::$types(child) => child.insert_id(id)),*
+                }
+            }
         }
     };
 }

@@ -4,16 +4,48 @@ use event::Event;
 
 pub mod html;
 
+#[derive(Clone)]
+pub struct ReactiveClass {
+    class: String,
+    store: Store<bool>,
+}
+
+impl ReactiveClass {
+    fn new(class: &str, store: Store<bool>) -> Self {
+        Self {
+            class: class.to_string(),
+            store,
+        }
+    }
+
+    #[client]
+    fn apply(&self, element: Rc<web_sys::Element>) {
+        let class = self.class.to_string();
+        // let element = element;
+        // TODO: simpler method?
+        self.store.on_change(move |_, &enabled| {
+            let class_list = element.class_list();
+            if enabled {
+                class_list.add_1(&class).unwrap();
+            } else {
+                class_list.remove_1(&class).unwrap();
+            }
+        });
+    }
+}
+
 #[derive(Default)]
 pub struct Element<T: Item> {
     tag_name: String,
-    id: u64,
+    id: Option<u64>,
     attributes: Attributes,
     children: T,
     #[cfg(target_arch = "wasm32")]
-    dom_element: Option<web_sys::Element>,
+    dom_element: Option<Rc<web_sys::Element>>,
     #[cfg(target_arch = "wasm32")]
     events: Vec<Event>,
+    #[cfg(target_arch = "wasm32")]
+    reactive_classes: Vec<ReactiveClass>,
 }
 
 impl<T: Item> Display for Element<T> {
@@ -33,10 +65,14 @@ impl<T: Item> Display for Element<T> {
 impl<T: Item> super::Hydrate for Element<T> {
     #[client]
     fn hydrate(mut self) {
-        let dom_element = self.dom_element().clone();
+        let dom_element = self.dom_element();
+
+        for reactive_class in self.reactive_classes {
+            reactive_class.apply(Rc::clone(&dom_element));
+        }
 
         for event in self.events {
-            event.apply(&dom_element);
+            event.apply(Rc::clone(&dom_element));
         }
 
         self.children.hydrate();
@@ -45,38 +81,41 @@ impl<T: Item> super::Hydrate for Element<T> {
 
 #[client]
 impl<T: Item> Element<T> {
-    pub fn dom_element(&mut self) -> web_sys::Element {
-        self.dom_element
-            .get_or_insert_with(|| crate::dom::get_reactive_element(self.id))
-            .clone()
+    pub fn dom_element(&mut self) -> Rc<web_sys::Element> {
+        Rc::clone(self.dom_element.get_or_insert_with(|| {
+            Rc::new(crate::dom::get_reactive_element(
+                self.id.expect_internal("get reactive element"),
+            ))
+        }))
     }
 }
-
 impl Element<item::Empty> {
+    #[must_use]
     pub fn new(tag_name: &str) -> Self {
-        use std::sync::atomic::{AtomicU64, Ordering::Relaxed};
-
-        static ID: AtomicU64 = AtomicU64::new(0);
-
-        let id = ID.fetch_add(1, Relaxed);
-
         Self {
             tag_name: tag_name.to_string(),
-            attributes: Attributes::new(
-                HashMap::from([("data-quux-id".to_string(), id.to_string())]),
-                HashMap::new(),
-            ),
+            attributes: Attributes::default(),
             children: item::Empty,
-            id,
+            id: None,
             #[cfg(target_arch = "wasm32")]
             dom_element: None,
             #[cfg(target_arch = "wasm32")]
             events: Vec::new(),
+            #[cfg(target_arch = "wasm32")]
+            reactive_classes: Vec::new(),
         }
     }
 }
 
-impl<T: Item> Item for Element<T> {}
+impl<T: Item> Item for Element<T> {
+    fn insert_id(&mut self, id: u64) {
+        self.id = Some(id);
+        self.attributes
+            .attributes
+            .insert("data-quux-id".to_string(), id.to_string());
+        self.children.insert_id(id + 1);
+    }
+}
 
 impl<T: Item> Element<T> {
     #[must_use]
@@ -121,6 +160,8 @@ impl<T: Item> Element<T> {
             events: self.events,
             #[cfg(target_arch = "wasm32")]
             dom_element: self.dom_element,
+            #[cfg(target_arch = "wasm32")]
+            reactive_classes: Vec::new(),
         }
     }
 
@@ -131,15 +172,16 @@ impl<T: Item> Element<T> {
         self.child(text.to_string())
     }
 
-    pub fn component<C>(self, component: C) -> Element<Pair<T, ComponentNode<C>>>
+    pub fn component<C>(self, component: C) -> Element<Pair<T, impl Item>>
     where
         C: Component + Clone,
     {
-        self.child(ComponentNode(component))
+        self.child(component.render(Context::new()))
     }
 
     #[server]
-    pub fn on(self, _: &str, _: ()) -> Self {
+    #[must_use]
+    pub const fn on(self, _: &str, _: ()) -> Self {
         self
     }
 
@@ -153,8 +195,9 @@ impl<T: Item> Element<T> {
         self
     }
 
+    #[must_use]
     #[server]
-    pub fn reactive_class(self, class: &str, _: &Store<bool>) -> Self {
+    pub fn reactive_class(self, _: &str, _: Store<bool>) -> Self {
         self
     }
 
@@ -162,18 +205,8 @@ impl<T: Item> Element<T> {
     #[must_use]
     /// # Panics
     /// if it fails to toggle the class in the dom
-    pub fn reactive_class(mut self, class: &str, store: &Store<bool>) -> Self {
-        let dom_element = self.dom_element();
-        let class = class.to_string();
-        // TODO: simpler method?
-        store.on_change(move |_, &enabled| {
-            let class_list = dom_element.class_list();
-            if enabled {
-                class_list.add_1(&class).unwrap();
-            } else {
-                class_list.remove_1(&class).unwrap();
-            }
-        });
+    pub fn reactive_class(mut self, class: &str, store: Store<bool>) -> Self {
+        self.reactive_classes.push(ReactiveClass::new(class, store));
         self
     }
 }

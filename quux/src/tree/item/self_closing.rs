@@ -14,4 +14,6 @@ impl Item for SelfClosing {
     fn is_self_closing(&self) -> bool {
         true
     }
+
+    fn insert_id(&mut self, id: u64) {}
 }

@@ -14,4 +14,8 @@ impl Item for Empty {
     fn is_empty(&self) -> bool {
         true
     }
+
+    fn insert_id(&mut self, _: u64) {
+        
+    }
 }

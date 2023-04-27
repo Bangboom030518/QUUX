@@ -1,10 +1,9 @@
 pub use confidence_rating::ConfidenceRating;
 pub use flashcard::Flashcard;
-use quux::{prelude::*, tree::prelude::ComponentNode};
+use quux::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::{
-    cell::{Ref, RefCell},
-    rc::Rc,
+    cell::{Ref},
 };
 
 pub mod confidence_rating;
@@ -83,7 +82,7 @@ impl Component for Flashcards {
                 div().class("flashcard-stack").child(
                     Ref::<_>::from(&self.terms)
                         .iter()
-                        .map(|term| ComponentNode(Flashcard::init(term.clone())))
+                        .map(|term| Flashcard::init(term.clone()).render(Context::new()))
                         .collect::<Many<_>>(),
                 ),
             )
@@ -115,7 +114,7 @@ impl Component for Flashcards {
                             //     flashcard.flip();
                             //     confidence_rating.show();
                             // }
-                            || ()
+                            || panic!("MUNNNNNNNEEEEEEEEEEEEE!")
                         }},
                     )
                     .text("flip"),

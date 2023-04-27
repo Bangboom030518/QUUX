@@ -17,14 +17,16 @@ impl Event {
     }
 
     #[client]
-    pub fn apply(self, element: &web_sys::Element) {
+    pub fn apply(self, element: Rc<web_sys::Element>) {
         use wasm_bindgen::prelude::*;
 
-        let closure = Closure::wrap(self.callback as Box<dyn FnMut()>);
+        let closure = Closure::wrap(self.callback);
+
 
         element
             .add_event_listener_with_callback(&self.name, closure.as_ref().unchecked_ref())
             .expect_internal("add event");
+
 
         closure.forget();
     }
@@ -38,9 +40,7 @@ macro_rules! event {
             $closure
         }
         #[cfg(not(target_arch = "wasm32"))]
-        {
-            ()
-        }
+        {}
     }};
 }
 

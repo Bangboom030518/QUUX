@@ -77,7 +77,9 @@ impl Routes {
                 fn hydrate(self) {
                     match self {
                         #(Self::#variants(component) => {
-                            quux::tree::Hydrate::hydrate(quux::component::Component::render(component, quux::context::Context::new()));
+                            let mut tree = quux::component::Component::render(component, quux::context::Context::new());
+                            quux::tree::Item::insert_id(&mut tree, 0);
+                            quux::tree::Hydrate::hydrate(tree);
                         }),*
                     };
                 }

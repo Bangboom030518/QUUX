@@ -83,12 +83,12 @@ impl Component for Flashcard {
 
         article()
             .class("grid place-items-center gap-4 text-center")
-            .reactive_class("hidden", &self.is_hidden)
+            .reactive_class("hidden", self.is_hidden)
             .child(div().class("relative min-w-[60ch] min-h-[40ch]")
                 .child(
                     div()
                         .class("card bg-base-200 shadow definition absolute top-0 left-0 w-full h-full grid place-items-center transition-[opacity,transform] duration-300")
-                        .reactive_class("flashcard-hidden", &term_hidden)
+                        .reactive_class("flashcard-hidden", term_hidden)
                         .child(
                             div()
                                 .class("card-body")
@@ -100,7 +100,7 @@ impl Component for Flashcard {
                 .child(
                     div()
                         .class("card bg-base-200 shadow definition absolute top-0 left-0 w-full h-full grid place-items-center transition-[opacity,transform] duration-300 flashcard-hidden")
-                        .reactive_class("flashcard-hidden", &definition_hidden)
+                        .reactive_class("flashcard-hidden", definition_hidden)
                         .child(
                             div()
                                 .class("card-body")
@@ -110,21 +110,5 @@ impl Component for Flashcard {
                         )
                 )
             )
-        //             div(
-        //                 class = "card bg-base-200 shadow term absolute top-0 left-0 w-full h-full grid place-items-center transition-[opacity,transform] duration-300",
-        //                 class:active-when = (&self.side, |side| side != Side::Term, "flashcard-hidden")
-        //             ) {
-        //                 div(class = "card-body") {
-        //                     p {{ self.term.term }}
-        //                 }
-        //             }
-        //             div(
-        //                 class = "card bg-base-200 shadow definition absolute top-0 left-0 w-full h-full grid place-items-center transition-[opacity,transform] duration-300 flashcard-hidden",
-        //                 class:active-when = (&self.side, |side| side != Side::Definition, "flashcard-hidden")
-        //             ) {
-        //                 div(class = "card-body") {
-        //                     p {{ self.term.definition }}
-        //                 }
-        //             }
     }
 }

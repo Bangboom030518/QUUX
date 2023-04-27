@@ -43,7 +43,8 @@ pub trait Routes: Serialize + DeserializeOwned {
     where
         Self: Sized + From<T>,
     {
-        let tree = component.clone().render(crate::context::Context::new());
+        let mut tree = component.clone().render(crate::context::Context::new());
+        tree.insert_id(0);
         let html = tree.to_string();
         // TODO: serialize component
         let component = Self::from(component);

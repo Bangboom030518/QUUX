@@ -23,7 +23,6 @@ type DisplayStore = Store<Box<dyn Display>>;
 
 pub mod prelude {
     pub use super::{
-        component::ComponentNode,
         event,
         item::{self, Many, Pair},
         Attributes, Element, Item,

@@ -11,7 +11,9 @@ mod many;
 mod pair;
 mod self_closing;
 
-impl Item for String {}
+impl Item for String {
+    fn insert_id(&mut self, _: u64) {}
+}
 
 impl Hydrate for String {}
 
@@ -24,6 +26,8 @@ pub trait Item: Display + Hydrate {
     fn is_empty(&self) -> bool {
         false
     }
+
+    fn insert_id(&mut self, id: u64);
 
     fn boxed<'a>(self) -> Box<dyn Item + 'a>
     where
