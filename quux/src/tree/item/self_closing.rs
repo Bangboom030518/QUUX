@@ -15,5 +15,7 @@ impl Item for SelfClosing {
         true
     }
 
-    fn insert_id(&mut self, id: u64) {}
+    fn insert_id(&mut self, id: u64) -> u64 {
+        id
+    }
 }

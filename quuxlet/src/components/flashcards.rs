@@ -3,7 +3,8 @@ pub use flashcard::Flashcard;
 use quux::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::{
-    cell::{Ref},
+    cell::{Ref, RefCell},
+    rc::Rc,
 };
 
 pub mod confidence_rating;
@@ -69,10 +70,31 @@ impl component::Init for Flashcards {
     }
 }
 
+//
+struct ForLoop<T, I: Item> {
+    list: store::List<T>,
+    mapping: Box<dyn FnMut(&T) -> I>,
+}
+
+impl<T, I: Item> Component for ForLoop<T, I> {
+    fn render(self, context: quux::context::Context<Self>) -> impl Item
+    where
+        Self: Sized,
+    {
+        div().child(Many::from_iter(
+            Ref::<_>::from(&self.list).iter().map(self.mapping),
+        ))
+    }
+}
+
+// struct ForLoop<T, C>
+// where
+//     C: Component, {}
+
 impl Component for Flashcards {
     fn render(self, _: Context<Self>) -> impl Item {
-        // let confidence_rating: ConfidenceRating = todo!();
-        // let flashcards: Rc<RefCell<Vec<Flashcard>>> = todo!();
+        let confidence_rating = ConfidenceRating::init(());
+        let flashcards: Rc<RefCell<Vec<Flashcard>>> = Rc::new(RefCell::new(Vec::new()));
 
         // TODO: for term in $self.terms { @Flashcard(term): flashcards }
 
@@ -92,33 +114,32 @@ impl Component for Flashcards {
                     .on(
                         "click",
                         event! {{
-                            // let rating = confidence_rating.get_rating_store();
-                            // let flashcards = Rc::clone(&flashcards);
-                            // let terms = self.terms.clone();
-                            // let confidence_rating = Rc::new(confidence_rating);
+                            let rating = confidence_rating.get_rating_store();
+                            let flashcards = Rc::clone(&flashcards);
+                            let terms = self.terms.clone();
+                            let confidence_rating = Rc::new(confidence_rating);
 
-                            // rating.on_change({
-                            //     let confidence_rating = Rc::clone(&confidence_rating);
-                            //     move |_, _| {
-                            //         terms.pop();
-                            //         confidence_rating.hide();
-                            //     }
-                            // });
+                            rating.on_change({
+                                let confidence_rating = Rc::clone(&confidence_rating);
+                                move |_, _| {
+                                    terms.pop();
+                                    confidence_rating.hide();
+                                }
+                            });
 
-                            // move || {
-                            //     let flashcards = flashcards.borrow();
-                            //     let Some(flashcard) = flashcards.last() else {
-                            //         quux::console_log!("No flashcards found");
-                            //         return
-                            //     };
-                            //     flashcard.flip();
-                            //     confidence_rating.show();
-                            // }
-                            || panic!("MUNNNNNNNEEEEEEEEEEEEE!")
+                            move || {
+                                let flashcards = flashcards.borrow();
+                                let Some(flashcard) = flashcards.last() else {
+                                    quux::console_log!("No flashcards found");
+                                    return
+                                };
+                                flashcard.flip();
+                                confidence_rating.show();
+                            }
                         }},
                     )
                     .text("flip"),
             )
-            .component(ConfidenceRating::init(()))
+            .component(confidence_rating)
     }
 }

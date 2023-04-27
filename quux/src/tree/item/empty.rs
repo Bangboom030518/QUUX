@@ -15,7 +15,7 @@ impl Item for Empty {
         true
     }
 
-    fn insert_id(&mut self, _: u64) {
-        
+    fn insert_id(&mut self, id: u64) -> u64 {
+        id
     }
 }

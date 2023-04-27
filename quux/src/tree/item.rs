@@ -12,7 +12,9 @@ mod pair;
 mod self_closing;
 
 impl Item for String {
-    fn insert_id(&mut self, _: u64) {}
+    fn insert_id(&mut self, id: u64) -> u64 {
+        id
+    }
 }
 
 impl Hydrate for String {}
@@ -27,7 +29,8 @@ pub trait Item: Display + Hydrate {
         false
     }
 
-    fn insert_id(&mut self, id: u64);
+    // TODO: why does it skip ids?
+    fn insert_id(&mut self, id: u64) -> u64;
 
     fn boxed<'a>(self) -> Box<dyn Item + 'a>
     where

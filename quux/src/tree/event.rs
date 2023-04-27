@@ -22,11 +22,9 @@ impl Event {
 
         let closure = Closure::wrap(self.callback);
 
-
         element
             .add_event_listener_with_callback(&self.name, closure.as_ref().unchecked_ref())
             .expect_internal("add event");
-
 
         closure.forget();
     }

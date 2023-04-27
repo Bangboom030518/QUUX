@@ -108,12 +108,12 @@ impl Element<item::Empty> {
 }
 
 impl<T: Item> Item for Element<T> {
-    fn insert_id(&mut self, id: u64) {
+    fn insert_id(&mut self, id: u64) -> u64 {
         self.id = Some(id);
         self.attributes
             .attributes
             .insert("data-quux-id".to_string(), id.to_string());
-        self.children.insert_id(id + 1);
+        self.children.insert_id(id + 1)
     }
 }
 

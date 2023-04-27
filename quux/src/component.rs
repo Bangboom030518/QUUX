@@ -1,6 +1,6 @@
 use crate::internal::prelude::*;
 
-pub trait Component: Serialize {
+pub trait Component {
     fn render(self, context: crate::context::Context<Self>) -> impl Item
     where
         Self: Sized;
@@ -39,7 +39,7 @@ pub trait Routes: Serialize + DeserializeOwned {
     fn hydrate(self);
 
     #[server]
-    fn render_to_string<T: Component + Clone>(component: T) -> String
+    fn render_to_string<T: Component + Clone + Serialize>(component: T) -> String
     where
         Self: Sized + From<T>,
     {

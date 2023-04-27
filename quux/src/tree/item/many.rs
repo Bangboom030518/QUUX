@@ -9,11 +9,11 @@ impl<T: Item> FromIterator<T> for Many<T> {
 }
 
 impl<T: Item> Item for Many<T> {
-    fn insert_id(&mut self, mut id: u64) {
+    fn insert_id(&mut self, mut id: u64) -> u64 {
         for item in self.0.iter_mut() {
-            item.insert_id(id);
-            id += 1;
+            id = item.insert_id(id + 1);
         }
+        id
     }
 }
 
