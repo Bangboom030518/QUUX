@@ -6,6 +6,7 @@ use reactivity::Event;
 pub mod html;
 pub mod reactivity;
 
+#[derive(Debug)]
 pub struct Element<'a, T: Item> {
     tag_name: String,
     id: Option<u64>,
@@ -15,6 +16,8 @@ pub struct Element<'a, T: Item> {
     dom_element: Option<Rc<web_sys::Element>>,
     #[cfg(target_arch = "wasm32")]
     reactivity: Vec<Box<dyn reactivity::Reactivity + 'a>>,
+    #[cfg(not(target_arch = "wasm32"))]
+    _phantom: PhantomData<&'a ()>,
 }
 
 impl<'a, T: Item> Display for Element<'a, T> {
@@ -60,6 +63,8 @@ impl<'a> Element<'a, item::Empty> {
             dom_element: None,
             #[cfg(target_arch = "wasm32")]
             reactivity: Vec::new(),
+            #[cfg(not(target_arch = "wasm32"))]
+            _phantom: PhantomData,
         }
     }
 }
@@ -117,6 +122,8 @@ impl<'a, T: Item> Element<'a, T> {
             reactivity: self.reactivity,
             #[cfg(target_arch = "wasm32")]
             dom_element: self.dom_element,
+            #[cfg(not(target_arch = "wasm32"))]
+            _phantom: PhantomData,
         }
     }
 
@@ -166,26 +173,23 @@ impl<'a, T: Item> Element<'a, T> {
         self
     }
 
-    pub fn reactive_many<E, F, I>(mut self, list: store::List<E>, mut mapping: F) -> impl Item
+    pub fn reactive_many<E, F, I>(mut self, list: store::List<E>, mut mapping: F) -> impl Item + 'a
     where
         E: Clone + 'a,
         I: Item + 'a,
-        F: FnMut(&E) -> Element<I> + 'a,
+        F: FnMut(E) -> Element<'a, I> + 'static + Clone,
+        T: 'a,
     {
-        // TODO: what??
         let items = list
             .clone()
             .into_iter()
-            .collect::<Vec<_>>()
-            .iter()
             .map(&mut mapping)
             .collect::<Many<_>>();
 
         #[cfg(target_arch = "wasm32")]
         {
-            let parent = self.dom_element();
-            let many = reactivity::Many::new(parent, list, mapping);
-            self.reactivity.push(Box::new(many))
+            let many = reactivity::Many::new(list, mapping);
+            self.reactivity.push(Box::new(many));
         }
 
         self.child(items)

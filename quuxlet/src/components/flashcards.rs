@@ -2,10 +2,7 @@ pub use confidence_rating::ConfidenceRating;
 pub use flashcard::Flashcard;
 use quux::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::{
-    cell::{Ref, RefCell},
-    rc::Rc,
-};
+use std::cell::Ref;
 
 pub mod confidence_rating;
 pub mod flashcard;
@@ -58,6 +55,7 @@ impl Term {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Flashcards {
     terms: store::List<Term>,
+    side: Store<flashcard::Side>,
 }
 
 impl component::Init for Flashcards {
@@ -66,18 +64,18 @@ impl component::Init for Flashcards {
     fn init(terms: Self::Props) -> Self {
         Self {
             terms: store::List::new(terms),
+            side: Store::new(flashcard::Side::Term),
         }
     }
 }
 
-//
 struct ForLoop<T, I: Item> {
     list: store::List<T>,
     mapping: Box<dyn FnMut(&T) -> I>,
 }
 
 impl<T, I: Item> Component for ForLoop<T, I> {
-    fn render(self, context: quux::context::Context<Self>) -> impl Item
+    fn render(self, _: quux::context::Context<Self>) -> impl Item
     where
         Self: Sized,
     {
@@ -97,19 +95,20 @@ impl<T, I: Item> Component for ForLoop<T, I> {
 impl Component for Flashcards {
     fn render(self, _: Context<Self>) -> impl Item {
         let confidence_rating = ConfidenceRating::init(());
-        let flashcards: Rc<RefCell<Vec<Flashcard>>> = Rc::new(RefCell::new(Vec::new()));
-
-        // TODO: for term in $self.terms { @Flashcard(term): flashcards }
+        let rating = confidence_rating.get_rating_store();
 
         div()
             .class("grid place-items-center gap-4")
             .child(
-                div().class("flashcard-stack").child(
-                    Ref::<_>::from(&self.terms)
-                        .iter()
-                        .map(|term| Flashcard::init(term.clone()).render(Context::new()))
-                        .collect::<Many<_>>(),
-                ),
+                div()
+                    .class("flashcard-stack")
+                    .reactive_many(self.terms.clone(), {
+                        let side = self.side.clone();
+                        move |term| {
+                            let flashcard = Flashcard::new(term, side.clone());
+                            div().component(flashcard)
+                        }
+                    }),
             )
             .child(
                 button()
@@ -117,26 +116,23 @@ impl Component for Flashcards {
                     .on(
                         "click",
                         event! {{
-                            let rating = confidence_rating.get_rating_store();
-                            let flashcards = Rc::clone(&flashcards);
-                            let terms = self.terms.clone();
-                            let confidence_rating = Rc::new(confidence_rating);
-
                             rating.on_change({
-                                let confidence_rating = Rc::clone(&confidence_rating);
+                                let confidence_rating = confidence_rating.clone();
+                                let terms = self.terms.clone();
                                 move |_, _| {
                                     terms.pop();
                                     confidence_rating.hide();
                                 }
                             });
 
+                            let side = self.side;
+
+                            let confidence_rating = confidence_rating.clone();
+
                             move || {
-                                let flashcards = flashcards.borrow();
-                                let Some(flashcard) = flashcards.last() else {
-                                    quux::console_log!("No flashcards found");
-                                    return
-                                };
-                                flashcard.flip();
+                                let side_ref = *side.get();
+                                let flipped = side_ref.flip();
+                                side.set(flipped);
                                 confidence_rating.show();
                             }
                         }},

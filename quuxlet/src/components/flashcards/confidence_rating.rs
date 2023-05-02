@@ -26,17 +26,17 @@ impl Display for Rating {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ConfidenceRating {
-    is_visible: Store<bool>,
+    is_hidden: Store<bool>,
     rating: Store<Rating>,
 }
 
 impl ConfidenceRating {
     pub fn show(&self) {
-        self.is_visible.set(true);
+        self.is_hidden.set(false);
     }
 
     pub fn hide(&self) {
-        self.is_visible.set(false);
+        self.is_hidden.set(true);
     }
 
     pub fn get_rating_store(&self) -> Store<Rating> {
@@ -49,15 +49,17 @@ impl component::Init for ConfidenceRating {
 
     fn init(_: Self::Props) -> Self {
         Self {
-            is_visible: Store::new(false),
+            is_hidden: Store::new(true),
             rating: Store::new(Rating::Ok),
         }
     }
 }
 
-// TODO: make `.text()` escape the basement
+// TODO: make `.text()` escape the basement (html)
 
 fn rating_button(store: Store<Rating>, rating: Rating, svg: &str) -> impl Item {
+    // tailwind include: btn-terrible btn-bad btn-ok btn-good btn-perfect
+
     button()
         .class(format!(
             "tooltip btn btn-icon btn-{}",
@@ -72,7 +74,9 @@ fn rating_button(store: Store<Rating>, rating: Rating, svg: &str) -> impl Item {
 impl Component for ConfidenceRating {
     fn render(self, _: Context<Self>) -> impl Item {
         div()
-            .class("flashcard-hidden btn-group")
+            .class("btn-group flashcard-hidden")
+            // TODO: remove need for duplication of reactive classes
+            .reactive_class("flashcard-hidden", self.is_hidden)
             .child(rating_button(
                 self.rating.clone(),
                 Rating::Terrible,
@@ -98,7 +102,5 @@ impl Component for ConfidenceRating {
                 Rating::Perfect,
                 include_str!("../../../assets/perfect.svg"),
             ))
-
-        // TODO: class:active-when" = (&self.is_visible, |visible: bool| !visible, "flashcard-hidden")
     }
 }

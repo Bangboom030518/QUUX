@@ -1,5 +1,6 @@
 macro_rules! branch_decl {
     ($name:ident, $($types:ident),*) => {
+        #[derive(Debug)]
         pub enum $name<$($types),*>
         where
             $($types: Item),*
@@ -27,7 +28,7 @@ macro_rules! branch_decl {
         {
             fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
                 match self {
-                    $($name::$types(child) => child.fmt(f)),*
+                    $($name::$types(child) => Display::fmt(&child, f)),*
                 }
             }
         }

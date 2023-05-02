@@ -19,7 +19,6 @@ use crate::internal::prelude::*;
 pub struct InitialisationScript {
     #[serde(skip)]
     init_script: &'static str,
-    // _phantom: std::marker::PhantomData<T>,
 }
 
 impl component::Init for InitialisationScript {

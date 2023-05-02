@@ -3,7 +3,7 @@ use crate::internal::prelude::*;
 macro_rules! element {
     ($name:ident) => {
         #[must_use]
-        pub fn $name() -> Element<item::Empty> {
+        pub fn $name<'a>() -> Element<'a, item::Empty> {
             Element::new(stringify!($name))
         }
     };

@@ -1,5 +1,6 @@
 use crate::internal::prelude::*;
 
+#[derive(Debug)]
 pub struct Empty;
 
 impl Display for Empty {

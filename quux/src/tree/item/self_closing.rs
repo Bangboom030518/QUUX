@@ -1,5 +1,6 @@
 use crate::internal::prelude::*;
 
+#[derive(Debug)]
 pub struct SelfClosing;
 
 impl Display for SelfClosing {

@@ -3,14 +3,13 @@ use quux::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
-enum Side {
+pub enum Side {
     Term,
     Definition,
 }
 
 impl Side {
-    #[cfg(target_arch = "wasm32")]
-    const fn flip(self) -> Self {
+    pub const fn flip(self) -> Self {
         match self {
             Self::Term => Self::Definition,
             Self::Definition => Self::Term,
@@ -33,12 +32,6 @@ pub struct Flashcard {
 }
 
 impl Flashcard {
-    #[cfg(target_arch = "wasm32")]
-    pub fn flip(&self) {
-        let previous = *self.side.get();
-        self.side.set(previous.flip());
-    }
-
     pub fn show(&self) {
         self.is_hidden.set(false);
     }
@@ -48,13 +41,11 @@ impl Flashcard {
     }
 }
 
-impl component::Init for Flashcard {
-    type Props = Term;
-
-    fn init(term: Self::Props) -> Self {
+impl Flashcard {
+    pub fn new(term: Term, side: Store<Side>) -> Self {
         Self {
             term,
-            side: Store::new(Side::Term),
+            side,
             flipped: Store::new(false),
             is_hidden: Store::new(false),
         }
@@ -63,7 +54,6 @@ impl component::Init for Flashcard {
 
 impl Component for Flashcard {
     fn render(self, _: Context<Self>) -> impl Item {
-        // TODO: class:active-when = (&self.is_visible, |visible: bool| !visible, "hidden")
         let term_hidden = Store::new(true);
         // let side = self.side.clone();
         let definition_hidden = Store::new(false);

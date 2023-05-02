@@ -1,5 +1,6 @@
 use crate::internal::prelude::*;
 
+#[derive(Debug)]
 pub struct Many<T: Item>(Vec<T>);
 
 impl<T: Item> FromIterator<T> for Many<T> {
@@ -10,7 +11,7 @@ impl<T: Item> FromIterator<T> for Many<T> {
 
 impl<T: Item> Item for Many<T> {
     fn insert_id(&mut self, mut id: u64) -> u64 {
-        for item in self.0.iter_mut() {
+        for item in &mut self.0 {
             id = item.insert_id(id + 1);
         }
         id

@@ -45,11 +45,10 @@ impl<T> List<T> {
 
     #[allow(clippy::must_use_candidate)]
     pub fn pop(&self) -> Option<T> {
-        let index = self.length() - 1;
         let mut listeners = self.listeners.borrow_mut();
         let value = self.value.borrow_mut().pop()?;
         for listener in listeners.iter_mut() {
-            listener(Event::Pop(&value, index));
+            listener(Event::Pop);
         }
         Some(value)
     }
@@ -68,7 +67,7 @@ impl<T: Clone> IntoIterator for List<T> {
     type Item = T;
     type IntoIter = std::vec::IntoIter<Self::Item>;
     fn into_iter(self) -> Self::IntoIter {
-        self.value.borrow().into_iter()
+        self.value.borrow().clone().into_iter()
     }
 }
 
@@ -98,7 +97,7 @@ impl<T: std::fmt::Debug> std::fmt::Debug for List<T> {
 
 pub enum Event<'a, T> {
     Push(&'a T),
-    Pop(&'a T, usize),
+    Pop,
     // Insert(&'a T, usize),
     // Remove(&'a T, usize),
 }

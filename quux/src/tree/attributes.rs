@@ -7,6 +7,22 @@ pub struct Attributes {
     pub reactive_attributes: HashMap<String, DisplayStore>,
 }
 
+impl Debug for Attributes {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Attributes")
+            .field("attributes", &self.attributes)
+            .field(
+                "reactive_attributes",
+                &self
+                    .attributes
+                    .iter()
+                    .map(|(key, value)| (key, value.to_string()))
+                    .collect::<HashMap<_, _>>(),
+            )
+            .finish()
+    }
+}
+
 impl Attributes {
     #[must_use]
     pub fn new(

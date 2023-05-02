@@ -19,7 +19,7 @@ impl Item for String {
 
 impl Hydrate for String {}
 
-pub trait Item: Display + Hydrate {
+pub trait Item: Display + Hydrate + Debug {
     // TODO: make constants?
     fn is_self_closing(&self) -> bool {
         false

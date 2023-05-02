@@ -1,27 +1,28 @@
 use crate::internal::prelude::*;
 
 #[client]
-pub trait Reactivity {
-    fn apply(self, element: Rc<web_sys::Element>);
+pub trait Reactivity: Debug {
+    fn apply(self: Box<Self>, element: Rc<web_sys::Element>);
 }
 
-#[client]
-impl<F> Reactivity for F
-where
-    F: FnMut(Rc<web_sys::Element>),
-{
-    fn apply(mut self, element: Rc<web_sys::Element>) {
-        self(element)
-    }
-}
+// #[client]
+// impl<F> Reactivity for F
+// where
+//     F: FnMut(Rc<web_sys::Element>),
+// {
+//     fn apply(mut self: Box<Self>, element: Rc<web_sys::Element>) {
+//         self(element);
+//     }
+// }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Class {
     class: String,
     store: Store<bool>,
 }
 
 impl Class {
+    #[must_use]
     pub fn new(class: &str, store: Store<bool>) -> Self {
         Self {
             class: class.to_string(),
@@ -32,7 +33,7 @@ impl Class {
 
 #[client]
 impl Reactivity for Class {
-    fn apply(self, element: Rc<web_sys::Element>) {
+    fn apply(self: Box<Self>, element: Rc<web_sys::Element>) {
         let class = self.class.to_string();
         // TODO: simpler method?
         self.store.on_change(move |_, &enabled| {
@@ -51,6 +52,15 @@ pub struct Event {
     callback: Box<dyn FnMut() + 'static>,
 }
 
+impl Debug for Event {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Event")
+            .field("name", &self.name)
+            .field("callback", &"unformatable!")
+            .finish()
+    }
+}
+
 impl Event {
     pub fn new<F>(name: &str, callback: F) -> Self
     where
@@ -65,7 +75,7 @@ impl Event {
 
 #[client]
 impl Reactivity for Event {
-    fn apply(self, element: Rc<web_sys::Element>) {
+    fn apply(self: Box<Self>, element: Rc<web_sys::Element>) {
         use wasm_bindgen::prelude::*;
 
         let closure = Closure::wrap(self.callback);
@@ -78,18 +88,31 @@ impl Reactivity for Event {
     }
 }
 
-pub struct Many<T, F, I>
+#[client]
+pub struct Many<'a, T, F, I>
 where
     T: Clone,
-    F: FnMut(&T) -> Element<I>,
+    F: FnMut(T) -> Element<'a, I> + Clone,
     I: Item,
 {
-    parent: Rc<web_sys::Element>,
     list: store::List<T>,
     mapping: F,
 }
+
 #[client]
-impl<T> Element<T>
+impl<'a, T, F, I> Debug for Many<'a, T, F, I>
+where
+    T: Clone,
+    F: FnMut(T) -> Element<'a, I> + Clone,
+    I: Item,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Many").finish()
+    }
+}
+
+#[client]
+impl<'a, T> Element<'a, T>
 where
     T: Item,
 {
@@ -97,10 +120,10 @@ where
         let dom_element = crate::dom::document()
             .create_element(&self.tag_name)
             .expect_internal("create element");
-        for (key, value) in self.attributes.attributes {
+        for (key, value) in &self.attributes.attributes {
             dom_element
-                .set_attribute(&key, &value)
-                .expect_internal("add attribute")
+                .set_attribute(key, value)
+                .expect_internal("add attribute");
         }
         dom_element.set_inner_html(&self.children.to_string());
         dom_element
@@ -108,42 +131,43 @@ where
 }
 
 #[client]
-impl<T, F, I> Many<T, F, I>
+impl<'a, T, F, I> Many<'a, T, F, I>
 where
     T: Clone,
-    F: FnMut(&T) -> Element<I>,
+    F: FnMut(T) -> Element<'a, I> + Clone,
     I: Item,
 {
-    pub fn new(parent: Rc<web_sys::Element>, list: store::List<T>, mapping: F) -> Self {
-        Self {
-            parent,
-            list,
-            mapping,
-        }
+    pub const fn new(list: store::List<T>, mapping: F) -> Self {
+        Self { list, mapping }
     }
 }
 
+// TODO: reference cycle?
+
 #[client]
-impl<T, F, I> Reactivity for Many<T, F, I>
+impl<'a, T, F, I> Reactivity for Many<'a, T, F, I>
 where
-    T: Clone,
-    F: FnMut(&T) -> Element<I>,
-    I: Item,
+    T: Clone + 'a,
+    F: FnMut(T) -> Element<'a, I> + 'static + Clone,
+    I: Item + 'a,
 {
-    fn apply(mut self, element: Rc<web_sys::Element>) {
+    fn apply(self: Box<Self>, element: Rc<web_sys::Element>) {
         use store::list::Event;
 
-        self.list.on_change(|event| match event {
-            Event::Pop(value, index) => element
+        let mut mapping = self.mapping.clone();
+        self.list.on_change(move |event| match event {
+            Event::Pop => element
                 .last_element_child()
                 .expect_internal("get last element of `ReactiveMany` list")
                 .remove(),
             Event::Push(new) => {
-                let mut element = (self.mapping)(new);
+                let mut new_element = mapping(new.clone());
 
-                let dom_element = element.create_dom_element();
-                element.dom_element = Some(Rc::new(dom_element));
-                self.parent.append_child(&dom_element);
+                let dom_element = new_element.create_dom_element();
+                element
+                    .append_child(&dom_element)
+                    .expect_internal("append child");
+                new_element.dom_element = Some(Rc::new(dom_element));
             }
         });
     }

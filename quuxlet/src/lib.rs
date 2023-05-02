@@ -1,5 +1,6 @@
 #![feature(more_qualified_paths, stmt_expr_attributes)]
 #![warn(clippy::pedantic, clippy::nursery)]
+#![allow(incomplete_features)]
 #![feature(return_position_impl_trait_in_trait)]
 
 use components::flashcards;
