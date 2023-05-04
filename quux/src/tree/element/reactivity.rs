@@ -92,7 +92,7 @@ impl Reactivity for Event {
 pub struct Many<'a, T, F, I>
 where
     T: Clone,
-    F: FnMut(T) -> Element<'a, I> + Clone,
+    F: FnMut(T, store::list::Element<T>) -> Element<'a, I> + Clone,
     I: Item,
 {
     list: store::List<T>,
@@ -103,7 +103,7 @@ where
 impl<'a, T, F, I> Debug for Many<'a, T, F, I>
 where
     T: Clone,
-    F: FnMut(T) -> Element<'a, I> + Clone,
+    F: FnMut(T, store::list::Element<T>) -> Element<'a, I> + Clone,
     I: Item,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -134,7 +134,7 @@ where
 impl<'a, T, F, I> Many<'a, T, F, I>
 where
     T: Clone,
-    F: FnMut(T) -> Element<'a, I> + Clone,
+    F: FnMut(T, store::list::Element<T>) -> Element<'a, I> + Clone,
     I: Item,
 {
     pub const fn new(list: store::List<T>, mapping: F) -> Self {
@@ -148,7 +148,7 @@ where
 impl<'a, T, F, I> Reactivity for Many<'a, T, F, I>
 where
     T: Clone + 'a,
-    F: FnMut(T) -> Element<'a, I> + 'static + Clone,
+    F: FnMut(T, store::list::Element<T>) -> Element<'a, I> + 'static + Clone,
     I: Item + 'a,
 {
     fn apply(self: Box<Self>, element: Rc<web_sys::Element>) {
@@ -168,6 +168,18 @@ where
                     .append_child(&dom_element)
                     .expect_internal("append child");
                 new_element.dom_element = Some(Rc::new(dom_element));
+            }
+            Event::Remove(index) => {
+                element
+                    .children()
+                    .item(
+                        #[allow(clippy::cast_possible_truncation)]
+                        {
+                            index as u32
+                        },
+                    )
+                    .expect_internal("get element of `ReactiveMany` list")
+                    .remove();
             }
         });
     }

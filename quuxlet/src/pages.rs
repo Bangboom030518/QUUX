@@ -16,6 +16,7 @@ pub struct Head {
 }
 
 impl Head {
+    #[must_use]
     pub fn new(title: &str) -> Self {
         Self {
             title: title.to_string(),
@@ -32,7 +33,7 @@ impl component::Init for Head {
 }
 
 impl Component for Head {
-    fn render(self, context: Context<Self>) -> impl Item
+    fn render(self, _: Context<Self>) -> impl Item
     where
         Self: Sized,
     {

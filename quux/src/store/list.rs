@@ -3,9 +3,19 @@ use crate::internal::prelude::*;
 
 pub type Callback<T> = Box<dyn FnMut(Event<T>) + 'static>;
 
+#[derive(Clone)]
+pub struct Element<T> {
+    parent: List<T>,
+    index: usize,
+}
+
+impl<T> Element<T> {
+    pub fn remove(&self) {}
+}
+
 #[derive(Serialize, Deserialize, Default)]
 pub struct List<T> {
-    value: RcCell<Vec<T>>,
+    value: RcCell<Vec<(Store<usize>, T)>>,
     #[serde(skip)]
     listeners: RcCell<Vec<Callback<T>>>,
 }
@@ -14,7 +24,13 @@ impl<T> List<T> {
     #[must_use]
     pub fn new(values: Vec<T>) -> Self {
         Self {
-            value: Rc::new(RefCell::new(values)),
+            value: Rc::new(RefCell::new(
+                values
+                    .into_iter()
+                    .enumerate()
+                    .map(|(index, value)| (Store::new(index), value))
+                    .collect(),
+            )),
             listeners: Rc::new(RefCell::new(Vec::new())),
         }
     }
@@ -35,7 +51,9 @@ impl<T> List<T> {
         for listener in listeners.iter_mut() {
             listener(Event::Push(&value));
         }
-        self.value.borrow_mut().push(value);
+        self.value
+            .borrow_mut()
+            .push((Store::new(self.length()), value));
     }
 
     #[must_use]
@@ -50,7 +68,37 @@ impl<T> List<T> {
         for listener in listeners.iter_mut() {
             listener(Event::Pop);
         }
-        Some(value)
+        Some(value.1)
+    }
+
+    #[allow(clippy::must_use_candidate)]
+    pub fn remove(&self, index: usize) -> T
+    where
+        T: Clone,
+    {
+        let mut listeners = self.listeners.borrow_mut();
+        let value = self.value.borrow_mut();
+        // FIXME: adjust indicies after index
+        value.remove(index);
+
+        // *element_refs = element_refs
+        //     .drain_filter(|element| {
+        //         if element.index == index {
+        //             return true;
+        //         }
+
+        //         if element.index > index {
+        //             element.index += 1;
+        //         }
+
+        //         false
+        //     })
+        //     .collect::<Vec<_>>();
+
+        for listener in listeners.iter_mut() {
+            listener(Event::Remove(index));
+        }
+        value.1
     }
 
     /// Gets the interior value
@@ -82,6 +130,7 @@ impl<T> Clone for List<T> {
         Self {
             value: Rc::clone(&self.value),
             listeners: Rc::clone(&self.listeners),
+            element_refs: Rc::clone(&self.element_refs),
         }
     }
 }
@@ -99,5 +148,5 @@ pub enum Event<'a, T> {
     Push(&'a T),
     Pop,
     // Insert(&'a T, usize),
-    // Remove(&'a T, usize),
+    Remove(usize),
 }

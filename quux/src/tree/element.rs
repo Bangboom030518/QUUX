@@ -177,13 +177,13 @@ impl<'a, T: Item> Element<'a, T> {
     where
         E: Clone + 'a,
         I: Item + 'a,
-        F: FnMut(E) -> Element<'a, I> + 'static + Clone,
+        F: FnMut(E, Store<usize>) -> Element<'a, I> + 'static + Clone,
         T: 'a,
     {
         let items = list
             .clone()
             .into_iter()
-            .map(&mut mapping)
+            .map(|value| mapping(value, store::l))
             .collect::<Many<_>>();
 
         #[cfg(target_arch = "wasm32")]
@@ -194,6 +194,7 @@ impl<'a, T: Item> Element<'a, T> {
 
         self.child(items)
     }
+
     #[client]
     pub fn dom_element(&mut self) -> Rc<web_sys::Element> {
         Rc::clone(self.dom_element.get_or_insert_with(|| {

@@ -32,16 +32,6 @@ pub struct Flashcard {
 }
 
 impl Flashcard {
-    pub fn show(&self) {
-        self.is_hidden.set(false);
-    }
-
-    pub fn hide(&self) {
-        self.is_hidden.set(true);
-    }
-}
-
-impl Flashcard {
     pub fn new(term: Term, side: Store<Side>) -> Self {
         Self {
             term,

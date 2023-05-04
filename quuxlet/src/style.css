@@ -14,6 +14,10 @@
   * {
     @apply box-border;
   }
+
+  .btn-square.btn-icon > svg {
+    @apply w-full h-full;
+  }
 }
 
 @define-mixin btn $color {
