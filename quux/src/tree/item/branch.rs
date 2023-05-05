@@ -1,6 +1,6 @@
 macro_rules! branch_decl {
     ($name:ident, $($types:ident),*) => {
-        #[derive(Debug)]
+        #[derive(Clone, Debug)]
         pub enum $name<$($types),*>
         where
             $($types: Item),*
@@ -40,6 +40,18 @@ macro_rules! branch_decl {
             fn insert_id(&mut self, id: u64) -> u64 {
                 match self {
                     $($name::$types(child) => child.insert_id(id)),*
+                }
+            }
+        }
+
+        #[client]
+        impl<$($types),*> From<$name<$($types),*>> for DomRepresentation
+        where
+            $($types: Item),* {
+            fn from(value: $name<$($types),*>) -> Self {
+                match value {
+                    // TODO: allow `from()`
+                    $($name::$types(value) => Into::<Self>::into(value)),*
                 }
             }
         }

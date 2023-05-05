@@ -1,26 +1,23 @@
 use super::Hydrate;
 use crate::internal::prelude::*;
+#[client]
+pub use dom_representation::DomRepresentation;
 pub use empty::Empty;
 pub use many::Many;
 pub use pair::Pair;
 pub use self_closing::SelfClosing;
 
 pub mod branch;
+#[cfg(target_arch = "wasm32")]
+mod dom_representation;
 mod empty;
 mod many;
 mod pair;
 mod self_closing;
-
-impl Item for String {
-    fn insert_id(&mut self, id: u64) -> u64 {
-        id
-    }
-}
-
-impl Hydrate for String {}
+mod text;
 
 pub trait Item: Display + Hydrate + Debug {
-    // TODO: make constants?
+    // TODO: make constants
     fn is_self_closing(&self) -> bool {
         false
     }
@@ -29,15 +26,18 @@ pub trait Item: Display + Hydrate + Debug {
         false
     }
 
+    #[client]
+    fn dom_representation(&self) -> DomRepresentation;
+
     // TODO: why does it skip ids?
     fn insert_id(&mut self, id: u64) -> u64;
 
-    fn boxed<'a>(self) -> Box<dyn Item + 'a>
-    where
-        Self: Sized + 'a,
-    {
-        Box::new(self)
-    }
+    // fn boxed<'a>(self) -> Box<dyn Item + 'a>
+    // where
+    //     Self: Sized + 'a,
+    // {
+    //     Box::new(self)
+    // }
 }
 
 impl<T: Display> Hydrate for Store<T> {

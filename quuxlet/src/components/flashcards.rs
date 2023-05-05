@@ -2,8 +2,6 @@ pub use confidence_rating::ConfidenceRating;
 pub use flashcard::Flashcard;
 use quux::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::cell::Ref;
-
 pub mod confidence_rating;
 pub mod flashcard;
 
@@ -69,29 +67,6 @@ impl component::Init for Flashcards {
     }
 }
 
-struct ForLoop<T, I: Item> {
-    list: store::List<T>,
-    mapping: Box<dyn FnMut(&T) -> I>,
-}
-
-impl<T, I: Item> Component for ForLoop<T, I> {
-    fn render(self, _: quux::context::Context<Self>) -> impl Item
-    where
-        Self: Sized,
-    {
-        div().child(
-            Ref::<_>::from(&self.list)
-                .iter()
-                .map(self.mapping)
-                .collect::<Many<_>>(),
-        )
-    }
-}
-
-// struct ForLoop<T, C>
-// where
-//     C: Component, {}
-
 impl Component for Flashcards {
     fn render(self, _: Context<Self>) -> impl Item {
         let confidence_rating = ConfidenceRating::init(());
@@ -104,7 +79,7 @@ impl Component for Flashcards {
                     .class("flashcard-stack")
                     .reactive_many(self.terms.clone(), {
                         let side = self.side.clone();
-                        move |term| {
+                        move |_, term| {
                             let flashcard = Flashcard::new(term, side.clone());
                             div().component(flashcard)
                         }

@@ -1,6 +1,6 @@
 use crate::internal::prelude::*;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Many<T: Item>(Vec<T>);
 
 impl<T: Item> FromIterator<T> for Many<T> {
@@ -15,6 +15,10 @@ impl<T: Item> Item for Many<T> {
             id = item.insert_id(id + 1);
         }
         id
+    }
+
+    fn dom_representation(&self) -> DomRepresentation {
+        DomRepresentation::Many(self.0.iter().flat_map(Item::dom_representation).collect())
     }
 }
 

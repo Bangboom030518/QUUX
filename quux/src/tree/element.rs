@@ -43,10 +43,6 @@ impl<'a, T: Item> super::Hydrate for Element<'a, T> {
             reactivity.apply(Rc::clone(&dom_element));
         }
 
-        // for event in self.events {
-        //     event.apply(Rc::clone(&dom_element));
-        // }
-
         self.children.hydrate();
     }
 }
@@ -69,6 +65,13 @@ impl<'a> Element<'a, item::Empty> {
     }
 }
 
+#[client]
+impl<'a, T: Item> From<Element<'a, T>> for DomRepresentation {
+    fn from(value: Element<'a, T>) -> Self {
+        Self::One(value.create_element().into())
+    }
+}
+
 impl<'a, T: Item> Item for Element<'a, T> {
     fn insert_id(&mut self, id: u64) -> u64 {
         self.id = Some(id);
@@ -80,6 +83,25 @@ impl<'a, T: Item> Item for Element<'a, T> {
 }
 
 impl<'a, T: Item> Element<'a, T> {
+    #[client]
+    fn create_element(mut self, hydrate: bool) -> web_sys::Element {
+        let dom_element = crate::dom::document()
+            .create_element(&self.tag_name)
+            .expect_internal("create element");
+        for (key, value) in &self.attributes.attributes {
+            dom_element
+                .set_attribute(key, value)
+                .expect_internal("add attribute");
+        }
+        self.dom_element = Some(Rc::new(dom_element.clone()));
+        for node in Into::<DomRepresentation>::into(self.children) {
+            dom_element
+                .append_child(&node)
+                .expect_internal("append node");
+        }
+        dom_element
+    }
+
     #[must_use]
     pub fn attribute<V: Display>(mut self, key: &str, value: V) -> Self {
         self.attributes
@@ -177,13 +199,13 @@ impl<'a, T: Item> Element<'a, T> {
     where
         E: Clone + 'a,
         I: Item + 'a,
-        F: FnMut(E, Store<usize>) -> Element<'a, I> + 'static + Clone,
+        F: FnMut(Store<usize>, E) -> Element<'a, I> + 'static + Clone,
         T: 'a,
     {
         let items = list
             .clone()
             .into_iter()
-            .map(|value| mapping(value, store::l))
+            .map(|(index, value)| mapping(index, value))
             .collect::<Many<_>>();
 
         #[cfg(target_arch = "wasm32")]

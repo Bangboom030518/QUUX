@@ -1,6 +1,6 @@
 use crate::internal::prelude::*;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct SelfClosing;
 
 impl Display for SelfClosing {
@@ -18,5 +18,10 @@ impl Item for SelfClosing {
 
     fn insert_id(&mut self, id: u64) -> u64 {
         id
+    }
+
+    #[client]
+    fn dom_representation(&self) -> DomRepresentation {
+        DomRepresentation::None
     }
 }

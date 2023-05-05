@@ -3,16 +3,6 @@ use crate::internal::prelude::*;
 
 pub type Callback<T> = Box<dyn FnMut(Event<T>) + 'static>;
 
-#[derive(Clone)]
-pub struct Element<T> {
-    parent: List<T>,
-    index: usize,
-}
-
-impl<T> Element<T> {
-    pub fn remove(&self) {}
-}
-
 #[derive(Serialize, Deserialize, Default)]
 pub struct List<T> {
     value: RcCell<Vec<(Store<usize>, T)>>,
@@ -47,13 +37,12 @@ impl<T> List<T> {
     }
 
     pub fn push(&self, value: T) {
+        let index_store = Store::new(self.length());
         let mut listeners = self.listeners.borrow_mut();
         for listener in listeners.iter_mut() {
-            listener(Event::Push(&value));
+            listener(Event::Push(index_store.clone(), &value));
         }
-        self.value
-            .borrow_mut()
-            .push((Store::new(self.length()), value));
+        self.value.borrow_mut().push((index_store, value));
     }
 
     #[must_use]
@@ -77,23 +66,13 @@ impl<T> List<T> {
         T: Clone,
     {
         let mut listeners = self.listeners.borrow_mut();
-        let value = self.value.borrow_mut();
-        // FIXME: adjust indicies after index
-        value.remove(index);
+        let mut list = self.value.borrow_mut();
+        let value = list.remove(index);
 
-        // *element_refs = element_refs
-        //     .drain_filter(|element| {
-        //         if element.index == index {
-        //             return true;
-        //         }
-
-        //         if element.index > index {
-        //             element.index += 1;
-        //         }
-
-        //         false
-        //     })
-        //     .collect::<Vec<_>>();
+        for (store, _) in list.get_mut(index..).unwrap_or(&mut []) {
+            let previous_index = *store.get();
+            store.set(previous_index - 1);
+        }
 
         for listener in listeners.iter_mut() {
             listener(Event::Remove(index));
@@ -107,30 +86,34 @@ impl<T> List<T> {
     where
         T: Clone,
     {
-        self.value.borrow().get(index).cloned()
+        self.value
+            .borrow()
+            .get(index)
+            .cloned()
+            .map(|(_, value)| value)
     }
 }
 
 impl<T: Clone> IntoIterator for List<T> {
-    type Item = T;
+    type Item = (Store<usize>, T);
     type IntoIter = std::vec::IntoIter<Self::Item>;
+
     fn into_iter(self) -> Self::IntoIter {
         self.value.borrow().clone().into_iter()
     }
 }
 
-impl<'a, T> From<&'a List<T>> for std::cell::Ref<'a, Vec<T>> {
-    fn from(value: &'a List<T>) -> Self {
-        value.value.borrow()
-    }
-}
+// impl<'a, T> From<&'a List<T>> for std::cell::Ref<'a, Vec<T>> {
+//     fn from(value: &'a List<T>) -> Self {
+//         value.value.borrow().
+//     }
+// }
 
 impl<T> Clone for List<T> {
     fn clone(&self) -> Self {
         Self {
             value: Rc::clone(&self.value),
             listeners: Rc::clone(&self.listeners),
-            element_refs: Rc::clone(&self.element_refs),
         }
     }
 }
@@ -145,7 +128,7 @@ impl<T: std::fmt::Debug> std::fmt::Debug for List<T> {
 }
 
 pub enum Event<'a, T> {
-    Push(&'a T),
+    Push(Store<usize>, &'a T),
     Pop,
     // Insert(&'a T, usize),
     Remove(usize),

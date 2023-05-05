@@ -1,13 +1,11 @@
-use std::sync::atomic::{AtomicUsize, Ordering::Relaxed};
-
 use super::Head;
 use crate::components::flashcards::Term;
 use quux::{prelude::*, tree::Element};
 
-fn text_input(id: &str, value: &str, placeholder: &str) -> impl Item {
+fn text_input(value: &str, placeholder: &str) -> impl Item {
     input()
         .class("input input-bordered input-primary w-full")
-        .id(id)
+        // .id(id)
         .attribute("type", "text")
         .attribute("placeholder", placeholder)
         .attribute("value", value)
@@ -23,9 +21,11 @@ fn text_input(id: &str, value: &str, placeholder: &str) -> impl Item {
 // }
 
 // TODO: add trippy animations
-fn term_editor<'a>(Term { term, definition }: Term) -> Element<'a, impl Item> {
-    static INDEX: AtomicUsize = AtomicUsize::new(0);
-    let index = INDEX.fetch_add(1, Relaxed);
+fn term_editor<'a>(
+    index: Store<usize>,
+    Term { term, definition }: Term,
+    terms: store::List<Term>,
+) -> Element<'a, impl Item> {
     fieldset()
         .class("card card-bordered shadow")
         .child(legend().class("badge").text("Card"))
@@ -63,16 +63,20 @@ fn term_editor<'a>(Term { term, definition }: Term) -> Element<'a, impl Item> {
                                 .data_attribute("tip", "Delete")
                                 .attribute("title", "Delete")
                                 .attribute("type", "button")
-                                .on("click", event!(|| todo!()))
+                                .on(
+                                    "click",
+                                    event!({
+                                        // let terms = terms.clone()
+                                        move || {
+                                            terms.remove(*index.get());
+                                        }
+                                    }),
+                                )
                                 .text(include_str!("../../assets/bin.svg")),
                         ),
                 )
-                .child(text_input(&format!("new-card-term-{index}"), &term, "Term"))
-                .child(text_input(
-                    &format!("new-card-definition-{index}"),
-                    &definition,
-                    "Definition",
-                )),
+                .child(text_input(&term, "Term"))
+                .child(text_input(&definition, "Definition")),
         )
 }
 
@@ -98,7 +102,10 @@ impl Component for Create {
                         .child(
                             fieldset()
                                 .class("grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(50ch,1fr))]")
-                                .reactive_many(terms.clone(), term_editor),
+                                .reactive_many(terms.clone(), {
+                                    let terms = terms.clone();
+                                    move |index, term| term_editor(index, term, terms.clone())
+                                }),
                         )
                         .child(
                             button()

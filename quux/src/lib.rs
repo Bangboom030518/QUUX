@@ -44,6 +44,8 @@ pub trait SerializePostcard: Serialize {
 
 mod internal {
     pub mod prelude {
+        #[client]
+        pub use super::super::tree::item::DomRepresentation;
         pub use super::super::{
             errors::{self, MapInternal},
             prelude::*,
