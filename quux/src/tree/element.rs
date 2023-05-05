@@ -1,7 +1,6 @@
 use super::DisplayStore;
 use crate::internal::prelude::*;
 pub use reactivity::event;
-use reactivity::Event;
 
 pub mod html;
 pub mod reactivity;
@@ -33,20 +32,6 @@ impl<'a, T: Item> Display for Element<'a, T> {
     }
 }
 
-// TODO: move `Hydrate` trait to client only
-impl<'a, T: Item> super::Hydrate for Element<'a, T> {
-    #[client]
-    fn hydrate(mut self) {
-        let dom_element = self.dom_element();
-
-        for reactivity in self.reactivity {
-            reactivity.apply(Rc::clone(&dom_element));
-        }
-
-        self.children.hydrate();
-    }
-}
-
 impl<'a> Element<'a, item::Empty> {
     #[must_use]
     pub fn new(tag_name: &str) -> Self {
@@ -65,13 +50,6 @@ impl<'a> Element<'a, item::Empty> {
     }
 }
 
-#[client]
-impl<'a, T: Item> From<Element<'a, T>> for DomRepresentation {
-    fn from(value: Element<'a, T>) -> Self {
-        Self::One(value.create_element().into())
-    }
-}
-
 impl<'a, T: Item> Item for Element<'a, T> {
     fn insert_id(&mut self, id: u64) -> u64 {
         self.id = Some(id);
@@ -80,11 +58,27 @@ impl<'a, T: Item> Item for Element<'a, T> {
             .insert("data-quux-id".to_string(), id.to_string());
         self.children.insert_id(id + 1)
     }
+
+    #[client]
+    fn hydrate(&mut self) {
+        let dom_element = self.dom_element();
+
+        for reactivity in &mut self.reactivity {
+            reactivity.apply(Rc::clone(&dom_element));
+        }
+
+        self.children.hydrate();
+    }
+
+    #[client]
+    fn dom_representation(&mut self) -> DomRepresentation {
+        DomRepresentation::One(self.create_element(false).into())
+    }
 }
 
 impl<'a, T: Item> Element<'a, T> {
     #[client]
-    fn create_element(mut self, hydrate: bool) -> web_sys::Element {
+    fn create_element(&mut self, hydrate: bool) -> web_sys::Element {
         let dom_element = crate::dom::document()
             .create_element(&self.tag_name)
             .expect_internal("create element");
@@ -94,10 +88,13 @@ impl<'a, T: Item> Element<'a, T> {
                 .expect_internal("add attribute");
         }
         self.dom_element = Some(Rc::new(dom_element.clone()));
-        for node in Into::<DomRepresentation>::into(self.children) {
+        for node in self.children.dom_representation() {
             dom_element
                 .append_child(&node)
                 .expect_internal("append node");
+        }
+        if hydrate {
+            self.hydrate()
         }
         dom_element
     }
@@ -173,9 +170,9 @@ impl<'a, T: Item> Element<'a, T> {
     #[client]
     pub fn on<F>(mut self, event: &str, callback: F) -> Self
     where
-        F: FnMut() + 'static,
+        F: FnMut() + 'static + Clone,
     {
-        self.reactivity.push(Box::new(Event::new(event, callback)));
+        self.reactivity.push(Box::new(reactivity::Event::new(event, callback)));
         self
     }
 

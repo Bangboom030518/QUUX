@@ -3,12 +3,13 @@ use super::Reactivity;
 use crate::internal::prelude::*;
 use std::fmt::Debug;
 
-pub struct Event {
+// TODO: `'static + Clone`?
+pub struct Event<F: FnMut() + 'static + Clone> {
     name: String,
-    callback: Box<dyn FnMut() + 'static>,
+    callback: F,
 }
 
-impl Debug for Event {
+impl<F: FnMut() + 'static + Clone> Debug for Event<F> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Event")
             .field("name", &self.name)
@@ -17,24 +18,21 @@ impl Debug for Event {
     }
 }
 
-impl Event {
-    pub fn new<F>(name: &str, callback: F) -> Self
-    where
-        F: FnMut() + 'static,
-    {
+impl<F: FnMut() + 'static + Clone> Event<F> {
+    pub fn new(name: &str, callback: F) -> Self {
         Self {
             name: name.to_string(),
-            callback: Box::new(callback),
+            callback,
         }
     }
 }
 
 #[client]
-impl Reactivity for Event {
-    fn apply(self: Box<Self>, element: Rc<web_sys::Element>) {
+impl<F: FnMut() + 'static + Clone> Reactivity for Event<F> {
+    fn apply(&mut self, element: Rc<web_sys::Element>) {
         use wasm_bindgen::prelude::*;
 
-        let closure = Closure::wrap(self.callback);
+        let closure = Closure::wrap(Box::new(self.callback.clone()) as Box<dyn FnMut()>);
 
         element
             .add_event_listener_with_callback(&self.name, closure.as_ref().unchecked_ref())

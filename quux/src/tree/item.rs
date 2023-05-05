@@ -1,4 +1,3 @@
-use super::Hydrate;
 use crate::internal::prelude::*;
 #[client]
 pub use dom_representation::DomRepresentation;
@@ -16,7 +15,7 @@ mod pair;
 mod self_closing;
 mod text;
 
-pub trait Item: Display + Hydrate + Debug {
+pub trait Item: Display + Debug + Sized {
     // TODO: make constants
     fn is_self_closing(&self) -> bool {
         false
@@ -27,7 +26,11 @@ pub trait Item: Display + Hydrate + Debug {
     }
 
     #[client]
-    fn dom_representation(&self) -> DomRepresentation;
+    fn hydrate(&mut self) {}
+
+
+    #[client]
+    fn dom_representation(&mut self) -> DomRepresentation;
 
     // TODO: why does it skip ids?
     fn insert_id(&mut self, id: u64) -> u64;
@@ -38,12 +41,6 @@ pub trait Item: Display + Hydrate + Debug {
     // {
     //     Box::new(self)
     // }
-}
-
-impl<T: Display> Hydrate for Store<T> {
-    fn hydrate(self) {
-        todo!()
-    }
 }
 
 // TODO: allow n-length tuple

@@ -9,8 +9,6 @@ impl Display for SelfClosing {
     }
 }
 
-impl Hydrate for SelfClosing {}
-
 impl Item for SelfClosing {
     fn is_self_closing(&self) -> bool {
         true
@@ -21,7 +19,7 @@ impl Item for SelfClosing {
     }
 
     #[client]
-    fn dom_representation(&self) -> DomRepresentation {
+    fn dom_representation(&mut self) -> DomRepresentation {
         DomRepresentation::None
     }
 }

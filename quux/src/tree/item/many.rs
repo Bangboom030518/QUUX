@@ -17,8 +17,21 @@ impl<T: Item> Item for Many<T> {
         id
     }
 
-    fn dom_representation(&self) -> DomRepresentation {
-        DomRepresentation::Many(self.0.iter().flat_map(Item::dom_representation).collect())
+    #[client]
+    fn hydrate(&mut self) {
+        for item in &mut self.0 {
+            item.hydrate();
+        }
+    }
+
+    #[client]
+    fn dom_representation(&mut self) -> DomRepresentation {
+        DomRepresentation::Many(
+            self.0
+                .iter_mut()
+                .flat_map(Item::dom_representation)
+                .collect(),
+        )
     }
 }
 
@@ -28,16 +41,5 @@ impl<T: Item> Display for Many<T> {
             write!(f, "{item}")?;
         }
         Ok(())
-    }
-}
-
-impl<T: Item> Hydrate for Many<T> {
-    fn hydrate(self)
-    where
-        Self: Sized,
-    {
-        for item in self.0 {
-            item.hydrate();
-        }
     }
 }

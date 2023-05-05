@@ -9,14 +9,6 @@ impl Display for Empty {
     }
 }
 
-impl Hydrate for Empty {}
-
-#[client]
-impl From<Empty> for DomRepresentation {
-    fn from(_: Empty) -> Self {
-        Self::None
-    }
-}
 
 impl Item for Empty {
     fn is_empty(&self) -> bool {
@@ -25,5 +17,10 @@ impl Item for Empty {
 
     fn insert_id(&mut self, id: u64) -> u64 {
         id
+    }
+
+    #[client]
+    fn dom_representation(&mut self) -> DomRepresentation {
+        DomRepresentation::None
     }
 }

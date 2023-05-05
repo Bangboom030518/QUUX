@@ -49,7 +49,7 @@ mod internal {
         pub use super::super::{
             errors::{self, MapInternal},
             prelude::*,
-            tree::{prelude::*, Hydrate},
+            tree::prelude::*,
             SerializePostcard,
         };
         pub use std::{

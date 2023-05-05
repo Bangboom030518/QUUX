@@ -11,5 +11,5 @@ mod many;
 
 #[client]
 pub trait Reactivity: Debug {
-    fn apply(self: Box<Self>, element: Rc<web_sys::Element>);
+    fn apply(&mut self, element: Rc<web_sys::Element>);
 }

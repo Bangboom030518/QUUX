@@ -6,7 +6,7 @@ impl Item for String {
     }
 
     #[client]
-    fn dom_representation(&self) -> DomRepresentation {
+    fn dom_representation(&mut self) -> DomRepresentation {
         DomRepresentation::One(
             web_sys::Text::new_with_data(self)
                 .expect_internal("failed to create text node")
@@ -27,5 +27,3 @@ impl From<String> for DomRepresentation {
         )
     }
 }
-
-impl Hydrate for String {}

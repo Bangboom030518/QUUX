@@ -9,14 +9,14 @@ mod component;
 pub mod element;
 pub mod item;
 
-// TODO: gobble gobble gobble?
-pub trait Hydrate {
-    fn hydrate(self)
-    where
-        Self: Sized,
-    {
-    }
-}
+// // TODO: gobble gobble gobble?
+// pub trait Hydrate {
+//     fn hydrate(self)
+//     where
+//         Self: Sized,
+//     {
+//     }
+// }
 
 type DisplayStore = Store<Box<dyn Display>>;
 

@@ -45,7 +45,7 @@ where
     F: FnMut(Store<usize>, T) -> Element<'a, I> + 'static + Clone,
     I: Item + 'a,
 {
-    fn apply(self: Box<Self>, element: Rc<web_sys::Element>) {
+    fn apply(&mut self, element: Rc<web_sys::Element>) {
         use store::list::Event;
 
         let mut mapping = self.mapping.clone();
@@ -55,8 +55,8 @@ where
                 .expect_internal("get last element of `ReactiveMany` list")
                 .remove(),
             Event::Push(index, new) => {
-                let new_element = mapping(index, new.clone());
-                let dom_element = new_element.create_element();
+                let mut new_element = mapping(index, new.clone());
+                let dom_element = new_element.create_element(true);
                 element
                     .append_child(&dom_element)
                     .expect_internal("append child");

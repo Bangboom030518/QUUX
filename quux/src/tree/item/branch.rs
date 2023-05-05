@@ -8,20 +8,6 @@ macro_rules! branch_decl {
             $($types($types)),*
         }
 
-        impl<$($types),*> Hydrate for $name<$($types),*>
-        where
-            $($types: Item),*
-        {
-            fn hydrate(self)
-            where
-                Self: Sized,
-            {
-                match self {
-                    $($name::$types(child) => child.hydrate()),*
-                }
-            }
-        }
-
         impl<$($types),*> Display for $name<$($types),*>
         where
             $($types: Item),*
@@ -42,16 +28,18 @@ macro_rules! branch_decl {
                     $($name::$types(child) => child.insert_id(id)),*
                 }
             }
-        }
 
-        #[client]
-        impl<$($types),*> From<$name<$($types),*>> for DomRepresentation
-        where
-            $($types: Item),* {
-            fn from(value: $name<$($types),*>) -> Self {
-                match value {
-                    // TODO: allow `from()`
-                    $($name::$types(value) => Into::<Self>::into(value)),*
+            #[client]
+            fn hydrate(&mut self) {
+                match self {
+                    $($name::$types(child) => child.hydrate()),*
+                }
+            }
+
+            #[client]
+            fn dom_representation(&mut self) -> DomRepresentation {
+                match self {
+                    $($name::$types(value) => value.dom_representation()),*
                 }
             }
         }
@@ -60,7 +48,6 @@ macro_rules! branch_decl {
 // TODO: consider the Branch enum futher
 
 pub mod prelude {
-    use super::super::Hydrate;
     use crate::internal::prelude::*;
 
     // TODO: macroify this

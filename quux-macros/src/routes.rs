@@ -80,7 +80,7 @@ impl Routes {
                             let mut tree = quux::component::Component::render(component, quux::context::Context::new());
                             quux::tree::Item::insert_id(&mut tree, 0);
                             // quux::dom::console_log!("{:#?}", tree);
-                            quux::tree::Hydrate::hydrate(tree);
+                            quux::tree::Item::hydrate(&mut tree);
                         }),*
                     };
                 }
