@@ -1,25 +1,24 @@
 use crate::internal::prelude::*;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Text(String);
+pub struct RawHtml(String);
 
-impl Text {
-    pub fn new<S>(text: S) -> Self
+impl RawHtml {
+    pub fn new<S>(html: S) -> Self
     where
         S: Display,
     {
-        Self(text.to_string())
+        Self(html.to_string())
     }
 }
 
-impl Display for Text {
+impl Display for RawHtml {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        // TODO: sanitize html
         Display::fmt(&self.0, f)
     }
 }
 
-impl Item for Text {
+impl Item for RawHtml {
     fn insert_id(&mut self, id: u64) -> u64 {
         id
     }
@@ -27,16 +26,20 @@ impl Item for Text {
     #[client]
     fn dom_representation(&mut self) -> DomRepresentation {
         DomRepresentation::One(
-            web_sys::Text::new_with_data(&self.0)
-                .expect_internal("failed to create text node")
+            web_sys::Range::new()
+                .expect_internal("create `Range`")
+                .create_contextual_fragment(&self.0)
+                .expect_internal("create fragment for `RawHtml`")
                 .into(),
         )
     }
 }
 
+// TODO: only escapes on the client
+
 #[client]
-impl From<Text> for DomRepresentation {
-    fn from(mut value: Text) -> Self {
+impl From<RawHtml> for DomRepresentation {
+    fn from(mut value: RawHtml) -> Self {
         value.dom_representation()
     }
 }

@@ -1,4 +1,7 @@
-use super::DisplayStore;
+use super::{
+    item::{RawHtml, Text},
+    DisplayStore,
+};
 use crate::internal::prelude::*;
 pub use reactivity::event;
 
@@ -63,7 +66,7 @@ impl<'a, T: Item> Item for Element<'a, T> {
     fn hydrate(&mut self) {
         let dom_element = self.dom_element();
 
-        for reactivity in &mut self.reactivity {
+        for reactivity in &mut self.reactivity.drain(..) {
             reactivity.apply(Rc::clone(&dom_element));
         }
 
@@ -94,7 +97,7 @@ impl<'a, T: Item> Element<'a, T> {
                 .expect_internal("append node");
         }
         if hydrate {
-            self.hydrate()
+            self.hydrate();
         }
         dom_element
     }
@@ -146,11 +149,18 @@ impl<'a, T: Item> Element<'a, T> {
         }
     }
 
-    pub fn text<S>(self, text: S) -> Element<'a, Pair<T, String>>
+    pub fn text<S>(self, text: S) -> Element<'a, Pair<T, Text>>
     where
         S: Display,
     {
-        self.child(text.to_string())
+        self.child(Text::new(text))
+    }
+
+    pub fn raw_html<S>(self, html: S) -> Element<'a, Pair<T, RawHtml>>
+    where
+        S: Display,
+    {
+        self.child(RawHtml::new(html))
     }
 
     pub fn component<C>(self, component: C) -> Element<'a, Pair<T, impl Item>>
@@ -172,7 +182,8 @@ impl<'a, T: Item> Element<'a, T> {
     where
         F: FnMut() + 'static + Clone,
     {
-        self.reactivity.push(Box::new(reactivity::Event::new(event, callback)));
+        self.reactivity
+            .push(Box::new(reactivity::Event::new(event, callback)));
         self
     }
 
@@ -196,14 +207,10 @@ impl<'a, T: Item> Element<'a, T> {
     where
         E: Clone + 'a,
         I: Item + 'a,
-        F: FnMut(Store<usize>, E) -> Element<'a, I> + 'static + Clone,
+        F: reactivity::many::Mapping<'a, E, I>,
         T: 'a,
     {
-        let items = list
-            .clone()
-            .into_iter()
-            .map(|(index, value)| mapping(index, value))
-            .collect::<Many<_>>();
+        let items = list.into_many(&mut mapping);
 
         #[cfg(target_arch = "wasm32")]
         {

@@ -4,7 +4,9 @@ pub use dom_representation::DomRepresentation;
 pub use empty::Empty;
 pub use many::Many;
 pub use pair::Pair;
+pub use raw_html::RawHtml;
 pub use self_closing::SelfClosing;
+pub use text::Text;
 
 pub mod branch;
 #[cfg(target_arch = "wasm32")]
@@ -12,6 +14,7 @@ mod dom_representation;
 mod empty;
 mod many;
 mod pair;
+mod raw_html;
 mod self_closing;
 mod text;
 
@@ -27,7 +30,6 @@ pub trait Item: Display + Debug + Sized {
 
     #[client]
     fn hydrate(&mut self) {}
-
 
     #[client]
     fn dom_representation(&mut self) -> DomRepresentation;

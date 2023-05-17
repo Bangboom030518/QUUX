@@ -80,7 +80,7 @@ impl Component for Flashcards {
                     .reactive_many(self.terms.clone(), {
                         let side = self.side.clone();
                         move |_, term| {
-                            let flashcard = Flashcard::new(term, side.clone());
+                            let flashcard = Flashcard::new(term.clone(), side.clone());
                             div().component(flashcard)
                         }
                     }),

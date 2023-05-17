@@ -1,5 +1,8 @@
 use super::RcCell;
-use crate::internal::prelude::*;
+use crate::{
+    internal::prelude::*,
+    tree::{self, element::reactivity},
+};
 
 pub type Callback<T> = Box<dyn FnMut(Event<T>) + 'static>;
 
@@ -92,22 +95,20 @@ impl<T> List<T> {
             .cloned()
             .map(|(_, value)| value)
     }
-}
 
-impl<T: Clone> IntoIterator for List<T> {
-    type Item = (Store<usize>, T);
-    type IntoIter = std::vec::IntoIter<Self::Item>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.value.borrow().clone().into_iter()
+    pub fn into_many<'a, F, I>(&self, mapping: &mut F) -> item::Many<tree::Element<'a, I>>
+    where
+        I: Item + 'a,
+        F: reactivity::many::Mapping<'a, T, I>,
+        T: 'a,
+    {
+        self.value
+            .borrow()
+            .iter()
+            .map(|(index, value)| mapping(index.clone(), value))
+            .collect::<Many<_>>()
     }
 }
-
-// impl<'a, T> From<&'a List<T>> for std::cell::Ref<'a, Vec<T>> {
-//     fn from(value: &'a List<T>) -> Self {
-//         value.value.borrow().
-//     }
-// }
 
 impl<T> Clone for List<T> {
     fn clone(&self) -> Self {

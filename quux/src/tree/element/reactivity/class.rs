@@ -20,7 +20,7 @@ impl Class {
 
 #[client]
 impl Reactivity for Class {
-    fn apply(&mut self, element: Rc<web_sys::Element>) {
+    fn apply(self: Box<Self>, element: Rc<web_sys::Element>) {
         let class = self.class.to_string();
         // TODO: simpler method?
         self.store.on_change(move |_, &enabled| {

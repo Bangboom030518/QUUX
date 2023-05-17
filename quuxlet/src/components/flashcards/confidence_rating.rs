@@ -68,7 +68,7 @@ fn rating_button(store: Store<Rating>, rating: Rating, svg: &str) -> impl Item {
         .on("click", event!(move || store.set(rating)))
         .data_attribute("tip", rating)
         .attribute("title", rating)
-        .text(svg)
+        .raw_html(svg)
 }
 
 impl Component for ConfidenceRating {

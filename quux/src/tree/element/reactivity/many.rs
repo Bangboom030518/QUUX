@@ -6,19 +6,18 @@ use crate::internal::prelude::*;
 #[derive(Clone)]
 pub struct Many<'a, T, F, I>
 where
-    T: Clone,
-    F: FnMut(Store<usize>, T) -> Element<'a, I> + Clone,
+    F: Mapping<'a, T, I>,
     I: Item,
 {
     list: store::List<T>,
     mapping: F,
+    _phantom: PhantomData<&'a I>,
 }
 
 #[client]
 impl<'a, T, F, I> Debug for Many<'a, T, F, I>
 where
-    T: Clone,
-    F: FnMut(Store<usize>, T) -> Element<'a, I> + Clone,
+    F: Mapping<'a, T, I>,
     I: Item,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -29,33 +28,36 @@ where
 #[client]
 impl<'a, T, F, I> Many<'a, T, F, I>
 where
-    T: Clone,
-    F: FnMut(Store<usize>, T) -> Element<'a, I> + Clone,
+    F: Mapping<'a, T, I>,
     I: Item,
 {
     pub const fn new(list: store::List<T>, mapping: F) -> Self {
-        Self { list, mapping }
+        Self {
+            list,
+            mapping,
+            _phantom: PhantomData,
+        }
     }
 }
 
 #[client]
 impl<'a, T, F, I> Reactivity for Many<'a, T, F, I>
 where
-    T: Clone + 'a,
-    F: FnMut(Store<usize>, T) -> Element<'a, I> + 'static + Clone,
-    I: Item + 'a,
+    F: Mapping<'a, T, I>,
+    I: Item,
 {
-    fn apply(&mut self, element: Rc<web_sys::Element>) {
+    fn apply(self: Box<Self>, element: Rc<web_sys::Element>) {
         use store::list::Event;
 
-        let mut mapping = self.mapping.clone();
+        let mut mapping = self.mapping;
+
         self.list.on_change(move |event| match event {
             Event::Pop => element
                 .last_element_child()
                 .expect_internal("get last element of `ReactiveMany` list")
                 .remove(),
             Event::Push(index, new) => {
-                let mut new_element = mapping(index, new.clone());
+                let mut new_element = mapping(index, new);
                 let dom_element = new_element.create_element(true);
                 element
                     .append_child(&dom_element)
@@ -75,4 +77,18 @@ where
             }
         });
     }
+}
+
+pub trait Mapping<'a, T, I>:
+    for<'b> FnMut(Store<usize>, &'b T) -> Element<'a, I> + 'static
+where
+    I: Item,
+{
+}
+
+impl<'a, T, F, I> Mapping<'a, T, I> for F
+where
+    F: for<'b> FnMut(Store<usize>, &'b T) -> Element<'a, I> + 'static,
+    I: Item,
+{
 }

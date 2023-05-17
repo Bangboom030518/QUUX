@@ -23,7 +23,7 @@ fn text_input(value: &str, placeholder: &str) -> impl Item {
 // TODO: add trippy animations
 fn term_editor<'a>(
     index: Store<usize>,
-    Term { term, definition }: Term,
+    Term { term, definition }: &Term,
     terms: store::List<Term>,
 ) -> Element<'a, impl Item> {
     fieldset()
@@ -45,7 +45,7 @@ fn term_editor<'a>(
                                         .attribute("title", "Move Left")
                                         .attribute("type", "button")
                                         .on("click", event!(|| todo!()))
-                                        .text(include_str!("../../assets/left-arrow.svg")),
+                                        .raw_html(include_str!("../../assets/left-arrow.svg")),
                                 )
                                 .child(
                                     button()
@@ -54,7 +54,7 @@ fn term_editor<'a>(
                                         .attribute("title", "Move Right")
                                         .attribute("type", "button")
                                         .on("click", event!(|| todo!()))
-                                        .text(include_str!("../../assets/right-arrow.svg")),
+                                        .raw_html(include_str!("../../assets/right-arrow.svg")),
                                 ),
                         )
                         .child(
@@ -72,7 +72,7 @@ fn term_editor<'a>(
                                         }
                                     }),
                                 )
-                                .text(include_str!("../../assets/bin.svg")),
+                                .raw_html(include_str!("../../assets/bin.svg")),
                         ),
                 )
                 .child(text_input(&term, "Term"))

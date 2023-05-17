@@ -6,10 +6,9 @@ pub use many::Many;
 
 mod class;
 mod event;
-#[cfg(target_arch = "wasm32")]
-mod many;
+pub mod many;
 
 #[client]
 pub trait Reactivity: Debug {
-    fn apply(&mut self, element: Rc<web_sys::Element>);
+    fn apply(self: Box<Self>, element: Rc<web_sys::Element>);
 }
