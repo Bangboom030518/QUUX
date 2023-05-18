@@ -5,7 +5,7 @@ pub use set::Set;
 
 use quux::prelude::*;
 
-mod create;
+pub mod create;
 pub mod error;
 mod index;
 mod set;

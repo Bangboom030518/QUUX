@@ -2,7 +2,11 @@
 // TODO: remove?
 #![allow(clippy::unused_async)]
 #![cfg(not(target_arch = "wasm32"))]
-use quuxlet::pages::{error, Create, Error, Index, Set};
+use std::{collections::HashMap, convert::Infallible};
+
+use http::Uri;
+use quuxlet::pages::{create, error, Create, Error, Index, Set};
+use serde::Deserialize;
 use sqlx::{Pool, Sqlite};
 use warp::{path::FullPath, Filter};
 
@@ -22,17 +26,17 @@ async fn main() {
         .await
         .unwrap();
 
-    let index = warp::path::end().map(|| Index);
-    let create = warp::path!("create").map(|| Create);
-    let set =
-        with_pool(pool)
-            .and(warp::path!("set" / String))
-            .and_then(|pool, id: String| async move {
-                Set::new(&pool, &id).await.map_err(warp::reject::custom)
-            });
+    let index = warp::path::end().and(warp::get()).map(|| Index);
+
+    let set = with_pool(pool)
+        .and(warp::path!("set" / String))
+        .and(warp::get())
+        .and_then(|pool, id: String| async move {
+            Set::new(&pool, &id).await.map_err(warp::reject::custom)
+        });
 
     let not_found = warp::path::full().and_then(|path: FullPath| async move {
-        Err::<std::convert::Infallible, _>(warp::reject::custom(error::NotFound(
+        Err::<Infallible, _>(warp::reject::custom(error::NotFound(
             path.as_str().parse().unwrap(),
         )))
     });
@@ -42,7 +46,7 @@ async fn main() {
     warp::serve(
         index
             .or(set)
-            .or(create)
+            .or(Create::routes())
             .or(warp::path!("dist" / "quuxlet_bg.wasm")
                 .and(warp::filters::fs::file("./dist/quuxlet_bg.wasm"))
                 .with(warp::reply::with::header(

@@ -1,24 +1,16 @@
 use super::Head;
 use crate::components::flashcards::Term;
 use quux::{prelude::*, tree::Element};
+use std::convert::Infallible;
 
 fn text_input(value: &str, placeholder: &str) -> impl Item {
     input()
         .class("input input-bordered input-primary w-full")
-        // .id(id)
+        .attribute("name", format!("{}[]", placeholder.to_lowercase()))
         .attribute("type", "text")
         .attribute("placeholder", placeholder)
         .attribute("value", value)
 }
-// legend {
-//     display: block;
-//     padding-inline-start: 2px;
-//     padding-inline-end: 2px;
-//     border-width: initial;
-//     border-style: none;
-//     border-color: initial;
-//     border-image: initial;
-// }
 
 // TODO: add trippy animations
 fn term_editor<'a>(
@@ -66,7 +58,7 @@ fn term_editor<'a>(
                                 .on(
                                     "click",
                                     event!({
-                                        // let terms = terms.clone()
+                                        // let index = index.clone();
                                         move || {
                                             terms.remove(*index.get());
                                         }
@@ -75,8 +67,8 @@ fn term_editor<'a>(
                                 .raw_html(include_str!("../../assets/bin.svg")),
                         ),
                 )
-                .child(text_input(&term, "Term"))
-                .child(text_input(&definition, "Definition")),
+                .child(text_input(term, "Term"))
+                .child(text_input(definition, "Definition")),
         )
 }
 
@@ -92,6 +84,8 @@ impl Component for Create {
             .child(
                 body().class("p-4 grid content-start").child(h1().text("Create Set")).child(
                     form()
+                        .attribute("action", "create")
+                        .attribute("method", "POST")
                         .class("grid gap-4 w-full")
                         .child(
                             input()
@@ -120,18 +114,57 @@ impl Component for Create {
             .component(InitialisationScript::init(include_str!(
                 "../../dist/init.js"
             )))
+    }
+}
 
-        // view! {
-        //     context,
-        //     fieldset(class="grid gap-4") {
-        //         for term in $terms {
-        //             @Card(term)
-        //         }
-        //     }
-        //     button("type"="button", class="btn btn-primary btn-outline w-full", on:click={
-        //         let terms = terms.clone();
-        //         move || terms.push(Term::new("", ""))
-        //     }) {{ "New Card" }}
-        // }
+impl Create {
+    #[server]
+    #[must_use]
+    pub fn routes() -> impl warp::Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Copy
+    {
+        use http::Uri;
+        use warp::Filter;
+
+        warp::path!("create")
+            .and(warp::get())
+            .map(|| Self)
+            .or(warp::post().and(warp::body::form::<PostData>()).and_then({
+                |data| async move {
+                    println!("{data:?}");
+                    Ok::<_, Infallible>(warp::redirect(Uri::from_static("/create")))
+                }
+            }))
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct PostData {
+    terms: Vec<Term>,
+}
+
+impl PostData {
+    fn from_formdata(value: Vec<(String, String)>) -> Self {
+        let mut terms = Vec::new();
+        let mut iter = value.into_iter();
+        loop {
+            let Some((_, term)) = iter.find(|(key, _)| key == "term[]") else {
+                break
+            };
+            let Some((_, definition)) = iter.find(|(key, _)| key == "definition[]") else {
+                break
+            };
+            terms.push(Term::new(&term, &definition));
+        }
+        Self { terms }
+    }
+}
+
+impl<'de> Deserialize<'de> for PostData {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let data: Vec<(String, String)> = Deserialize::deserialize(deserializer)?;
+        Ok(Self::from_formdata(data))
     }
 }

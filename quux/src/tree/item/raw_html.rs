@@ -35,8 +35,6 @@ impl Item for RawHtml {
     }
 }
 
-// TODO: only escapes on the client
-
 #[client]
 impl From<RawHtml> for DomRepresentation {
     fn from(mut value: RawHtml) -> Self {

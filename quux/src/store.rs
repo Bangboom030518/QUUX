@@ -74,6 +74,6 @@ impl<T: Display> Display for Store<T> {
 
 impl<T: Debug> Debug for Store<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self.get())
+        f.debug_tuple("Store").field(&self.get()).finish()
     }
 }

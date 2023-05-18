@@ -35,11 +35,17 @@ impl Set {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq, Eq)]
 pub struct Term {
     pub term: String,
     pub definition: String,
 }
+
+// impl TryFrom<[(String, String); 2]> for Term {
+//     fn from(value: [(String, String); 2]) -> Self {
+
+//     }
+// }
 
 impl Term {
     pub fn new(term: &str, definition: &str) -> Self {
