@@ -75,6 +75,40 @@ where
                     .expect_internal("get element of `ReactiveMany` list")
                     .remove();
             }
+            Event::Swap(first_index, second_index) => {
+                // TODO: only works with consecutive indices
+                let children = element.children();
+
+                if first_index == second_index {
+                    return;
+                }
+
+                let mut first = children
+                    .item(
+                        #[allow(clippy::cast_possible_truncation)]
+                        {
+                            first_index as u32
+                        },
+                    )
+                    .expect_internal("get element for swapping");
+
+                let mut second = children
+                    .item(
+                        #[allow(clippy::cast_possible_truncation)]
+                        {
+                            second_index as u32
+                        },
+                    )
+                    .expect_internal("get element for swapping");
+
+                if first_index < second_index {
+                    std::mem::swap(&mut first, &mut second);
+                }
+
+                element
+                    .insert_before(&first, Some(&second.into()))
+                    .expect_internal("swap elements");
+            }
         });
     }
 }

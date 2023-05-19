@@ -2,12 +2,11 @@
 // TODO: remove?
 #![allow(clippy::unused_async)]
 #![cfg(not(target_arch = "wasm32"))]
-use std::{collections::HashMap, convert::Infallible};
-
 use http::Uri;
-use quuxlet::pages::{create, error, Create, Error, Index, Set};
+use quuxlet::pages::{create, error, Create, Discover, Error, Index, Set};
 use serde::Deserialize;
 use sqlx::{Pool, Sqlite};
+use std::{collections::HashMap, convert::Infallible};
 use warp::{path::FullPath, Filter};
 
 fn with_pool(
@@ -28,10 +27,15 @@ async fn main() {
 
     let index = warp::path::end().and(warp::get()).map(|| Index);
 
-    let set = with_pool(pool)
-        .and(warp::path!("set" / String))
+    let discover = warp::path!("discover")
         .and(warp::get())
-        .and_then(|pool, id: String| async move {
+        .and(with_pool(pool.clone()))
+        .and_then(|pool| async move { Discover::new(&pool).await.map_err(warp::reject::custom) });
+
+    let set = warp::path!("set" / String)
+        .and(warp::get())
+        .and(with_pool(pool.clone()))
+        .and_then(|id: String, pool| async move {
             Set::new(&pool, &id).await.map_err(warp::reject::custom)
         });
 
@@ -42,11 +46,32 @@ async fn main() {
     });
 
     println!("listening on http://localhost:{PORT}");
+    let create = warp::path!("create")
+        .and(warp::get())
+        .map(|| Create)
+        .or(warp::path!("create")
+            .and(warp::post())
+            .and(with_pool(pool))
+            .and(warp::body::form::<create::PostData>())
+            .and_then({
+                |pool: sqlx::Pool<sqlx::Sqlite>, data: create::PostData| async move {
+                    println!("{data:?}");
+                    let set = quuxlet::Set::create(&pool, &data.name, data.terms)
+                        .await
+                        .map_err(|error| warp::reject::custom(error::Database::from(error)))?;
+
+                    // TODO: `.parse()` is infallible
+                    Ok::<_, warp::Rejection>(warp::redirect(
+                        format!("/set/{}", set.id).parse::<http::Uri>().unwrap(),
+                    ))
+                }
+            }));
 
     warp::serve(
         index
             .or(set)
-            .or(Create::routes())
+            .or(create)
+            .or(discover)
             .or(warp::path!("dist" / "quuxlet_bg.wasm")
                 .and(warp::filters::fs::file("./dist/quuxlet_bg.wasm"))
                 .with(warp::reply::with::header(

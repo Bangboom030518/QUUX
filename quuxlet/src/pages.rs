@@ -1,4 +1,5 @@
 pub use create::Create;
+pub use discover::Discover;
 pub use error::Error;
 pub use index::Index;
 pub use set::Set;
@@ -6,6 +7,7 @@ pub use set::Set;
 use quux::prelude::*;
 
 pub mod create;
+mod discover;
 pub mod error;
 mod index;
 mod set;

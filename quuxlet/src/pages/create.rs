@@ -1,13 +1,15 @@
+use std::collections::HashMap;
+
 use super::Head;
 use crate::components::flashcards::Term;
 use quux::{prelude::*, tree::Element};
-use std::convert::Infallible;
 
 fn text_input(value: &str, placeholder: &str) -> impl Item {
     input()
         .class("input input-bordered input-primary w-full")
         .attribute("name", format!("{}[]", placeholder.to_lowercase()))
         .attribute("type", "text")
+        .attribute("required", true)
         .attribute("placeholder", placeholder)
         .attribute("value", value)
 }
@@ -36,7 +38,18 @@ fn term_editor<'a>(
                                         .data_attribute("tip", "Move Left")
                                         .attribute("title", "Move Left")
                                         .attribute("type", "button")
-                                        .on("click", event!(|| todo!()))
+                                        .on(
+                                            "click",
+                                            event!({
+                                                let terms = terms.clone();
+                                                let index = index.clone();
+                                                move || {
+                                                    let index = *index.get();
+                                                    console_log!("{index}");
+                                                    terms.swap(index, index.saturating_sub(1));
+                                                }
+                                            }),
+                                        )
                                         .raw_html(include_str!("../../assets/left-arrow.svg")),
                                 )
                                 .child(
@@ -45,7 +58,27 @@ fn term_editor<'a>(
                                         .data_attribute("tip", "Move Right")
                                         .attribute("title", "Move Right")
                                         .attribute("type", "button")
-                                        .on("click", event!(|| todo!()))
+                                        .on(
+                                            "click",
+                                            event!({
+                                                let terms = terms.clone();
+                                                let index = index.clone();
+                                                move || {
+                                                    let index_value = *index.get();
+
+                                                    terms.swap(
+                                                        index_value,
+                                                        index_value
+                                                            .saturating_add(1)
+                                                            .min(terms.length() - 1),
+                                                    );
+                                                    console_log!(
+                                                        "{index_value} --> {}",
+                                                        *index.get()
+                                                    );
+                                                }
+                                            }),
+                                        )
                                         .raw_html(include_str!("../../assets/right-arrow.svg")),
                                 ),
                         )
@@ -91,6 +124,7 @@ impl Component for Create {
                             input()
                                 .attribute("type", "text")
                                 .attribute("placeholder", "Set Name")
+                                .attribute("name", "name")
                                 .class("input input-bordered input-primary w-full"),
                         )
                         .child(
@@ -120,42 +154,62 @@ impl Component for Create {
 impl Create {
     #[server]
     #[must_use]
-    pub fn routes() -> impl warp::Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Copy
-    {
-        use http::Uri;
+    pub fn routes<'a>(
+        pool: &'a sqlx::Pool<sqlx::Sqlite>,
+    ) -> impl warp::Filter<Extract = impl warp::Reply, Error = warp::Rejection> + 'a {
         use warp::Filter;
 
         warp::path!("create")
             .and(warp::get())
             .map(|| Self)
-            .or(warp::post().and(warp::body::form::<PostData>()).and_then({
-                |data| async move {
-                    println!("{data:?}");
-                    Ok::<_, Infallible>(warp::redirect(Uri::from_static("/create")))
-                }
-            }))
+            .or(warp::path!("create")
+                .and(warp::post())
+                .and(warp::any().map(move || pool.clone()))
+                .and(warp::body::form::<PostData>())
+                .and_then({
+                    |pool: sqlx::Pool<sqlx::Sqlite>, data: PostData| async move {
+                        println!("{data:?}");
+                        let set = super::super::Set::create(&pool, &data.name, data.terms)
+                            .await
+                            .map_err(|error| {
+                                warp::reject::custom(super::error::Database::from(error))
+                            })?;
+
+                        // TODO: `.parse()` is infallible
+                        Ok::<_, warp::Rejection>(warp::redirect(
+                            format!("/set/{}", set.id).parse::<http::Uri>().unwrap(),
+                        ))
+                    }
+                }))
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct PostData {
-    terms: Vec<Term>,
+    pub terms: Vec<Term>,
+    pub name: String,
 }
 
 impl PostData {
     fn from_formdata(value: Vec<(String, String)>) -> Self {
-        let mut terms = Vec::new();
-        let mut iter = value.into_iter();
-        loop {
-            let Some((_, term)) = iter.find(|(key, _)| key == "term[]") else {
-                break
-            };
-            let Some((_, definition)) = iter.find(|(key, _)| key == "definition[]") else {
-                break
-            };
-            terms.push(Term::new(&term, &definition));
+        let mut data: HashMap<String, Vec<String>> = HashMap::new();
+        for (key, value) in value {
+            data.entry(key).or_default().push(value);
         }
-        Self { terms }
+
+        let terms = std::iter::zip(
+            data.remove("term[]").unwrap_or_default(),
+            data.remove("definition[]").unwrap_or_default(),
+        )
+        .map(|(term, definition)| Term::new(&term, &definition))
+        .collect();
+
+        let name = data
+            .remove("name")
+            .and_then(|mut value| value.pop())
+            .unwrap_or_else(|| "Untitled Set".to_string());
+
+        Self { terms, name }
     }
 }
 

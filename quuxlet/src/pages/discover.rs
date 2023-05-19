@@ -1,0 +1,70 @@
+use quux::prelude::*;
+
+use super::{error, Head};
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct SetCard {
+    pub name: String,
+    pub url: String,
+}
+
+impl Component for SetCard {
+    fn render(self, _: quux::context::Context<Self>) -> impl Item
+    where
+        Self: Sized,
+    {
+        article().class("card shadow bg-base-200").child(
+            div().class("card-body").child(h2().text(self.name)).child(
+                a().attribute("href", self.url)
+                    .class("btn btn-primary")
+                    .text("View Cards"),
+            ),
+        )
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct Discover(Vec<SetCard>);
+
+impl Discover {
+    /// # Errors
+    /// If the database query fails
+    #[server]
+    pub async fn new(pool: &sqlx::Pool<sqlx::Sqlite>) -> Result<Self, error::Database> {
+        let query: sqlx::query::Map<_, _, _> = sqlx::query!("SELECT * FROM sets");
+        let sets = query.fetch_all(pool).await?;
+
+        Ok(Self(
+            sets.into_iter()
+                .map(|entry| SetCard {
+                    name: entry.name,
+                    url: format!("/set/{}", entry.id),
+                })
+                .collect(),
+        ))
+    }
+}
+
+impl Component for Discover {
+    fn render(self, _: quux::context::Context<Self>) -> impl Item
+    where
+        Self: Sized,
+    {
+        html()
+            .attribute("lang", "en")
+            .component(Head::new("Discover - QUUXLET"))
+            .child(
+                body()
+                    .class("p-4 grid content-start")
+                    .child(h1().text("Discover"))
+                    .child(
+                        main().class("p-4 grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(50ch,1fr))]").child(
+                            self.0
+                                .into_iter()
+                                .map(|set| set.render(Context::new()))
+                                .collect::<Many<_>>(),
+                        ),
+                    ),
+            )
+    }
+}

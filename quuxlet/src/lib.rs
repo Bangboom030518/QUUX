@@ -12,7 +12,13 @@ use wasm_bindgen::prelude::*;
 mod components;
 pub mod pages;
 
-routes!(pages::Set, pages::Error, pages::Create, pages::Index);
+routes!(
+    pages::Set,
+    pages::Error,
+    pages::Create,
+    pages::Index,
+    pages::Discover
+);
 
 /// # Panics
 /// This function will panic if it's unable to retrieve and parse the tree sent by the server

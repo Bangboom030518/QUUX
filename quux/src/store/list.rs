@@ -64,6 +64,20 @@ impl<T> List<T> {
     }
 
     #[allow(clippy::must_use_candidate)]
+    pub fn swap(&self, a: usize, b: usize) {
+        let mut listeners = self.listeners.borrow_mut();
+        let mut list = self.value.borrow_mut();
+
+        list[a].0.set(b);
+        list[b].0.set(a);
+        list.swap(a, b);
+
+        for listener in listeners.iter_mut() {
+            listener(Event::Swap(a, b));
+        }
+    }
+
+    #[allow(clippy::must_use_candidate)]
     pub fn remove(&self, index: usize) -> T
     where
         T: Clone,
@@ -131,6 +145,6 @@ impl<T: std::fmt::Debug> std::fmt::Debug for List<T> {
 pub enum Event<'a, T> {
     Push(Store<usize>, &'a T),
     Pop,
-    // Insert(&'a T, usize),
     Remove(usize),
+    Swap(usize, usize),
 }
