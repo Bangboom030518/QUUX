@@ -43,19 +43,21 @@ impl<F: FnMut() + 'static> Reactivity for Event<F> {
         closure.forget();
     }
 }
-
 #[macro_export]
 macro_rules! callback {
-    ($closure:expr) => {{
-        #[cfg(target_arch = "wasm32")]
+    ($closure:expr) => {
+        #[allow(clippy::unit_arg)]
         {
-            $closure
+            #[cfg(target_arch = "wasm32")]
+            {
+                $closure
+            }
+            #[cfg(not(target_arch = "wasm32"))]
+            {
+                ()
+            }
         }
-        #[cfg(not(target_arch = "wasm32"))]
-        {
-            ()
-        }
-    }};
+    };
 }
 
 pub use callback as event;

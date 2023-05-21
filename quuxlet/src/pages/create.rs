@@ -4,10 +4,17 @@ use super::Head;
 use crate::components::flashcards::Term;
 use quux::{prelude::*, tree::Element};
 
-fn text_input(value: &str, placeholder: &str) -> impl Item {
+fn text_input(value: &str, placeholder: &str, multiple: bool) -> impl Item {
     input()
         .class("input input-bordered input-primary w-full")
-        .attribute("name", format!("{}[]", placeholder.to_lowercase()))
+        .attribute(
+            "name",
+            format!(
+                "{}{}",
+                placeholder.to_lowercase(),
+                if multiple { "[]" } else { "" }
+            ),
+        )
         .attribute("type", "text")
         .attribute("required", true)
         .attribute("placeholder", placeholder)
@@ -100,8 +107,8 @@ fn term_editor<'a>(
                                 .raw_html(include_str!("../../assets/bin.svg")),
                         ),
                 )
-                .child(text_input(term, "Term"))
-                .child(text_input(definition, "Definition")),
+                .child(text_input(term, "Term", true))
+                .child(text_input(definition, "Definition", true)),
         )
 }
 
@@ -154,6 +161,7 @@ impl Component for Create {
 impl Create {
     #[server]
     #[must_use]
+    #[allow(clippy::needless_lifetimes, clippy::opaque_hidden_inferred_bound)]
     pub fn routes<'a>(
         pool: &'a sqlx::Pool<sqlx::Sqlite>,
     ) -> impl warp::Filter<Extract = impl warp::Reply, Error = warp::Rejection> + 'a {
@@ -218,7 +226,9 @@ impl<'de> Deserialize<'de> for PostData {
     where
         D: serde::Deserializer<'de>,
     {
-        let data: Vec<(String, String)> = Deserialize::deserialize(deserializer)?;
-        Ok(Self::from_formdata(data))
+        let data: HashMap<String, Vec<String>> = Deserialize::deserialize(deserializer)?;
+
+        panic!("{data:?}")
+        // Ok(Self::from_formdata(data))
     }
 }
