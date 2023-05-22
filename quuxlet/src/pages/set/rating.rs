@@ -25,12 +25,12 @@ impl Display for Rating {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct ConfidenceRating {
+pub struct Selector {
     is_hidden: Store<bool>,
     rating: Store<Rating>,
 }
 
-impl ConfidenceRating {
+impl Selector {
     pub fn show(&self) {
         self.is_hidden.set(false);
     }
@@ -44,7 +44,7 @@ impl ConfidenceRating {
     }
 }
 
-impl component::Init for ConfidenceRating {
+impl component::Init for Selector {
     type Props = ();
 
     fn init(_: Self::Props) -> Self {
@@ -71,7 +71,7 @@ fn rating_button(store: Store<Rating>, rating: Rating, svg: &str) -> impl Item {
         .raw_html(svg)
 }
 
-impl Component for ConfidenceRating {
+impl Component for Selector {
     fn render(self, _: Context<Self>) -> impl Item {
         div()
             .class("btn-group flashcard-hidden")

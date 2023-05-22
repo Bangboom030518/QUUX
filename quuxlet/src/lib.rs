@@ -3,13 +3,11 @@
 #![allow(incomplete_features)]
 #![feature(return_position_impl_trait_in_trait)]
 
-use components::flashcards;
-pub use flashcards::Set;
 use quux::prelude::*;
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
 
-mod components;
+mod data;
 pub mod pages;
 
 routes!(

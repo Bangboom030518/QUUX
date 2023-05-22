@@ -1,8 +1,9 @@
-use std::collections::HashMap;
-
-use super::Head;
-use crate::components::flashcards::Term;
+use super::{nav_bar, Head};
+use crate::data::{Set, Term};
+use post_data::PostData;
 use quux::{prelude::*, tree::Element};
+
+mod post_data;
 
 fn text_input(value: &str, placeholder: &str, multiple: bool) -> impl Item {
     input()
@@ -28,7 +29,7 @@ fn term_editor<'a>(
     terms: store::List<Term>,
 ) -> Element<'a, impl Item> {
     fieldset()
-        .class("card card-bordered shadow")
+        .class("card card-bordered bg-base-200 shadow")
         .child(legend().class("badge").text("Card"))
         .child(
             div()
@@ -122,7 +123,7 @@ impl Component for Create {
             .attribute("lang", "en")
             .component(Head::new("Flashcards - QUUX"))
             .child(
-                body().class("p-4 grid content-start").child(h1().text("Create Set")).child(
+                body().class("p-4 grid content-start").child(nav_bar()).child(h1().text("Create Set")).child(
                     form()
                         .attribute("action", "create")
                         .attribute("method", "POST")
@@ -161,7 +162,9 @@ impl Component for Create {
 impl Create {
     #[server]
     #[must_use]
-    #[allow(clippy::needless_lifetimes, clippy::opaque_hidden_inferred_bound)]
+    #[allow(clippy::needless_lifetimes, opaque_hidden_inferred_bound)]
+    // TODO: remove `allow(..)`
+    #[allow(clippy::missing_panics_doc)]
     pub fn routes<'a>(
         pool: &'a sqlx::Pool<sqlx::Sqlite>,
     ) -> impl warp::Filter<Extract = impl warp::Reply, Error = warp::Rejection> + 'a {
@@ -177,11 +180,12 @@ impl Create {
                 .and_then({
                     |pool: sqlx::Pool<sqlx::Sqlite>, data: PostData| async move {
                         println!("{data:?}");
-                        let set = super::super::Set::create(&pool, &data.name, data.terms)
-                            .await
-                            .map_err(|error| {
-                                warp::reject::custom(super::error::Database::from(error))
-                            })?;
+                        let set =
+                            Set::create(&pool, &data.name, data.terms)
+                                .await
+                                .map_err(|error| {
+                                    warp::reject::custom(super::error::Database::from(error))
+                                })?;
 
                         // TODO: `.parse()` is infallible
                         Ok::<_, warp::Rejection>(warp::redirect(
@@ -189,46 +193,5 @@ impl Create {
                         ))
                     }
                 }))
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct PostData {
-    pub terms: Vec<Term>,
-    pub name: String,
-}
-
-impl PostData {
-    fn from_formdata(value: Vec<(String, String)>) -> Self {
-        let mut data: HashMap<String, Vec<String>> = HashMap::new();
-        for (key, value) in value {
-            data.entry(key).or_default().push(value);
-        }
-
-        let terms = std::iter::zip(
-            data.remove("term[]").unwrap_or_default(),
-            data.remove("definition[]").unwrap_or_default(),
-        )
-        .map(|(term, definition)| Term::new(&term, &definition))
-        .collect();
-
-        let name = data
-            .remove("name")
-            .and_then(|mut value| value.pop())
-            .unwrap_or_else(|| "Untitled Set".to_string());
-
-        Self { terms, name }
-    }
-}
-
-impl<'de> Deserialize<'de> for PostData {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let data: HashMap<String, Vec<String>> = Deserialize::deserialize(deserializer)?;
-
-        panic!("{data:?}")
-        // Ok(Self::from_formdata(data))
     }
 }

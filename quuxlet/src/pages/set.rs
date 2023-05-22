@@ -1,8 +1,15 @@
 #[server]
 use super::error::{self, Error};
-use super::Head;
-use crate::{components::Flashcards, Component};
+use super::{nav_bar, Head};
+use crate::Component;
+pub use flashcard::Flashcard;
 use quux::prelude::*;
+pub use rating::Rating;
+pub use stack::Stack;
+
+pub mod flashcard;
+pub mod rating;
+pub mod stack;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Set(super::super::Set);
@@ -47,8 +54,9 @@ impl Component for Set {
             .component(Head::new(&format!("{} - QUUXLET", self.0.name)))
             .child(
                 body()
-                    .child(h1().text("Welcome to QUUXLET"))
-                    .component(Flashcards::init(self.0.terms))
+                    .child(nav_bar())
+                    .child(h1().text(self.0.name))
+                    .component(Stack::init(self.0.terms))
                     .component(InitialisationScript::init(include_str!(
                         "../../dist/init.js"
                     ))),

@@ -1,4 +1,4 @@
-use super::Term;
+use crate::data::Term;
 use quux::prelude::*;
 use serde::{Deserialize, Serialize};
 

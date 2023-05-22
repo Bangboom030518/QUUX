@@ -1,6 +1,6 @@
 use quux::prelude::*;
 
-use super::{error, Head};
+use super::{error, nav_bar, Head};
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct SetCard {
@@ -13,12 +13,17 @@ impl Component for SetCard {
     where
         Self: Sized,
     {
-        article().class("card shadow bg-base-200").child(
-            div().class("card-body").child(h2().text(self.name)).child(
-                a().attribute("href", self.url)
-                    .class("btn btn-primary")
-                    .text("View Cards"),
-            ),
+        article().class("card shadow w-auto bg-base-200").child(
+            div()
+                .class("card-body")
+                .child(h2().class("card-title break-words").text(self.name))
+                .child(
+                    div().class("card-actions").child(
+                        a().attribute("href", self.url)
+                            .class("btn btn-primary")
+                            .text("View Cards"),
+                    ),
+                ),
         )
     }
 }
@@ -55,10 +60,10 @@ impl Component for Discover {
             .component(Head::new("Discover - QUUXLET"))
             .child(
                 body()
-                    .class("p-4 grid content-start")
-                    .child(h1().text("Discover"))
+                    .class("p-4 grid content-start").child(nav_bar())
+                    .child(h1().class("break-words").text("Discover"))
                     .child(
-                        main().class("p-4 grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(50ch,1fr))]").child(
+                        main().class("p-4 grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(50ch,1fr))] w-full").child(
                             self.0
                                 .into_iter()
                                 .map(|set| set.render(Context::new()))

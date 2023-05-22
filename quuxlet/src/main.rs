@@ -39,11 +39,11 @@ async fn main() {
             Set::new(&pool, &id).await.map_err(warp::reject::custom)
         });
 
-    let not_found = warp::path::full().and_then(|path: FullPath| async move {
-        Err::<Infallible, _>(warp::reject::custom(error::NotFound(
-            path.as_str().parse().unwrap(),
-        )))
-    });
+    // let not_found = warp::path::full().and_then(|path: FullPath| async move {
+    //     Err::<Infallible, _>(warp::reject::custom(error::NotFound(
+    //         path.as_str().parse().unwrap(),
+    //     )))
+    // });
 
     println!("listening on http://localhost:{PORT}");
     let create = warp::path!("create")
@@ -78,9 +78,10 @@ async fn main() {
                     "Content-Type",
                     "application/wasm",
                 )))
-            .or(not_found)
+            // .or(not_found)
             .recover(|rejection| async move {
-                Ok::<_, std::convert::Infallible>(Error::from(rejection))
+                eprintln!("Error: {rejection:?}");
+                Ok::<Error, std::convert::Infallible>(Error::from(rejection))
             }),
     )
     .run(([127, 0, 0, 1], PORT))

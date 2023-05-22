@@ -1,4 +1,4 @@
-use super::Head;
+use super::{nav_bar, Head};
 use quux::prelude::*;
 
 #[derive(Debug)]
@@ -52,7 +52,7 @@ impl Component for Error {
         html()
             .attribute("lang", "en")
             .component(Head::new(&self.title()))
-            .child(body().child(main().child(match self {
+            .child(body().child(nav_bar()).child(main().child(match self {
                 Self::Internal { message } => Branch4::A(children((
                     h1().text("Internal Server Error!"),
                     p().text(message),
