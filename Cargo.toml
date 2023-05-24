@@ -5,11 +5,20 @@ serde = { version = "1.0", features = ["derive", "rc"] }
 postcard = { version = "1.0", features = ["use-std"] }
 lazy_static = "1.4"
 base64 = "0.20"
-web-sys = { version = "0.3", features = ["Document", "Element", "HtmlElement", "Node", "Window", "DomTokenList", "HtmlCollection", "Text", "Range", "SupportedType", "DocumentFragment"] }
+web-sys = { version = "0.3", features = [
+	"Document",
+	"Element",
+	"HtmlElement",
+	"Node",
+	"Window",
+	"DomTokenList",
+	"HtmlCollection",
+	"Text",
+	"Range",
+	"SupportedType",
+	"DocumentFragment",
+	"Comment",
+] }
 
 [workspace]
-members = [
-    "quux-macros",
-    "quux",
-    "quuxlet"
-]
+members = ["quux-macros", "quux", "quuxlet"]

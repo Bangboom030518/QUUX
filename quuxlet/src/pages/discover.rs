@@ -60,15 +60,21 @@ impl Component for Discover {
             .component(Head::new("Discover - QUUXLET"))
             .child(
                 body()
-                    .class("p-4 grid content-start").child(nav_bar())
-                    .child(h1().class("break-words").text("Discover"))
+                    .child(nav_bar())
                     .child(
-                        main().class("p-4 grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(50ch,1fr))] w-full").child(
-                            self.0
-                                .into_iter()
-                                .map(|set| set.render(Context::new()))
-                                .collect::<Many<_>>(),
-                        ),
+                        div()
+                            .class("grid content-start p-4")
+                            .child(h1().class("break-words").text("Discover"))
+                            .child(
+                                main()
+                                    .class("p-4 grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(50ch,1fr))] w-full")
+                                    .child(
+                                        self.0
+                                        .into_iter()
+                                        .map(|set| set.render(Context::new()))
+                                        .collect::<Many<_>>(),
+                                    ),
+                            )
                     ),
             )
     }

@@ -56,7 +56,7 @@ async fn main() {
             .and_then({
                 |pool: sqlx::Pool<sqlx::Sqlite>, data: create::PostData| async move {
                     println!("{data:?}");
-                    let set = quuxlet::Set::create(&pool, &data.name, data.terms)
+                    let set = quuxlet::data::Set::create(&pool, &data.name, data.terms)
                         .await
                         .map_err(|error| warp::reject::custom(error::Database::from(error)))?;
 

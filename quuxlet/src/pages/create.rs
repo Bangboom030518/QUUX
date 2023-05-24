@@ -1,6 +1,6 @@
 use super::{nav_bar, Head};
 use crate::data::{Set, Term};
-use post_data::PostData;
+pub use post_data::PostData;
 use quux::{prelude::*, tree::Element};
 
 mod post_data;
@@ -123,7 +123,7 @@ impl Component for Create {
             .attribute("lang", "en")
             .component(Head::new("Flashcards - QUUX"))
             .child(
-                body().class("p-4 grid content-start").child(nav_bar()).child(h1().text("Create Set")).child(
+                body().child(nav_bar()).child(main().class("grid content-start p-4").child(h1().text("Create Set")).child(
                     form()
                         .attribute("action", "create")
                         .attribute("method", "POST")
@@ -151,7 +151,7 @@ impl Component for Create {
                                 .on("click", event!(move || terms.push(Term::default()))),
                         )
                         .child(button().class("btn btn-primary w-full").text("Create")),
-                ),
+                )),
             )
             .component(InitialisationScript::init(include_str!(
                 "../../dist/init.js"

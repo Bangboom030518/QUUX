@@ -75,39 +75,44 @@ where
                     .expect_internal("get element of `ReactiveMany` list")
                     .remove();
             }
-            Event::Swap(first_index, second_index) => {
-                // TODO: only works with consecutive indices
+            Event::Swap(first, second) => {
                 let children = element.children();
 
-                if first_index == second_index {
+                if first == second {
                     return;
                 }
 
-                let mut first = children
+                let first = children
                     .item(
                         #[allow(clippy::cast_possible_truncation)]
                         {
-                            first_index as u32
+                            first as u32
                         },
                     )
                     .expect_internal("get element for swapping");
 
-                let mut second = children
+                let second = children
                     .item(
                         #[allow(clippy::cast_possible_truncation)]
                         {
-                            second_index as u32
+                            second as u32
                         },
                     )
                     .expect_internal("get element for swapping");
 
-                if first_index < second_index {
-                    std::mem::swap(&mut first, &mut second);
-                }
+                let tmp_node = crate::dom::document().create_comment("");
 
+                // move tmp to first
+                first.replace_with_with_node_1(&tmp_node.clone().into());
+                // move first before second
                 element
-                    .insert_before(&first, Some(&second.into()))
+                    .insert_before(&first, Some(&second.clone().into()))
                     .expect_internal("swap elements");
+                // move second before tmp
+                element
+                    .insert_before(&second, Some(&tmp_node.clone().into()))
+                    .expect_internal("swap elements");
+                tmp_node.remove();
             }
         });
     }

@@ -111,7 +111,12 @@ pub fn nav_bar() -> impl Item {
     }
 
     nav()
-        .class("navbar bg-primary text-primary-content")
-        .child(link("Discover", "/discover"))
-        .child(link("Create", "/create"))
+        .class("navbar bg-base-200")
+        .child(
+            div()
+                .class("navbar-start")
+                .child(link("Discover", "/discover"))
+                .child(link("Create", "/create")),
+        )
+        .child(div().class("navbar-center").child(link("QUUXLET", "/")))
 }

@@ -12,7 +12,7 @@ pub mod rating;
 pub mod stack;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct Set(super::super::Set);
+pub struct Set(crate::data::Set);
 
 #[server]
 impl From<&sqlx::Error> for Error {
@@ -35,12 +35,12 @@ impl Set {
         pool: &sqlx::Pool<sqlx::Sqlite>,
         set_id: &str,
     ) -> Result<Self, error::Database> {
-        Ok(Self::init(super::super::Set::fetch(pool, set_id).await?))
+        Ok(Self::init(crate::data::Set::fetch(pool, set_id).await?))
     }
 }
 
 impl quux::component::Init for Set {
-    type Props = super::super::Set;
+    type Props = crate::data::Set;
 
     fn init(set: Self::Props) -> Self {
         Self(set)
@@ -55,8 +55,12 @@ impl Component for Set {
             .child(
                 body()
                     .child(nav_bar())
-                    .child(h1().text(self.0.name))
-                    .component(Stack::init(self.0.terms))
+                    .child(
+                        main()
+                            .class("grid place-items-center p-4 h-full")
+                            .child(h1().text(self.0.name))
+                            .component(Stack::init(self.0.terms)),
+                    )
                     .component(InitialisationScript::init(include_str!(
                         "../../dist/init.js"
                     ))),

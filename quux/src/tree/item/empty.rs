@@ -9,7 +9,6 @@ impl Display for Empty {
     }
 }
 
-
 impl Item for Empty {
     fn is_empty(&self) -> bool {
         true

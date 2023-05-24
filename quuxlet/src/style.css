@@ -8,7 +8,7 @@
   }
 
   body {
-    @apply min-h-full w-full m-0 grid place-items-center;
+    @apply min-h-full w-full m-0;
   }
 
   * {

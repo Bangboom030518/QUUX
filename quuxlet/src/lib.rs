@@ -7,7 +7,7 @@ use quux::prelude::*;
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
 
-mod data;
+pub mod data;
 pub mod pages;
 
 routes!(

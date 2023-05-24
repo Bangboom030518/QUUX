@@ -18,6 +18,6 @@
 
 // impl<T: Component + Clone> Item for ComponentNode<T> {
 //     fn insert_id(&mut self, id: u64) {
-        
+
 //     }
 // }
