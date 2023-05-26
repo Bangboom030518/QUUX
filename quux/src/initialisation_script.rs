@@ -19,7 +19,6 @@ use crate::internal::prelude::*;
 pub struct InitialisationScript {
     #[serde(skip)]
     init_script: &'static str,
-    // _phantom: std::marker::PhantomData<T>,
 }
 
 impl component::Init for InitialisationScript {
@@ -31,15 +30,11 @@ impl component::Init for InitialisationScript {
 }
 
 impl Component for InitialisationScript {
-    fn render(self, context: crate::view::Context<Self>) -> crate::view::Output<Self> {
-        use crate as quux;
-
-        type Component = InitialisationScript;
-        view! {
-            context,
-            script("type"="module", id="__quux_init_script__", data-quux-tree = "$$QUUX_TREE_INTERPOLATION$$") {
-                {self.init_script}
-            }
-        }
+    fn render(self, _: crate::context::Context<Self>) -> impl Item {
+        script()
+            .attribute("type", "module")
+            .attribute("id", "__quux_init_script__")
+            .attribute("data-quux-tree", "$$QUUX_TREE_INTERPOLATION$$")
+            .text(self.init_script)
     }
 }

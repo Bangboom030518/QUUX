@@ -1,13 +1,13 @@
 {
   "files.exclude": {
-    "..gitignore": true,
-    ".vscode": true,
-    "**/*.lock": true,
-    "target": true,
-    ".devcontainer": true,
-    "assets": true
+    "..gitignore": false,
+    ".vscode": false,
+    "**/*.lock": false,
+    "target": false,
+    ".devcontainer": false,
+    "assets": false
   },
-  "rust-analyzer.cargo.target": "wasm32-unknown-unknown",
+  // "rust-analyzer.cargo.target": "wasm32-unknown-unknown",
   "files.associations": {
     "*.css": "postcss"
   },
@@ -17,5 +17,6 @@
     "strings": true
   },
   "css.validate": false,
-  "editor.inlineSuggest.enabled": true
+  "editor.inlineSuggest.enabled": true,
+  "rust-analyzer.showUnlinkedFileNotification": false
 }

@@ -1,22 +1,24 @@
 #![warn(clippy::pedantic, clippy::nursery)]
+#![allow(incomplete_features)]
+#![feature(return_position_impl_trait_in_trait, drain_filter)]
 
 pub use cfg_if;
 use internal::prelude::*;
 pub use postcard;
 pub use quux_macros as macros;
+pub use serde;
 #[cfg(all(feature = "warp", not(target_arch = "wasm32")))]
 pub use warp;
 
 pub mod component;
+pub mod context;
 pub mod errors;
 pub mod initialisation_script;
 pub mod store;
-pub mod view;
-pub use serde;
+pub mod tree;
 
 #[cfg(target_arch = "wasm32")]
 pub mod dom;
-mod tree;
 
 pub trait SerializePostcard: Serialize {
     fn serialize_bytes(&self) -> Vec<u8> {
@@ -42,14 +44,17 @@ pub trait SerializePostcard: Serialize {
 
 mod internal {
     pub mod prelude {
+        #[client]
+        pub use super::super::tree::item::DomRepresentation;
         pub use super::super::{
             errors::{self, MapInternal},
             prelude::*,
-            view::{ComponentChildren, SerializedComponent},
+            tree::prelude::*,
             SerializePostcard,
         };
         pub use std::{
             cell::{Ref, RefCell},
+            collections::HashMap,
             fmt::{self, Debug, Display},
             marker::PhantomData,
             rc::Rc,
@@ -63,10 +68,17 @@ pub mod prelude {
     pub use super::dom::console_log;
     pub use super::{
         component::{self, Component, Init as _, Routes as _},
+        context::Context,
+        event,
         initialisation_script::InitialisationScript,
         store::{self, Store},
-        view::{Context, Output},
+        tree::{
+            element::html::prelude::*,
+            item::{branch::prelude::*, children, Many},
+            Item,
+        },
     };
+
     #[cfg(feature = "warp")]
     #[macro_export]
     macro_rules! routes {
@@ -74,10 +86,11 @@ pub mod prelude {
             quux::macros::routes!(#warp $($tokens)*);
         };
     }
-    #[cfg(not(feature = "warp"))]
-    pub use quux_macros::routes;
     #[cfg(feature = "warp")]
     pub use routes;
+
+    #[cfg(not(feature = "warp"))]
+    pub use quux_macros::routes;
 
     pub use quux_macros::{client, server, view};
     pub use serde::{de::DeserializeOwned, Deserialize, Serialize};

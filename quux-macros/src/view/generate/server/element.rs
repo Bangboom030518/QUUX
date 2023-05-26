@@ -15,23 +15,43 @@ impl ToTokens for Item {
     }
 }
 
+impl From<Children> for Html {
+    fn from(value: Children) -> Self {
+        match value {
+            Children::ForLoop(for_loop) => Self::from(for_loop),
+            Children::If(if_expr) => Self::from(if_expr),
+            Children::Items(items) => Self::from(items),
+            Children::Match(match_expr) => Self::from(match_expr),
+            Children::ReactiveStore(store) => Self::from(store),
+        }
+    }
+}
+
+impl ToTokens for Children {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        match self {
+            Self::ForLoop(for_loop) => for_loop.to_tokens(tokens),
+            Self::If(if_expr) => if_expr.to_tokens(tokens),
+            Self::Items(items) => items.to_tokens(tokens),
+            Self::Match(match_expr) => match_expr.to_tokens(tokens),
+            Self::ReactiveStore(store) => store.to_tokens(tokens),
+        }
+    }
+}
+
 impl From<Items> for Html {
     fn from(value: Items) -> Self {
         if value.items.is_empty() {
             return Self::default();
         }
 
-        let (html, (components, for_loop_components)): (Vec<_>, (Vec<_>, Vec<_>)) = value
+        let (html, types): (Vec<_>, Vec<_>) = value
             .items
             .iter()
             .cloned()
             .map(|item| {
-                let Self {
-                    html,
-                    components,
-                    for_loop_components,
-                } = item.into();
-                (html, (components.0, for_loop_components.0))
+                let Self { html, ty } = item.into();
+                (html, ty)
             })
             .unzip();
 
@@ -39,8 +59,9 @@ impl From<Items> for Html {
             html: parse_quote! {
                 String::new() + #(&#html)+*
             },
-            components: Components(components.concat()),
-            for_loop_components: ForLoops(for_loop_components.concat()),
+            ty: parse_quote! {
+                (#(#types,)*)
+            },
         }
     }
 }
@@ -56,6 +77,21 @@ fn is_self_closing(tag_name: &str) -> bool {
 impl Element {
     pub fn insert_attribute(&mut self, key: &str, value: Expr) -> Option<Expr> {
         self.attributes.insert_static(key, value)
+    }
+}
+
+impl ToTokens for Element {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let Self {
+            tag_name,
+            attributes,
+            children,
+            ..
+        } = self;
+        quote! {
+            quux::tree::Element::new(#tag_name, #attributes, #children)
+        }
+        .to_tokens(tokens);
     }
 }
 

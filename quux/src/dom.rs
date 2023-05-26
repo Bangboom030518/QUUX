@@ -1,12 +1,14 @@
 use super::errors::MapInternal;
 use wasm_bindgen::prelude::*;
 
+// TODO: consider moving these functions to more relevant locations
+
 /// # Panics
 /// If the element does not exist, it will panic.
 /// It is up to the caller to ensure this is not the case.
 #[must_use]
-pub fn get_reactive_element(parent_id: u64, child_id: u64) -> web_sys::Element {
-    query_selector(&format!("[data-quux-id='{parent_id}.{child_id}']"))
+pub fn get_reactive_element(id: u64) -> web_sys::Element {
+    query_selector(&format!("[data-quux-id='{id}']"))
 }
 
 /// # Panics
@@ -42,13 +44,6 @@ pub fn document() -> web_sys::Document {
 #[must_use]
 pub fn as_html_element(element: web_sys::Element) -> web_sys::HtmlElement {
     wasm_bindgen::JsCast::dyn_into(element).expect_internal("cast `Element` to `HTMLElement`")
-}
-
-#[must_use]
-pub fn create_element(tag_name: &str) -> web_sys::Element {
-    document()
-        .create_element(tag_name)
-        .expect_internal("create element")
 }
 
 #[wasm_bindgen]

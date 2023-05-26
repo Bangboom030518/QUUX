@@ -1,7 +1,7 @@
 use crate::internal::prelude::*;
 
-pub trait Component: Serialize + ComponentChildren {
-    fn render(self, context: crate::view::Context<Self>) -> crate::view::Output<Self>
+pub trait Component {
+    fn render(self, context: crate::context::Context<Self>) -> impl Item
     where
         Self: Sized;
 }
@@ -31,30 +31,28 @@ pub trait Routes: Serialize + DeserializeOwned {
             .map_or_else(|| Err(errors::InitApp::NoTreeOnInitScript), Ok)?;
 
         let tree = Self::deserialize_base64(&tree).map_err(errors::InitApp::InvalidTree)?;
-        tree.render();
+        tree.hydrate();
         Ok(())
     }
 
     #[client]
-    fn render(self);
+    fn hydrate(self);
 
     #[server]
-    fn render_to_string<T: Component>(component: T) -> String
+    fn render_to_string<T: Component + Clone + Serialize>(component: T) -> String
     where
-        Self: Sized + From<SerializedComponent<T>>,
+        Self: Sized + From<T>,
     {
-        let crate::view::Output {
-            html,
-            component_node,
-            ..
-        } = component.render(crate::view::Context::new(0, None));
-        let component_node = Self::from(component_node);
-        let bytes =
-            postcard::to_stdvec(&component_node).expect_internal("serialize `RenderContext`");
-        let component_node = base64::encode(bytes);
+        let mut tree = component.clone().render(crate::context::Context::new());
+        tree.insert_id(0);
+        let html = tree.to_string();
+        // TODO: serialize component
+        let component = Self::from(component);
+        let bytes = postcard::to_stdvec(&component).expect_internal("serialize `RenderContext`");
+        let tree = base64::encode(bytes);
         format!(
             "<!DOCTYPE html>{}",
-            html.replace("$$QUUX_TREE_INTERPOLATION$$", &component_node)
+            html.replace("$$QUUX_TREE_INTERPOLATION$$", &tree)
         )
     }
 }

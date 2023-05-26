@@ -1,0 +1,98 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    @apply w-full h-full m-0 prose dark:prose-invert max-w-none;
+  }
+
+  body {
+    @apply min-h-full w-full m-0;
+  }
+
+  * {
+    @apply box-border;
+  }
+
+  .btn-square.btn-icon > svg {
+    @apply w-full h-full;
+  }
+}
+
+@define-mixin btn $color {
+  .btn-$(color) {
+    --tw-border-opacity: 1;
+    border-color: theme("colors.$color.DEFAULT" / var(--tw-border-opacity));
+    --tw-bg-opacity: 1;
+    background-color: theme("colors.$color.DEFAULT" / var(--tw-bg-opacity));
+    --tw-text-opacity: 1;
+    /* TODO: Fix `color` */
+    color: hsl(var(--pc) / var(--tw-text-opacity));
+
+    &.btn-active,
+    &:hover {
+      --tw-border-opacity: 1;
+      border-color: theme("colors.$color.accent" / var(--tw-border-opacity));
+      --tw-bg-opacity: 1;
+      background-color: theme("colors.$color.accent" / var(--tw-bg-opacity));
+    }
+
+    &:focus-visible {
+      outline: 2px solid theme("colors.$color.DEFAULT");
+    }
+  }
+}
+
+@layer components {
+  .flashcard-stack {
+    display: inline-grid;
+    place-items: center;
+    align-items: flex-end;
+    > * {
+      grid-column-start: 1;
+      grid-row-start: 1;
+      transform: translateY(10%) scale(0.9);
+      z-index: 1;
+      width: 100%;
+      opacity: 0.6;
+    }
+
+    > :nth-last-child(1) {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+
+    > :nth-last-child(2) {
+      transform: translateY(5%) scale(0.95);
+      opacity: 0.8;
+    }
+  }
+
+  .flashcard-hidden {
+    @apply opacity-0 translate-y-10 pointer-events-none -z-10;
+  }
+
+  .btn-icon {
+    @apply p-1 h-fit;
+    svg {
+      @apply w-12 h-12;
+    }
+  }
+
+  .base-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+
+    main {
+      @apply grid p-4 gap-4 place-items-center;
+    }
+  }
+
+  @mixin btn terrible;
+  @mixin btn bad;
+  @mixin btn ok;
+  @mixin btn good;
+  @mixin btn perfect;
+}

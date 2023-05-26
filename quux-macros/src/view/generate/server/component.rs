@@ -47,8 +47,7 @@ impl From<Component> for Html {
         };
         Self {
             html,
-            components: Components(vec![value]),
-            for_loop_components: ForLoops::default(),
+            ty: todo!(),
         }
     }
 }

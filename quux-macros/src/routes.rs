@@ -16,7 +16,7 @@ impl Route {
     fn variant(&self) -> TokenStream {
         let Self { ty, variant_name } = self;
         quote! {
-            #variant_name(quux::view::SerializedComponent<#ty>)
+            #variant_name(#ty)
         }
     }
 
@@ -37,8 +37,8 @@ impl Route {
         quote! {
             #warp_code
 
-            impl From<SerializedComponent<#ty>> for Routes {
-                fn from(value: SerializedComponent<#ty>) -> Self {
+            impl From<#ty> for Routes {
+                fn from(value: #ty) -> Self {
                     Self::#variant_name(value)
                 }
             }
@@ -74,10 +74,13 @@ impl Routes {
 
             impl quux::component::Routes for Routes {
                 #[quux::prelude::client]
-                fn render(self) {
+                fn hydrate(self) {
                     match self {
                         #(Self::#variants(component) => {
-                            quux::view::SerializedComponent::render(component);
+                            let mut tree = quux::component::Component::render(component, quux::context::Context::new());
+                            quux::tree::Item::insert_id(&mut tree, 0);
+                            // quux::dom::console_log!("{:#?}", tree);
+                            quux::tree::Item::hydrate(&mut tree);
                         }),*
                     };
                 }

@@ -1,0 +1,32 @@
+[package]
+name = "quuxlet"
+version = "0.1.0"
+edition = "2021"
+repository = "https://github.com/Bangboom030518/QUUX"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+quux = { path = "../quux", features = ["warp"] }
+quux-macros = { path = "../quux-macros" }
+wasm-bindgen = { workspace = true }
+serde = { workspace = true }
+http = "0.2"
+thiserror = "1.0"
+
+[target.'cfg(not(target_arch="wasm32"))'.dependencies]
+tokio = { workspace = true }
+sqlx = { version = "0.6", features = ["runtime-tokio-native-tls", "sqlite"] }
+warp = "0.3"
+nanoid = "0.4"
+hyper = { version = "0.14", features = ["full"] }
+
+[target.'cfg(target_arch="wasm32")'.dependencies]
+web-sys = { workspace = true }
+lazy_static = { workspace = true }
+base64 = { workspace = true }
+postcard = { workspace = true }
+console_error_panic_hook = "0.1"

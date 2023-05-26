@@ -1,11 +1,14 @@
 use super::RcCell;
-use crate::internal::prelude::*;
+use crate::{
+    internal::prelude::*,
+    tree::{self, element::reactivity},
+};
 
 pub type Callback<T> = Box<dyn FnMut(Event<T>) + 'static>;
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct List<T> {
-    value: RcCell<Vec<T>>,
+    value: RcCell<Vec<(Store<usize>, T)>>,
     #[serde(skip)]
     listeners: RcCell<Vec<Callback<T>>>,
 }
@@ -14,7 +17,13 @@ impl<T> List<T> {
     #[must_use]
     pub fn new(values: Vec<T>) -> Self {
         Self {
-            value: Rc::new(RefCell::new(values)),
+            value: Rc::new(RefCell::new(
+                values
+                    .into_iter()
+                    .enumerate()
+                    .map(|(index, value)| (Store::new(index), value))
+                    .collect(),
+            )),
             listeners: Rc::new(RefCell::new(Vec::new())),
         }
     }
@@ -31,11 +40,12 @@ impl<T> List<T> {
     }
 
     pub fn push(&self, value: T) {
+        let index_store = Store::new(self.length());
         let mut listeners = self.listeners.borrow_mut();
         for listener in listeners.iter_mut() {
-            listener(Event::Push(&value));
+            listener(Event::Push(index_store.clone(), &value));
         }
-        self.value.borrow_mut().push(value);
+        self.value.borrow_mut().push((index_store, value));
     }
 
     #[must_use]
@@ -45,13 +55,46 @@ impl<T> List<T> {
 
     #[allow(clippy::must_use_candidate)]
     pub fn pop(&self) -> Option<T> {
-        let index = self.length() - 1;
         let mut listeners = self.listeners.borrow_mut();
         let value = self.value.borrow_mut().pop()?;
         for listener in listeners.iter_mut() {
-            listener(Event::Pop(&value, index));
+            listener(Event::Pop);
         }
-        Some(value)
+        Some(value.1)
+    }
+
+    #[allow(clippy::must_use_candidate)]
+    pub fn swap(&self, a: usize, b: usize) {
+        let mut listeners = self.listeners.borrow_mut();
+        let mut list = self.value.borrow_mut();
+
+        list[a].0.set(b);
+        list[b].0.set(a);
+        list.swap(a, b);
+
+        for listener in listeners.iter_mut() {
+            listener(Event::Swap(a, b));
+        }
+    }
+
+    #[allow(clippy::must_use_candidate)]
+    pub fn remove(&self, index: usize) -> T
+    where
+        T: Clone,
+    {
+        let mut listeners = self.listeners.borrow_mut();
+        let mut list = self.value.borrow_mut();
+        let value = list.remove(index);
+
+        for (store, _) in list.get_mut(index..).unwrap_or(&mut []) {
+            let previous_index = *store.get();
+            store.set(previous_index - 1);
+        }
+
+        for listener in listeners.iter_mut() {
+            listener(Event::Remove(index));
+        }
+        value.1
     }
 
     /// Gets the interior value
@@ -60,13 +103,24 @@ impl<T> List<T> {
     where
         T: Clone,
     {
-        self.value.borrow().get(index).cloned()
+        self.value
+            .borrow()
+            .get(index)
+            .cloned()
+            .map(|(_, value)| value)
     }
-}
 
-impl<'a, T> From<&'a List<T>> for std::cell::Ref<'a, Vec<T>> {
-    fn from(value: &'a List<T>) -> Self {
-        value.value.borrow()
+    pub fn into_many<'a, F, I>(&self, mapping: &mut F) -> item::Many<tree::Element<'a, I>>
+    where
+        I: Item + 'a,
+        F: reactivity::many::Mapping<'a, T, I>,
+        T: 'a,
+    {
+        self.value
+            .borrow()
+            .iter()
+            .map(|(index, value)| mapping(index.clone(), value))
+            .collect::<Many<_>>()
     }
 }
 
@@ -89,8 +143,8 @@ impl<T: std::fmt::Debug> std::fmt::Debug for List<T> {
 }
 
 pub enum Event<'a, T> {
-    Push(&'a T),
-    Pop(&'a T, usize),
-    // Insert(&'a T, usize),
-    // Remove(&'a T, usize),
+    Push(Store<usize>, &'a T),
+    Pop,
+    Remove(usize),
+    Swap(usize, usize),
 }

@@ -4,7 +4,7 @@ use for_loop::Iterable;
 
 impl ForLoop {
     pub fn html(self) -> Html {
-        let ident = self.ident();
+        let ident: Ident = self.ident();
         let Self {
             pattern,
             iterable,
@@ -20,30 +20,57 @@ impl ForLoop {
                 }
             }
         };
-        let Html {
-            html,
-            components,
-            mut for_loop_components,
-        } = (*item).into();
+        let Html { html, ty } = (*item).into();
 
-        // push the the type of for loop's children to the return type so the root item may declare and use them
-        for_loop_components.0.push(self);
-
-        let declarations = components.declarations();
-        let expr = components.expr();
-
-        Html {
-            html: parse_quote! {{
-                let (html, components): (String, Vec<_>) = (#iterable).enumerate().map(|(index, #pattern)| {
-                    #declarations
-
-                    (ToString::to_string(&#html), #expr)
-                }).unzip();
+        Html::new(
+            parse_quote! {{
+                let html: String = (#iterable).enumerate().map(|(index, #pattern)| {
+                    ToString::to_string(&#html)
+                }).collect();
                 #ident = components;
                 html
             }},
-            for_loop_components,
-            ..Default::default()
-        }
+            todo!(),
+        )
+    }
+}
+
+impl From<ForLoop> for Html {
+    fn from(value: ForLoop) -> Self {
+        let ident: Ident = value.ident();
+        let ForLoop {
+            pattern,
+            iterable,
+            mut item,
+            ..
+        } = value;
+        let iterable = match iterable {
+            Iterable::Static(iterable) => quote! { #iterable },
+            Iterable::Reactive(iterable) => {
+                item.insert_for_loop_id(value.id);
+                quote! {
+                    (std::cell::Ref::<Vec<_>>::from(&#iterable)).iter().cloned()
+                }
+            }
+        };
+        // let Html {
+        //     html,
+        //     components,
+        //     mut for_loop_components,
+        // } = (*item).into();
+
+        // let declarations = components.declarations();
+        // let expr = components.expr();
+
+        Html::new(
+            parse_quote! {{
+                let html: String = (#iterable).enumerate().map(|(index, #pattern)| {
+                    ToString::to_string(&#item)
+                }).collect();
+                #ident = components;
+                html
+            }},
+            todo!(),
+        )
     }
 }
