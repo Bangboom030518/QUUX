@@ -1,9 +1,11 @@
 use super::{nav_bar, Head};
 use crate::data::{Set, Term};
 pub use post_data::PostData;
-use quux::{prelude::*, tree::Element};
+use quux::prelude::*;
+use term_card::term_card;
 
 mod post_data;
+mod term_card;
 
 fn text_input(value: &str, placeholder: &str, multiple: bool) -> impl Item {
     input()
@@ -22,97 +24,6 @@ fn text_input(value: &str, placeholder: &str, multiple: bool) -> impl Item {
         .attribute("value", value)
 }
 
-// TODO: add trippy animations
-fn term_editor<'a>(
-    index: Store<usize>,
-    Term { term, definition }: &Term,
-    terms: store::List<Term>,
-) -> Element<'a, impl Item> {
-    fieldset()
-        .class("card card-bordered bg-base-200 shadow")
-        .child(legend().class("badge").text("Card"))
-        .child(
-            div()
-                .class("card-body")
-                .child(
-                    menu()
-                        .class("card-actions justify-between")
-                        .child(
-                            menu()
-                                .class("flex gap-4")
-                                .child(
-                                    button()
-                                        .class("tooltip btn btn-square text-white")
-                                        .data_attribute("tip", "Move Left")
-                                        .attribute("title", "Move Left")
-                                        .attribute("type", "button")
-                                        .on(
-                                            "click",
-                                            event!({
-                                                let terms = terms.clone();
-                                                let index = index.clone();
-                                                move || {
-                                                    let index = *index.get();
-                                                    console_log!("{index}");
-                                                    terms.swap(index, index.saturating_sub(1));
-                                                }
-                                            }),
-                                        )
-                                        .raw_html(include_str!("../../assets/left-arrow.svg")),
-                                )
-                                .child(
-                                    button()
-                                        .class("tooltip btn btn-square text-white")
-                                        .data_attribute("tip", "Move Right")
-                                        .attribute("title", "Move Right")
-                                        .attribute("type", "button")
-                                        .on(
-                                            "click",
-                                            event!({
-                                                let terms = terms.clone();
-                                                let index = index.clone();
-                                                move || {
-                                                    let index_value = *index.get();
-
-                                                    terms.swap(
-                                                        index_value,
-                                                        index_value
-                                                            .saturating_add(1)
-                                                            .min(terms.length() - 1),
-                                                    );
-                                                    console_log!(
-                                                        "{index_value} --> {}",
-                                                        *index.get()
-                                                    );
-                                                }
-                                            }),
-                                        )
-                                        .raw_html(include_str!("../../assets/right-arrow.svg")),
-                                ),
-                        )
-                        .child(
-                            button()
-                                .class("tooltip btn btn-square text-white")
-                                .data_attribute("tip", "Delete")
-                                .attribute("title", "Delete")
-                                .attribute("type", "button")
-                                .on(
-                                    "click",
-                                    event!({
-                                        // let index = index.clone();
-                                        move || {
-                                            terms.remove(*index.get());
-                                        }
-                                    }),
-                                )
-                                .raw_html(include_str!("../../assets/bin.svg")),
-                        ),
-                )
-                .child(text_input(term, "Term", true))
-                .child(text_input(definition, "Definition", true)),
-        )
-}
-
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Create;
 
@@ -123,7 +34,7 @@ impl Component for Create {
             .attribute("lang", "en")
             .component(Head::new("Flashcards - QUUX"))
             .child(
-                body().child(nav_bar()).child(main().class("grid content-start p-4").child(h1().text("Create Set")).child(
+                body().class("base-layout").child(nav_bar()).child(main().child(h1().text("Create Set")).child(
                     form()
                         .attribute("action", "create")
                         .attribute("method", "POST")
@@ -140,7 +51,7 @@ impl Component for Create {
                                 .class("grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(50ch,1fr))]")
                                 .reactive_many(terms.clone(), {
                                     let terms = terms.clone();
-                                    move |index, term| term_editor(index, term, terms.clone())
+                                    move |index, term| term_card(index, term, terms.clone())
                                 }),
                         )
                         .child(

@@ -52,17 +52,22 @@ impl Component for Error {
         html()
             .attribute("lang", "en")
             .component(Head::new(&self.title()))
-            .child(body().child(nav_bar()).child(main().child(match self {
-                Self::Internal { message } => Branch4::A(children((
-                    h1().text("Internal Server Error!"),
-                    p().text(message),
-                ))),
-                Self::Timeout => Branch4::B(h1().text("Request Timeout!")),
-                Self::PageNotFound { uri } => {
-                    Branch4::C(h1().text(format!("Page '{uri}' not found!")))
-                }
-                Self::SetNotFound => Branch4::D(h1().text("Set not found!")),
-            })))
+            .child(
+                body()
+                    .class("base-layout")
+                    .child(nav_bar())
+                    .child(main().child(match self {
+                        Self::Internal { message } => Branch4::A(children((
+                            h1().text("Internal Server Error!"),
+                            p().text(message),
+                        ))),
+                        Self::Timeout => Branch4::B(h1().text("Request Timeout!")),
+                        Self::PageNotFound { uri } => {
+                            Branch4::C(h1().text(format!("Page '{uri}' not found!")))
+                        }
+                        Self::SetNotFound => Branch4::D(h1().text("Set not found!")),
+                    })),
+            )
             .component(InitialisationScript::init(include_str!(
                 "../../dist/init.js"
             )))

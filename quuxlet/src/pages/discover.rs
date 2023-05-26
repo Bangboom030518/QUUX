@@ -60,13 +60,14 @@ impl Component for Discover {
             .component(Head::new("Discover - QUUXLET"))
             .child(
                 body()
+                    .class("base-layout")
                     .child(nav_bar())
                     .child(
-                        div()
+                        main()
                             .class("grid content-start p-4")
                             .child(h1().class("break-words").text("Discover"))
                             .child(
-                                main()
+                                section()
                                     .class("p-4 grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(50ch,1fr))] w-full")
                                     .child(
                                         self.0

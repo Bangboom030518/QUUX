@@ -9,17 +9,6 @@
 
 # TODO
 
-- HOW COMPONENTS MANAGE STATE
-  - Stores?
-- HOW THEY ARE RENDERED
-  - Server Side Static Rendering
-  - Client Side Dynamic Rendering
-- HOW THEY INTERACT WITH THE DOM TREE
-
-  - Child -> Parent Communication
-  - Parent -> Child Communication
-
-- Do we optimise the generated Rust before compiling to WASM?
 - How do we store state in the html?
 - [Module splitting](https://emscripten.org/docs/optimizing/Module-Splitting.html#module-splitting)?
   https://www.arewewebyet.org/topics/frameworks/

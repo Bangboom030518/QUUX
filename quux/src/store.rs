@@ -64,7 +64,7 @@ impl<T> Clone for Store<T> {
 }
 
 impl<T: Display> Display for Store<T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result
     where
         T: Display,
     {
@@ -73,7 +73,7 @@ impl<T: Display> Display for Store<T> {
 }
 
 impl<T: Debug> Debug for Store<T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_tuple("Store").field(&self.get()).finish()
     }
 }

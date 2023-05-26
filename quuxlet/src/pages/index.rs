@@ -11,8 +11,9 @@ impl Component for Index {
             .component(Head::new("QUUXLET - like Quizlet but gud"))
             .child(
                 body()
+                    .class("base-layout")
                     .child(nav_bar())
-                    .child(h1().text("Welcome to QUUXLET"))
+                    .child(main().child(h1().text("Welcome to QUUXLET")))
                     .component(InitialisationScript::init(include_str!(
                         "../../dist/init.js"
                     ))),

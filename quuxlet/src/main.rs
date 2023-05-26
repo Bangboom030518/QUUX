@@ -2,12 +2,9 @@
 // TODO: remove?
 #![allow(clippy::unused_async)]
 #![cfg(not(target_arch = "wasm32"))]
-use http::Uri;
 use quuxlet::pages::{create, error, Create, Discover, Error, Index, Set};
-use serde::Deserialize;
 use sqlx::{Pool, Sqlite};
-use std::{collections::HashMap, convert::Infallible};
-use warp::{path::FullPath, Filter};
+use warp::Filter;
 
 fn with_pool(
     pool: Pool<Sqlite>,

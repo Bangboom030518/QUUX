@@ -9,6 +9,8 @@ pub struct Set {
 }
 
 impl Set {
+    /// # Errors
+    /// If the database query fails
     #[server]
     pub async fn fetch(pool: &sqlx::Pool<sqlx::Sqlite>, set_id: &str) -> Result<Self, sqlx::Error> {
         use sqlx::query::Map;
@@ -35,6 +37,8 @@ impl Set {
         })
     }
 
+    /// # Errors
+    /// if the database query fails
     #[server]
     pub async fn create(
         pool: &sqlx::Pool<sqlx::Sqlite>,
@@ -75,6 +79,7 @@ pub struct Term {
 }
 
 impl Term {
+    #[must_use]
     pub fn new(term: &str, definition: &str) -> Self {
         Self {
             term: term.to_string(),

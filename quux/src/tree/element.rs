@@ -8,6 +8,7 @@ pub use reactivity::event;
 pub mod html;
 pub mod reactivity;
 
+// TODO: make `Element` trait
 #[derive(Debug)]
 pub struct Element<'a, T: Item> {
     tag_name: String,

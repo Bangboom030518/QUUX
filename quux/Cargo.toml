@@ -13,6 +13,7 @@ quux-macros = { path = "../quux-macros/" }
 
 [target.'cfg(not(target_arch="wasm32"))'.dependencies]
 warp = { version = "0.3", optional = true}
+hyper = { version = "0.14", features = ["full"] }
 
 [target.'cfg(target_arch="wasm32")'.dependencies]
 web-sys = { workspace = true }

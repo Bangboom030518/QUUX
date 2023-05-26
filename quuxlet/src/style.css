@@ -80,6 +80,16 @@
     }
   }
 
+  .base-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+
+    main {
+      @apply grid p-4 gap-4 place-items-center;
+    }
+  }
+
   @mixin btn terrible;
   @mixin btn bad;
   @mixin btn ok;

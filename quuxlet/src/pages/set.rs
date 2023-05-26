@@ -54,10 +54,10 @@ impl Component for Set {
             .component(Head::new(&format!("{} - QUUXLET", self.0.name)))
             .child(
                 body()
+                    .class("base-layout")
                     .child(nav_bar())
                     .child(
                         main()
-                            .class("grid place-items-center p-4 h-full")
                             .child(h1().text(self.0.name))
                             .component(Stack::init(self.0.terms)),
                     )
