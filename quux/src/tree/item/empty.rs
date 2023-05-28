@@ -10,9 +10,7 @@ impl Display for Empty {
 }
 
 impl Item for Empty {
-    fn is_empty(&self) -> bool {
-        true
-    }
+    const IS_EMPTY: bool = true;
 
     fn insert_id(&mut self, id: u64) -> u64 {
         id

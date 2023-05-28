@@ -1,3 +1,4 @@
+#![allow(incomplete_features)]
 #![feature(async_fn_in_trait, return_position_impl_trait_in_trait, pattern)]
 use http::{Request, Response, Uri};
 use hyper::{

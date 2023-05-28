@@ -25,7 +25,7 @@ pub struct Element<'a, T: Item> {
 
 impl<'a, T: Item> Display for Element<'a, T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if self.children.is_self_closing() {
+        if T::IS_SELF_CLOSING {
             return write!(f, "<{} {} />", self.tag_name, self.attributes);
         }
         write!(
@@ -190,6 +190,7 @@ impl<'a, T: Item> Element<'a, T> {
 
     #[must_use]
     #[server]
+    #[allow(clippy::missing_const_for_fn)]
     pub fn reactive_class(self, _: &str, _: Store<bool>) -> Self {
         self
     }
@@ -204,6 +205,7 @@ impl<'a, T: Item> Element<'a, T> {
         self
     }
 
+    #[allow(unused_mut, clippy::needless_pass_by_value)]
     pub fn reactive_many<E, F, I>(mut self, list: store::List<E>, mut mapping: F) -> impl Item + 'a
     where
         E: Clone + 'a,
@@ -225,9 +227,17 @@ impl<'a, T: Item> Element<'a, T> {
     #[client]
     pub fn dom_element(&mut self) -> Rc<web_sys::Element> {
         Rc::clone(self.dom_element.get_or_insert_with(|| {
-            Rc::new(crate::dom::get_reactive_element(
+            let selector: &format!(
+                "[data-quux-id='{}']",
                 self.id.expect_internal("get reactive element"),
-            ))
+            );
+            let error_message = format!("get element with selector ({selector})");
+            Rc::new(
+                crate::dom::document()
+                    .query_selector(selector)
+                    .expect_internal(&error_message)
+                    .expect_internal(&error_message),
+            )
         }))
     }
 }

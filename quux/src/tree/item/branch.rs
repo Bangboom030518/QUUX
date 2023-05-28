@@ -45,7 +45,6 @@ macro_rules! branch_decl {
         }
     };
 }
-// TODO: consider the Branch enum futher
 
 pub mod prelude {
     use crate::internal::prelude::*;

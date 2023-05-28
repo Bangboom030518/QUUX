@@ -2,30 +2,31 @@ use super::text_input;
 use crate::data::Term;
 use quux::{prelude::*, tree::Element};
 
+macro_rules! action_button {
+    ($tooltip:expr, $callback:expr, $icon:literal) => {
+        button()
+            .class("tooltip btn btn-square text-white")
+            .data_attribute("tip", $tooltip)
+            .attribute("title", $tooltip)
+            .attribute("type", "button")
+            .on(
+                "click",
+                event!({
+                    // let terms = terms.clone();
+                    // let index = index.clone();
+                    $callback
+                }),
+            )
+            .raw_html(include_str!(concat!("../../../assets/", $icon, ".svg")))
+    };
+}
+
 // TODO: add trippy animations
 pub fn term_card<'a>(
     index: Store<usize>,
     Term { term, definition }: &Term,
     terms: store::List<Term>,
 ) -> Element<'a, impl Item> {
-    macro_rules! action_button {
-        ($tooltip:expr, $callback:expr, $icon:literal) => {
-            button()
-                .class("tooltip btn btn-square text-white")
-                .data_attribute("tip", $tooltip)
-                .attribute("title", $tooltip)
-                .attribute("type", "button")
-                .on(
-                    "click",
-                    event!({
-                        // let terms = terms.clone();
-                        // let index = index.clone();
-                        $callback
-                    }),
-                )
-                .raw_html(include_str!(concat!("../../../assets/", $icon, ".svg")))
-        };
-    }
 
     fieldset()
         .class("card card-bordered bg-base-200 shadow")

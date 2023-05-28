@@ -10,9 +10,7 @@ impl Display for SelfClosing {
 }
 
 impl Item for SelfClosing {
-    fn is_self_closing(&self) -> bool {
-        true
-    }
+    const IS_SELF_CLOSING: bool = true;
 
     fn insert_id(&mut self, id: u64) -> u64 {
         id

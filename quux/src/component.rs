@@ -46,7 +46,6 @@ pub trait Routes: Serialize + DeserializeOwned {
         let mut tree = component.clone().render(crate::context::Context::new());
         tree.insert_id(0);
         let html = tree.to_string();
-        // TODO: serialize component
         let component = Self::from(component);
         let bytes = postcard::to_stdvec(&component).expect_internal("serialize `RenderContext`");
         let tree = base64::encode(bytes);
