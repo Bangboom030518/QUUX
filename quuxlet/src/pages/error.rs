@@ -17,14 +17,14 @@ impl From<sqlx::Error> for Database {
     }
 }
 
-#[server]
-impl warp::reject::Reject for Database {}
+// #[server]
+// impl warp::reject::Reject for Database {}
 
 #[derive(Debug)]
 pub struct NotFound(pub http::Uri);
 
-#[server]
-impl warp::reject::Reject for NotFound {}
+// #[server]
+// impl warp::reject::Reject for NotFound {}
 
 #[derive(Clone, Debug, Serialize, Deserialize, thiserror::Error)]
 #[error("{self:?}")]
@@ -84,30 +84,30 @@ impl From<Error> for http::StatusCode {
     }
 }
 
-#[server]
-impl From<warp::Rejection> for Error {
-    fn from(value: warp::Rejection) -> Self {
-        // TODO: internal errors + not found?
-        if let Some(error) = value.find::<Database>() {
-            return match error {
-                Database::Internal(error) => Self::Internal {
-                    message: error.to_string(),
-                },
-                Database::NotFound => Self::SetNotFound,
-            };
-        }
+// #[server]
+// impl From<warp::Rejection> for Error {
+//     fn from(value: warp::Rejection) -> Self {
+//         // TODO: internal errors + not found?
+//         if let Some(error) = value.find::<Database>() {
+//             return match error {
+//                 Database::Internal(error) => Self::Internal {
+//                     message: error.to_string(),
+//                 },
+//                 Database::NotFound => Self::SetNotFound,
+//             };
+//         }
 
-        if let Some(NotFound(uri)) = value.find::<NotFound>() {
-            return Self::PageNotFound {
-                uri: uri.to_string(),
-            };
-        }
+//         if let Some(NotFound(uri)) = value.find::<NotFound>() {
+//             return Self::PageNotFound {
+//                 uri: uri.to_string(),
+//             };
+//         }
 
-        Self::Internal {
-            message: format!("{value:?}"),
-        }
-    }
-}
+//         Self::Internal {
+//             message: format!("{value:?}"),
+//         }
+//     }
+// }
 
-#[server]
-impl warp::reject::Reject for Error {}
+// #[server]
+// impl warp::reject::Reject for Error {}

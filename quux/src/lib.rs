@@ -6,9 +6,9 @@ pub use cfg_if;
 use internal::prelude::*;
 pub use postcard;
 pub use quux_macros as macros;
+#[cfg(not(target_arch = "wasm32"))]
+pub use quux_server as server;
 pub use serde;
-#[cfg(all(feature = "warp", not(target_arch = "wasm32")))]
-pub use warp;
 
 pub mod component;
 pub mod context;
@@ -78,20 +78,9 @@ pub mod prelude {
             Item,
         },
     };
+    #[server]
+    pub use quux_server::prelude::*;
 
-    #[cfg(feature = "warp")]
-    #[macro_export]
-    macro_rules! routes {
-        ($($tokens:tt)*) => {
-            quux::macros::routes!(#warp $($tokens)*);
-        };
-    }
-    #[cfg(feature = "warp")]
-    pub use routes;
-
-    #[cfg(not(feature = "warp"))]
-    pub use quux_macros::routes;
-
-    pub use quux_macros::{client, server, view};
+    pub use quux_macros::{client, routes, server, view};
     pub use serde::{de::DeserializeOwned, Deserialize, Serialize};
 }

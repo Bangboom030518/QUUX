@@ -20,23 +20,10 @@ impl Route {
         }
     }
 
-    fn implementations(&self, warp: bool) -> TokenStream {
+    fn implementations(&self) -> TokenStream {
         let Self { ty, variant_name } = self;
-        let warp_code = warp
-            .then(|| {
-                quote! {
-                    #[quux::prelude::server]
-                    impl quux::warp::Reply for #ty {
-                        fn into_response(self) -> warp::reply::Response {
-                            warp::reply::html(Routes::render_to_string(self)).into_response()
-                        }
-                    }
-                }
-            })
-            .unwrap_or_default();
-        quote! {
-            #warp_code
 
+        quote! {
             impl From<#ty> for Routes {
                 fn from(value: #ty) -> Self {
                     Self::#variant_name(value)
@@ -46,14 +33,11 @@ impl Route {
     }
 }
 
-struct Routes {
-    routes: Vec<Route>,
-    warp: bool,
-}
+struct Routes(Vec<Route>);
 
 impl Routes {
     fn enum_declaration(&self) -> TokenStream {
-        let variants = self.routes.iter().map(Route::variant);
+        let variants = self.0.iter().map(Route::variant);
         quote! {
             #[derive(quux::prelude::Serialize, quux::prelude::Deserialize, Clone)]
             pub enum Routes {
@@ -64,9 +48,9 @@ impl Routes {
 
     fn implementations(&self) -> TokenStream {
         let (implementations, variants): (TokenStream, Vec<_>) = self
-            .routes
+            .0
             .iter()
-            .map(|route| (route.implementations(self.warp), &route.variant_name))
+            .map(|route| (route.implementations(), &route.variant_name))
             .unzip();
 
         quote! {
@@ -89,19 +73,8 @@ impl Routes {
     }
 }
 
-fn include_warp(input: &mut ParseStream) -> bool {
-    if input.parse::<Token![#]>().is_err() {
-        return false;
-    }
-    if let Ok(ident) = input.parse::<Ident>() {
-        return ident == "warp";
-    }
-    false
-}
-
 impl Parse for Routes {
-    fn parse(mut input: ParseStream) -> syn::Result<Self> {
-        let warp = include_warp(&mut input);
+    fn parse(input: ParseStream) -> syn::Result<Self> {
         let routes = Punctuated::<_, Token![,]>::parse_terminated(input)?
             .into_iter()
             .enumerate()
@@ -111,7 +84,7 @@ impl Parse for Routes {
             })
             .collect();
 
-        Ok(Self { routes, warp })
+        Ok(Self(routes))
     }
 }
 

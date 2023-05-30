@@ -70,39 +70,39 @@ impl Component for Create {
     }
 }
 
-impl Create {
-    #[server]
-    #[must_use]
-    #[allow(clippy::needless_lifetimes, opaque_hidden_inferred_bound)]
-    // TODO: remove `allow(..)`
-    #[allow(clippy::missing_panics_doc)]
-    pub fn routes<'a>(
-        pool: &'a sqlx::Pool<sqlx::Sqlite>,
-    ) -> impl warp::Filter<Extract = impl warp::Reply, Error = warp::Rejection> + 'a {
-        use warp::Filter;
+// impl Create {
+//     #[server]
+//     #[must_use]
+//     #[allow(clippy::needless_lifetimes, opaque_hidden_inferred_bound)]
+//     // TODO: remove `allow(..)`
+//     #[allow(clippy::missing_panics_doc)]
+//     pub fn routes<'a>(
+//         pool: &'a sqlx::Pool<sqlx::Sqlite>,
+//     ) -> impl warp::Filter<Extract = impl warp::Reply, Error = warp::Rejection> + 'a {
+//         use warp::Filter;
 
-        warp::path!("create")
-            .and(warp::get())
-            .map(|| Self)
-            .or(warp::path!("create")
-                .and(warp::post())
-                .and(warp::any().map(move || pool.clone()))
-                .and(warp::body::form::<PostData>())
-                .and_then({
-                    |pool: sqlx::Pool<sqlx::Sqlite>, data: PostData| async move {
-                        println!("{data:?}");
-                        let set =
-                            Set::create(&pool, &data.name, data.terms)
-                                .await
-                                .map_err(|error| {
-                                    warp::reject::custom(super::error::Database::from(error))
-                                })?;
+//         warp::path!("create")
+//             .and(warp::get())
+//             .map(|| Self)
+//             .or(warp::path!("create")
+//                 .and(warp::post())
+//                 .and(warp::any().map(move || pool.clone()))
+//                 .and(warp::body::form::<PostData>())
+//                 .and_then({
+//                     |pool: sqlx::Pool<sqlx::Sqlite>, data: PostData| async move {
+//                         println!("{data:?}");
+//                         let set =
+//                             Set::create(&pool, &data.name, data.terms)
+//                                 .await
+//                                 .map_err(|error| {
+//                                     warp::reject::custom(super::error::Database::from(error))
+//                                 })?;
 
-                        // TODO: `.parse()` is infallible
-                        Ok::<_, warp::Rejection>(warp::redirect(
-                            format!("/set/{}", set.id).parse::<http::Uri>().unwrap(),
-                        ))
-                    }
-                }))
-    }
-}
+//                         // TODO: `.parse()` is infallible
+//                         Ok::<_, warp::Rejection>(warp::redirect(
+//                             format!("/set/{}", set.id).parse::<http::Uri>().unwrap(),
+//                         ))
+//                     }
+//                 }))
+//     }
+// }

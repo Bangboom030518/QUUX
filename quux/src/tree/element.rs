@@ -227,7 +227,7 @@ impl<'a, T: Item> Element<'a, T> {
     #[client]
     pub fn dom_element(&mut self) -> Rc<web_sys::Element> {
         Rc::clone(self.dom_element.get_or_insert_with(|| {
-            let selector: &format!(
+            let selector = &format!(
                 "[data-quux-id='{}']",
                 self.id.expect_internal("get reactive element"),
             );
