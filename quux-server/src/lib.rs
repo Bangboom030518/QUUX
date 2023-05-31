@@ -36,5 +36,5 @@ mod internal {
 }
 
 pub mod prelude {
-    pub use super::handler::{or::HandlerExt as _, server::Server, Handler};
+    pub use super::handler::{and_then::HandlerExt as _, map_err::HandlerExt as _, Handler};
 }

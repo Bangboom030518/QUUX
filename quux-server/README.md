@@ -1,37 +1,54 @@
 # The Server Component of QUUX
 
 ```rust
-#[cfg(ignore)]
-fn a() {
-    server()
-        .route(matching!(Method::Get, "/"), |request| -> Response {
-            handler()
-        })
-        .route(path!("path1"), |request| -> Response { handler() })
-        .route(path!("path2"), |request| -> Response { handler() })
-        .or_default(|request| -> Response { handler() })
-        .error(|error| -> Response { handler() });
-    // route = (Request) -> Option<Result<Response, E>>
+server()
+    .route(matching!(Method::Get, "/" + String), |request| -> Response {
+        handler()
+    })
+    .route(matching!(...), Component::new())
 
-    // generic handler = (I) -> (I, Result<O, E>)
-    // and(
-    //     handler: (I) -> (I, Result<O1, E1>),
-    //     and: (I, O) -> (I, Result<O2, E2>)
-    // ) = (I) -> (I, Result<O2, Either<E1, E2>>)
-    fn and(handler: !, and: !) -> ! {
-        |input| {
-            let (input, result) = handler(input);
-            let output = result.map_err(Either::A)?;
-            let (input, result) = and(input, output);
-            (input, result.map_err(Either::A))
-        }
-    }
+    .route(path!("path1"), |request| -> Response { handler() })
+    .route(path!("path2"), |request| -> Response { handler() })
+    .or_default(|request| -> Response { handler() })
+    .error(|error| -> Response { handler() });
 
-    // (Request) -> (Request, Result<(), FailedMatch>)
-    get()
-        // (Request) -> (Request, Result<u8, Either<FailedMatch, FailedMatch>>)
-        .and(path!(u8))
-        // (Request) -> (Request, Result<Response, Either<Either<FailedMatch, FailedMatch>>, DatabaseError>>)
-        .map(|request, (number)| async move { Response::new(query_database(request)) })
+struct Context<T> {
+    request: Request,
+    output: T,
+    url: Url,
 }
+
+any()
+    .or(
+        any()
+            // Error = Either<Infallible, MatchFailure>
+            // -> = Result<Context<Request>, Context<MatchFailure>>
+            .and_then(|context| if context.method == Method::Get {
+                Ok(context)
+            } else {
+                Err(context.data(MatchFailure))
+            })
+            // Error = Either<Either<Infallible, MatchFailure>, MatchFailure>
+            .and_then(|context| context
+                .match_static_path_segment("hello")
+                .match_path_segment::<String>()
+                .and_then(|string| string)
+            )
+            // Error = Either<Either<Either<Infallible, MatchFailure>, MatchFailure>, DatabaseError>
+            .and_then(|context| {
+                let name = query_database(context)?;
+                Ok(context.data(Response::new(format!("Hello {name}"))))
+            })
+    )
+    .or(|err| {
+
+    })
+
+// (Context<()>) -> Result<Context<()>, Context<FailedMatch>>
+get()
+    // (Context<()>) -> Result<Context<u8>, Context<Either<FailedMatch, FailedMatch>>>
+    .and_then(path!(u8))
+    // (Context<u8>) -> Result<Context<Response>, Context<Either<Either<FailedMatch, FailedMatch>>, DatabaseError>>>
+    .and_then(|context| async move { context.data(Response::new(query_database(context.request, context.extracted))) })
+
 ```
