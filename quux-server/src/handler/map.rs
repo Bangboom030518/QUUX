@@ -1,26 +1,26 @@
 use crate::internal::prelude::*;
 
 #[derive(Debug, Clone)]
-struct MapErr<H, M, E>
+struct Map<H, M, O>
 where
     H: Handler,
-    M: FnMut(H::Error) -> E + Send + Sync,
-    E: Error + Send + Sync,
+    M: FnMut(H::Output) -> O + Send + Sync,
+    O: Send + Sync,
 {
     handler: H,
     mapping: M,
-    _phantom: PhantomData<E>,
+    _phantom: PhantomData<O>,
 }
 
-impl<M, H, E> Handler for MapErr<H, M, E>
+impl<M, H, O> Handler for Map<H, M, O>
 where
     H: Handler,
-    M: FnMut(H::Error) -> E + Send + Sync,
-    E: Error + Send + Sync,
+    M: FnMut(H::Output) -> O + Send + Sync,
+    O: Send + Sync,
 {
     type Input = H::Input;
-    type Output = H::Output;
-    type Error = E;
+    type Output = O;
+    type Error = H::Error;
 
     #[allow(clippy::needless_lifetimes)]
     #[allow(clippy::manual_async_fn)]
@@ -32,19 +32,19 @@ where
             let Self {
                 handler, mapping, ..
             } = self;
-            handler.handle(input).await.map_err(mapping)
+            handler.handle(input).await.map(mapping)
         }
     }
 }
 
 pub trait HandlerExt: Handler {
-    fn map_err<M, E>(self, mapping: M) -> impl Handler
+    fn map<M, O>(self, mapping: M) -> impl Handler
     where
-        M: FnMut(Self::Error) -> E + Send + Sync,
-        E: Error + Send + Sync,
+        M: FnMut(Self::Output) -> O + Send + Sync,
+        O: Send + Sync,
         Self: Sized,
     {
-        MapErr {
+        Map {
             handler: self,
             mapping,
             _phantom: PhantomData,

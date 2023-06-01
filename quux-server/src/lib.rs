@@ -6,23 +6,56 @@
     impl_trait_in_assoc_type
 )]
 
+use std::convert::Infallible;
+
 pub use hyper;
-use url::Url;
+pub use url::Url;
 
 pub mod handler;
 
-pub fn expect_uri(url: &Url) -> http::Uri {
+pub type Request = http::Request<hyper::Body>;
+pub type Response = http::Response<hyper::Body>;
+
+pub(crate) fn expect_uri(url: &Url) -> http::Uri {
     url.as_str()
         .parse()
         .expect("a parsed Url should always be a valid Uri")
 }
 
-// TODO: connection
+#[derive(Debug, thiserror::Error)]
+pub enum Either<A, B> {
+    #[error(transparent)]
+    A(A),
+    #[error(transparent)]
+    B(B),
+}
+
+trait IntoResponse {
+    fn into_response(self) -> Response;
+}
+
+impl<A, B> IntoResponse for Either<A, B>
+where
+    A: IntoResponse,
+    B: IntoResponse,
+{
+    fn into_response(self) -> Response {
+        match self {
+            Either::A(value) => value.into_response(),
+            Either::B(value) => value.into_response(),
+        }
+    }
+}
+
+impl IntoResponse for Infallible {
+    fn into_response(self) -> Response {
+        match self {}
+    }
+}
 
 mod internal {
     pub mod prelude {
-        pub use super::super::prelude::*;
-        pub use http::{Request, Response};
+        pub use super::super::{prelude::*, Either};
         pub use hyper::{
             server::conn::AddrStream,
             service::{make_service_fn, service_fn},
@@ -36,5 +69,5 @@ mod internal {
 }
 
 pub mod prelude {
-    pub use super::handler::{and_then::HandlerExt as _, map_err::HandlerExt as _, Handler};
+    pub use super::{handler::prelude::*, Request, Response};
 }

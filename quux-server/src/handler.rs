@@ -1,27 +1,30 @@
-use http::Request;
-use hyper::Body;
-use std::{error::Error, future::Future, marker::PhantomData};
+use crate::internal::prelude::*;
+use std::{error::Error, future::Future, sync::Arc};
 use url::Url;
 
 pub mod and_then;
+pub mod any;
+pub mod function;
+pub mod map;
 pub mod map_err;
 pub mod or;
 pub mod path_segment;
-pub mod server;
 
-// TODO: consider
-struct Context<O> {
-    request: Request<Body>,
+pub struct Context<O> {
+    request: Request,
     url: Url,
     output: O,
 }
 
-#[derive(Debug, thiserror::Error)]
-enum Either<A, B> {
-    #[error(transparent)]
-    A(A),
-    #[error(transparent)]
-    B(B),
+impl<O> Context<O> {
+    pub fn with_output<T>(self, output: T) -> Context<T> {
+        let Self { request, url, .. } = self;
+        Context {
+            request,
+            url,
+            output,
+        }
+    }
 }
 
 // TODO: connection
@@ -36,33 +39,32 @@ pub trait Handler: Send + Sync {
         &'a mut self,
         input: Self::Input,
     ) -> impl Future<Output = Result<Self::Output, Self::Error>> + Send + Sync + 'a;
+
+    async fn serve(self, addr: impl Into<SocketAddr>)
+    where
+        Self: Sized + Handler<Input = Request, Output = Response> + 'static,
+    {
+        // TODO: Mutex means we lose the benfit of async
+        let server = Arc::new(tokio::sync::Mutex::new(self));
+        let server =
+            hyper::Server::bind(&addr.into()).serve(make_service_fn(move |_: &AddrStream| {
+                let server = Arc::clone(&server);
+                async move {
+                    let server = Arc::clone(&server);
+                    Ok::<_, Infallible>(service_fn(move |request| {
+                        let server = Arc::clone(&server);
+                        async move { server.lock().await.handle(request).await.map(Into::into) }
+                    }))
+                }
+            }));
+
+        server.await.unwrap();
+    }
 }
 
-// pub trait IntoHandler {
-//     fn into_handler<'a>(self) -> impl Handler<'a>;
-// }
-
-// struct HandlerFn<F, Fut, I, O, E>
-// where
-//     F: FnMut(I) -> Fut,
-//     Fut: Future<Output = Result<O, E>> + Send + Sync,
-//     E: Error,
-// {
-//     handler: F,
-//     _phantom: PhantomData<(Fut, I, O, E)>,
-// }
-
-// impl<'a, F, I, O, E> Handler<'a> for HandlerFn<F, Fut, I, O, E>
-// where
-//     F: FnMut(I) -> Fut,
-//     // Fut: Future<Output = Result<O, E>> + Send + Sync,
-//     E: Error,
-// {
-//     type Input = I;
-//     type Output = O;
-//     type Error = E;
-
-//     fn handle(&mut self, input: Self::Input) -> impl Future<Output = Result<O, E>> + Send + Sync {
-//         self(input)
-//     }
-// }
+pub mod prelude {
+    pub use super::{
+        and_then::HandlerExt as _, function::handler, map::HandlerExt as _,
+        map_err::HandlerExt as _, or::HandlerExt as _, Handler,
+    };
+}

@@ -39,6 +39,24 @@ any()
                 let name = query_database(context)?;
                 Ok(context.data(Response::new(format!("Hello {name}"))))
             })
+            FnMut<Args = (A, B, C), Output = ()>
+    )
+    .or(
+        any()
+            .and_then(match_route("api"))
+            .and_then(
+                {
+                    let handler =
+                        match_route("number")
+                            .and_then(respond(42))
+                            .or(
+                                any()
+                                    .and_then(match_route("number"))
+                                    .and_then(respond(42))
+                            );
+                    |context| handler.handle(context)
+                }
+            )
     )
     .or(|err| {
 
