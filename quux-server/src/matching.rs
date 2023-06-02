@@ -1,18 +1,51 @@
 use crate::internal::prelude::*;
 
+pub use path::{path, Path};
+
 mod path;
 
 #[derive(Debug, thiserror::Error)]
 #[error("failed to match in handler")]
 pub struct MatchError;
 
-pub struct Matching<P> {
-    _phantom: PhantomData<P>,
+pub struct Matching<H, O>
+where
+    H: Handler<Input = Context<()>, Output = Context<O>>,
+    O: Send + Sync,
+{
+    handler: H,
 }
 
-// impl<P> Matching<P> {
-//     pub fn route(route: Route) -> Self {}
-// }
+impl<H, O> Matching<H, O>
+where
+    H: Handler<Input = Context<()>, Output = Context<O>>,
+    O: Send + Sync,
+{
+    pub fn new(handler: H) -> Self {
+        Self { handler }
+    }
+    /*
+    expected struct `handler::Context<()>`
+       found struct `handler::Context<O>`
+    */
+    pub fn path<H2, O2>(
+        self,
+        path: Path<H2, O, O2>,
+    ) -> Matching<impl Handler<Input = Context<()>, Output = Context<(O, O2)>>, (O, O2)>
+    where
+        H2: Handler<Input = path::Context<O>, Output = path::Context<O2>>,
+        O2: Send + Sync,
+    {
+        Matching::new(
+            self.handler
+                .and_then(handler(move |context: Context<O>| async move {
+                    let previous = context.output;
+                    let context = path.handle(context).await?;
+                    Ok(context.with_output((previous, context.output)))
+                })),
+        )
+    }
+}
 
 // impl<P> Handler for Matching<P>
 // where
@@ -30,8 +63,8 @@ pub struct Matching<P> {
 //     }
 // }
 
-pub fn matching<P>() -> Matching<P> {
-    Matching {
-        _phantom: PhantomData,
-    }
+pub fn matching() -> Matching<impl Handler<Input = Context<()>, Output = Context<()>>, ()> {
+    Matching::new(handler(|context: Context<()>| async move {
+        Ok::<_, Infallible>(context)
+    }))
 }

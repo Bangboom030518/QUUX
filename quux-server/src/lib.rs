@@ -3,8 +3,9 @@
     async_fn_in_trait,
     return_position_impl_trait_in_trait,
     pattern,
-    impl_trait_in_assoc_type,
-    impl_trait_projections
+    impl_trait_projections,
+    is_some_and,
+    exact_size_is_empty
 )]
 pub use hyper;
 pub use server::{server, Server};

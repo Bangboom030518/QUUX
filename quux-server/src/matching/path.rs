@@ -1,19 +1,25 @@
 use crate::internal::prelude::*;
 use std::{str::FromStr, vec::IntoIter};
 
-pub struct Path<H, I>
+pub type Context<I> = crate::handler::Context<(I, IntoIter<String>)>;
+
+pub struct Path<H, I, O>
 where
-    H: Handler<Input = Context<(I, IntoIter<String>)>>,
+    H: Handler<Input = Context<I>, Output = Context<O>>,
 {
     handler: H,
 }
 
-impl<H, I> Path<H, I>
+impl<H, I, O> Path<H, I, O>
 where
-    H: Handler<Input = Context<(I, IntoIter<String>)>, Output = Context<(I, IntoIter<String>)>>,
-    I: Send + Sync,
+    H: Handler<Input = Context<I>, Output = Context<O>>,
+    O: Send + Sync,
+    I: Send + Sync
 {
-    pub fn static_segment(self, segment: &'static str) -> Path<impl Handler<Input = H::Input>, I> {
+    pub fn static_segment(
+        self,
+        segment: &'static str,
+    ) -> Path<impl Handler<Input = Context<I>, Output = Context<O>>, I, O> {
         Path {
             handler: self
                 .handler
@@ -37,7 +43,7 @@ where
 
     pub fn dynamic_segment<T: FromStr>(
         self,
-    ) -> Path<impl Handler<Input = H::Input, Output = Context<((I, T), IntoIter<String>)>>, I>
+    ) -> Path<impl Handler<Input = Context<I>, Output = Context<(O, T)>>, I, (O, T)>
     where
         T: Send + Sync,
     {
@@ -45,7 +51,7 @@ where
             .handler
             .and_then(handler(|context: H::Input| async move {
                 let (previous, mut segments) = context.output;
-                let Some(segment) = (&mut segments).next() else {
+                let Some(segment) = segments.next() else {
                     return Err(super::MatchError)
                 };
                 let new: T = segment.parse().map_err(|_| super::MatchError)?;
@@ -59,13 +65,14 @@ where
     }
 }
 
-impl<H, I> Handler for Path<H, I>
+impl<H, O, I> Handler for Path<H, I, O>
 where
-    H: Handler<Input = Context<(I, IntoIter<String>)>>,
-    I: Send + Sync,
+    H: Handler<Input = Context<I>, Output = Context<O>>,
+    O: Send + Sync,
+    I: Send + Sync
 {
-    type Input = Context<I>;
-    type Output = H::Output;
+    type Input = crate::handler::Context<I>;
+    type Output = crate::handler::Context<O>;
     type Error = super::MatchError;
 
     // TODO: path args parse failure?
@@ -85,28 +92,35 @@ where
                 .collect::<Vec<String>>()
                 .into_iter();
 
-            let output = self
-                .handler
-                .handle(Context {
+            self.handler
+                .handle(crate::handler::Context {
                     request: input.request,
                     url: input.url,
                     output: (input.output, segments),
                 })
                 .await
-                .map_err(|_| super::MatchError)?;
-
-            Ok(output)
+                .map_err(|_| super::MatchError)
+                .and_then(|context| {
+                    if !context.output.1.is_empty() {
+                        return Err(super::MatchError);
+                    }
+                    Ok(crate::handler::Context {
+                        request: context.request,
+                        url: context.url,
+                        output: context.output.0,
+                    })
+                })
         }
     }
 }
 
-pub fn route<O>() -> Path<impl Handler<Input = Context<((), IntoIter<String>)>>, ()> {
+pub fn path<I>() -> Path<impl Handler<Input = Context<I>, Output = Context<I>>, I, I> {
     Path {
         handler: handler(|context: Context<_>| async move {
             Ok::<_, Infallible>(Context {
                 request: context.request,
                 url: context.url,
-                output: ((), context.output),
+                output: context.output,
             })
         }),
     }
