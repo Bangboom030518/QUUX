@@ -1,5 +1,6 @@
-use crate::internal::prelude::*;
-use std::{error::Error, future::Future, sync::Arc};
+use crate::{internal::prelude::*, IntoResponse};
+use http::Uri;
+use std::{future::Future, sync::Arc};
 use url::Url;
 
 pub mod and_then;
@@ -8,15 +9,34 @@ pub mod function;
 pub mod map;
 pub mod map_err;
 pub mod or;
-pub mod path_segment;
+
+fn expect_url(uri: &Uri) -> Url {
+    uri.to_string()
+        .parse()
+        .expect("a parsed Uri should always be a valid Url")
+}
 
 pub struct Context<O> {
-    request: Request,
-    url: Url,
-    output: O,
+    pub(crate) request: crate::Request,
+    pub(crate) url: Url,
+    pub output: O,
+}
+
+impl Context<()> {
+    fn new(request: crate::Request) -> Self {
+        Self {
+            url: expect_url(request.uri()),
+            request,
+            output: (),
+        }
+    }
 }
 
 impl<O> Context<O> {
+    pub fn url(&self) -> &Url {
+        &self.url
+    }
+
     pub fn with_output<T>(self, output: T) -> Context<T> {
         let Self { request, url, .. } = self;
         Context {
@@ -31,7 +51,7 @@ impl<O> Context<O> {
 pub trait Handler: Send + Sync {
     type Input: Send + Sync;
     type Output: Send + Sync;
-    type Error: Error + Send + Sync;
+    type Error: Send + Sync;
 
     #[allow(clippy::needless_lifetimes)]
     #[allow(clippy::manual_async_fn)]
@@ -42,7 +62,8 @@ pub trait Handler: Send + Sync {
 
     async fn serve(self, addr: impl Into<SocketAddr>)
     where
-        Self: Sized + Handler<Input = Request, Output = Response> + 'static,
+        Self: Sized + Handler<Input = Context<()>> + 'static,
+        Result<Self::Output, Self::Error>: IntoResponse,
     {
         // TODO: Mutex means we lose the benfit of async
         let server = Arc::new(tokio::sync::Mutex::new(self));
@@ -53,7 +74,16 @@ pub trait Handler: Send + Sync {
                     let server = Arc::clone(&server);
                     Ok::<_, Infallible>(service_fn(move |request| {
                         let server = Arc::clone(&server);
-                        async move { server.lock().await.handle(request).await.map(Into::into) }
+                        async move {
+                            Ok::<_, Infallible>(
+                                server
+                                    .lock()
+                                    .await
+                                    .handle(Context::new(request))
+                                    .await
+                                    .into_response(),
+                            )
+                        }
                     }))
                 }
             }));
@@ -65,6 +95,6 @@ pub trait Handler: Send + Sync {
 pub mod prelude {
     pub use super::{
         and_then::HandlerExt as _, function::handler, map::HandlerExt as _,
-        map_err::HandlerExt as _, or::HandlerExt as _, Handler,
+        map_err::HandlerExt as _, or::HandlerExt as _, Context, Handler,
     };
 }

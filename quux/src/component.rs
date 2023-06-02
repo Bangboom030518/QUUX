@@ -1,17 +1,12 @@
 use crate::internal::prelude::*;
 
 pub trait Component {
-    fn render(self, context: crate::context::Context<Self>) -> impl Item
+    fn render(self) -> impl Item
     where
         Self: Sized;
 }
 
-pub trait Init {
-    type Props;
-    fn init(props: Self::Props) -> Self;
-}
-
-pub trait Routes: Serialize + DeserializeOwned {
+pub trait Routes: Serialize + DeserializeOwned + quux_server::server::Routes {
     /// Recursively hydrates the dom, starting at the root app component.
     /// Applies a console panic hook for better debugging.
     /// # Errors
@@ -43,7 +38,7 @@ pub trait Routes: Serialize + DeserializeOwned {
     where
         Self: Sized + From<T>,
     {
-        let mut tree = component.clone().render(crate::context::Context::new());
+        let mut tree = component.clone().render();
         tree.insert_id(0);
         let html = tree.to_string();
         let component = Self::from(component);

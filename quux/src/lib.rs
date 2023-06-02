@@ -11,7 +11,6 @@ pub use quux_server as server;
 pub use serde;
 
 pub mod component;
-pub mod context;
 pub mod errors;
 pub mod initialisation_script;
 pub mod store;
@@ -67,8 +66,7 @@ pub mod prelude {
     #[client]
     pub use super::dom::console_log;
     pub use super::{
-        component::{self, Component, Init as _, Routes as _},
-        context::Context,
+        component::{self, Component, Routes as _},
         event,
         initialisation_script::InitialisationScript,
         store::{self, Store},
@@ -78,9 +76,8 @@ pub mod prelude {
             Item,
         },
     };
+    pub use quux_macros::{client, routes, server, view};
     #[server]
     pub use quux_server::prelude::*;
-
-    pub use quux_macros::{client, routes, server, view};
     pub use serde::{de::DeserializeOwned, Deserialize, Serialize};
 }

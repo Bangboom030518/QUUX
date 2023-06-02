@@ -21,16 +21,14 @@ pub struct InitialisationScript {
     init_script: &'static str,
 }
 
-impl component::Init for InitialisationScript {
-    type Props = &'static str;
-
-    fn init(init_script: Self::Props) -> Self {
+impl InitialisationScript {
+    pub fn new(init_script: &'static str) -> Self {
         Self { init_script }
     }
 }
 
 impl Component for InitialisationScript {
-    fn render(self, _: crate::context::Context<Self>) -> impl Item {
+    fn render(self) -> impl Item {
         script()
             .attribute("type", "module")
             .attribute("id", "__quux_init_script__")

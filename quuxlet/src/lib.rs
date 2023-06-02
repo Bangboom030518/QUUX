@@ -18,6 +18,17 @@ routes!(
     pages::Discover
 );
 
+struct RouteHandler<R: component::Routes>();
+
+impl<R: component::Routes> Handler for RouteHandler<R> {
+    fn handle<'a>(
+        &'a mut self,
+        input: Self::Input,
+    ) -> impl std::future::Future<Output = Result<Self::Output, Self::Error>> + Send + Sync + 'a
+    {
+    }
+}
+
 /// # Panics
 /// This function will panic if it's unable to retrieve and parse the tree sent by the server
 // #[cfg(target_arch = "wasm32")]

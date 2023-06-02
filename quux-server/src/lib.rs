@@ -3,24 +3,20 @@
     async_fn_in_trait,
     return_position_impl_trait_in_trait,
     pattern,
-    impl_trait_in_assoc_type
+    impl_trait_in_assoc_type,
+    impl_trait_projections
 )]
-
-use std::convert::Infallible;
-
 pub use hyper;
+pub use server::{server, Server};
+use std::convert::Infallible;
 pub use url::Url;
 
 pub mod handler;
+mod matching;
+pub mod server;
 
 pub type Request = http::Request<hyper::Body>;
 pub type Response = http::Response<hyper::Body>;
-
-pub(crate) fn expect_uri(url: &Url) -> http::Uri {
-    url.as_str()
-        .parse()
-        .expect("a parsed Url should always be a valid Uri")
-}
 
 #[derive(Debug, thiserror::Error)]
 pub enum Either<A, B> {
@@ -30,8 +26,21 @@ pub enum Either<A, B> {
     B(B),
 }
 
-trait IntoResponse {
+pub trait IntoResponse {
     fn into_response(self) -> Response;
+}
+
+impl<T, E> IntoResponse for Result<T, E>
+where
+    T: IntoResponse,
+    E: IntoResponse,
+{
+    fn into_response(self) -> Response {
+        match self {
+            Ok(value) => value.into_response(),
+            Err(value) => value.into_response(),
+        }
+    }
 }
 
 impl<A, B> IntoResponse for Either<A, B>
@@ -53,6 +62,12 @@ impl IntoResponse for Infallible {
     }
 }
 
+impl IntoResponse for Response {
+    fn into_response(self) -> Response {
+        self
+    }
+}
+
 mod internal {
     pub mod prelude {
         pub use super::super::{prelude::*, Either};
@@ -69,5 +84,5 @@ mod internal {
 }
 
 pub mod prelude {
-    pub use super::{handler::prelude::*, Request, Response};
+    pub use super::{handler::prelude::*, server, Request, Response, Server};
 }

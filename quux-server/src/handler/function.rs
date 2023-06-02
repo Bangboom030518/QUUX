@@ -1,12 +1,11 @@
 use super::Handler;
-use std::{error::Error, future::Future, marker::PhantomData, sync::Arc};
+use std::{future::Future, marker::PhantomData, sync::Arc};
 
 #[derive(Clone)]
 pub struct Function<F, Fut, I, O, E>
 where
     F: FnMut(I) -> Fut + Clone,
     Fut: Future<Output = Result<O, E>> + Send + Sync,
-    E: Error,
 {
     handler: F,
     _phantom: PhantomData<Arc<(Fut, I, O, E)>>,
@@ -32,7 +31,7 @@ pub fn handler<F, Fut, I, O, E>(f: F) -> Function<F, Fut, I, O, E>
 where
     F: FnMut(I) -> Fut + Send + Sync + Clone,
     Fut: Future<Output = Result<O, E>> + Send + Sync,
-    E: Error + Send + Sync,
+    E: Send + Sync,
     O: Send + Sync,
     I: Send + Sync,
 {
@@ -46,7 +45,7 @@ impl<F, Fut, I, O, E> Handler for Function<F, Fut, I, O, E>
 where
     F: FnMut(I) -> Fut + Send + Sync + Clone,
     Fut: Future<Output = Result<O, E>> + Send + Sync,
-    E: Error + Send + Sync,
+    E: Send + Sync,
     O: Send + Sync,
     I: Send + Sync,
 {

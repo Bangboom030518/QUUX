@@ -1,7 +1,7 @@
 use crate::internal::prelude::*;
 
 #[derive(Debug, Clone)]
-struct AndThen<H1, H2>
+pub struct AndThen<H1, H2>
 where
     H1: Handler,
     H2: Handler<Input = H1::Output>,
@@ -35,7 +35,7 @@ where
 }
 
 pub trait HandlerExt: Handler {
-    fn and_then<H>(self, mapping: H) -> impl Handler
+    fn and_then<H>(self, mapping: H) -> AndThen<Self, H>
     where
         H: Handler<Input = Self::Output>,
         Self: Sized,

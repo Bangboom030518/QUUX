@@ -1,7 +1,7 @@
 use crate::internal::prelude::*;
 
 #[derive(Debug, Clone)]
-struct Or<H1, H2>
+pub struct Or<H1, H2>
 where
     H1: Handler,
     H2: Handler<Input = H1::Error>,
@@ -35,7 +35,7 @@ where
 }
 
 pub trait HandlerExt: Handler {
-    fn or<H>(self, fallback: H) -> impl Handler
+    fn or<H>(self, fallback: H) -> Or<Self, H>
     where
         H: Handler<Input = Self::Error>,
         Self: Sized,

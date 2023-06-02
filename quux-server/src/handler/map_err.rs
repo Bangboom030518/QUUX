@@ -5,7 +5,7 @@ struct MapErr<H, M, E>
 where
     H: Handler,
     M: FnMut(H::Error) -> E + Send + Sync,
-    E: Error + Send + Sync,
+    E: Send + Sync,
 {
     handler: H,
     mapping: M,
@@ -16,7 +16,7 @@ impl<M, H, E> Handler for MapErr<H, M, E>
 where
     H: Handler,
     M: FnMut(H::Error) -> E + Send + Sync,
-    E: Error + Send + Sync,
+    E: Send + Sync,
 {
     type Input = H::Input;
     type Output = H::Output;
@@ -41,7 +41,7 @@ pub trait HandlerExt: Handler {
     fn map_err<M, E>(self, mapping: M) -> impl Handler
     where
         M: FnMut(Self::Error) -> E + Send + Sync,
-        E: Error + Send + Sync,
+        E: Send + Sync,
         Self: Sized,
     {
         MapErr {
