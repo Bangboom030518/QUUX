@@ -1,10 +1,13 @@
+use std::sync::Arc;
+
 use crate::internal::prelude::*;
 
 pub use path::{path, Path};
+use tokio::sync::Mutex;
 
 mod path;
 
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, Clone, thiserror::Error)]
 #[error("failed to match in handler")]
 pub struct MatchError;
 
@@ -34,16 +37,23 @@ where
     ) -> Matching<impl Handler<Input = Context<()>, Output = Context<(O, O2)>>, (O, O2)>
     where
         H2: Handler<Input = path::Context<O>, Output = path::Context<O2>>,
-        O2: Send + Sync,
+        O2: ThreadSafe,
+        O: Clone,
     {
-        Matching::new(
-            self.handler
-                .and_then(handler(move |context: Context<O>| async move {
-                    let previous = context.output;
-                    let context = path.handle(context).await?;
-                    Ok(context.with_output((previous, context.output)))
-                })),
-        )
+        // TODO: `Arc<Mutex<_>>`?
+        let path = Arc::new(Mutex::new(path));
+        Matching::new(self.handler.and_then(handler({
+            let path = Arc::clone(&path);
+            move |context: Context<O>| {
+                let path = Arc::clone(&path);
+                async move {
+                    let previous = context.output.clone();
+                    let context = path.lock().await.handle(context).await?;
+                    let new = context.output.clone();
+                    Ok::<_, MatchError>(context.with_output((previous, new)))
+                }
+            }
+        })))
     }
 }
 

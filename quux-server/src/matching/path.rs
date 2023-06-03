@@ -14,7 +14,7 @@ impl<H, I, O> Path<H, I, O>
 where
     H: Handler<Input = Context<I>, Output = Context<O>>,
     O: Send + Sync,
-    I: Send + Sync
+    I: Send + Sync,
 {
     pub fn static_segment(
         self,
@@ -58,7 +58,7 @@ where
                 Ok(Context {
                     request: context.request,
                     url: context.url,
-                    output: ((previous, new), segments),
+                    output: ((context.output.0, new), segments),
                 })
             }));
         Path { handler }
@@ -69,7 +69,7 @@ impl<H, O, I> Handler for Path<H, I, O>
 where
     H: Handler<Input = Context<I>, Output = Context<O>>,
     O: Send + Sync,
-    I: Send + Sync
+    I: Send + Sync,
 {
     type Input = crate::handler::Context<I>;
     type Output = crate::handler::Context<O>;
@@ -114,7 +114,10 @@ where
     }
 }
 
-pub fn path<I>() -> Path<impl Handler<Input = Context<I>, Output = Context<I>>, I, I> {
+pub fn path<I>() -> Path<impl Handler<Input = Context<I>, Output = Context<I>>, I, I>
+where
+    I: Send + Sync,
+{
     Path {
         handler: handler(|context: Context<_>| async move {
             Ok::<_, Infallible>(Context {

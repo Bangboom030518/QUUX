@@ -4,7 +4,7 @@ use std::{future::Future, marker::PhantomData, sync::Arc};
 #[derive(Clone)]
 pub struct Function<F, Fut, I, O, E>
 where
-    F: FnMut(I) -> Fut + Clone,
+    F: FnMut(I) -> Fut,
     Fut: Future<Output = Result<O, E>> + Send + Sync,
 {
     handler: F,
@@ -29,7 +29,7 @@ where
 
 pub fn handler<F, Fut, I, O, E>(f: F) -> Function<F, Fut, I, O, E>
 where
-    F: FnMut(I) -> Fut + Send + Sync + Clone,
+    F: FnMut(I) -> Fut + Send + Sync,
     Fut: Future<Output = Result<O, E>> + Send + Sync,
     E: Send + Sync,
     O: Send + Sync,
@@ -43,10 +43,10 @@ where
 
 impl<F, Fut, I, O, E> Handler for Function<F, Fut, I, O, E>
 where
-    F: FnMut(I) -> Fut + Send + Sync + Clone,
+    F: FnMut(I) -> Fut + Send + Sync,
     Fut: Future<Output = Result<O, E>> + Send + Sync,
     E: Send + Sync,
-    O: Send + Sync,
+    O: Send + Sync ,
     I: Send + Sync,
 {
     type Input = I;

@@ -69,6 +69,10 @@ impl IntoResponse for Response {
     }
 }
 
+pub trait ThreadSafe: Send + Sync + Clone {}
+
+impl<T: Send + Sync + Clone> ThreadSafe for T {}
+
 mod internal {
     pub mod prelude {
         pub use super::super::{prelude::*, Either};
@@ -85,5 +89,5 @@ mod internal {
 }
 
 pub mod prelude {
-    pub use super::{handler::prelude::*, server, Request, Response, Server};
+    pub use super::{handler::prelude::*, server, Request, Response, Server, ThreadSafe};
 }

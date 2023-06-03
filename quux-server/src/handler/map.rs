@@ -15,8 +15,8 @@ where
 impl<M, H, O> Handler for Map<H, M, O>
 where
     H: Handler,
-    M: FnMut(H::Output) -> O + Send + Sync,
-    O: Send + Sync,
+    M: FnMut(H::Output) -> O + Send + Sync + Clone,
+    O: Send + Sync + Clone,
 {
     type Input = H::Input;
     type Output = O;
@@ -40,8 +40,8 @@ where
 pub trait HandlerExt: Handler {
     fn map<M, O>(self, mapping: M) -> impl Handler
     where
-        M: FnMut(Self::Output) -> O + Send + Sync,
-        O: Send + Sync,
+        M: FnMut(Self::Output) -> O + Send + Sync + Clone,
+        O: Send + Sync + Clone,
         Self: Sized,
     {
         Map {

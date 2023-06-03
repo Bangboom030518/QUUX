@@ -15,8 +15,8 @@ where
 impl<M, H, E> Handler for MapErr<H, M, E>
 where
     H: Handler,
-    M: FnMut(H::Error) -> E + Send + Sync,
-    E: Send + Sync,
+    M: FnMut(H::Error) -> E + Send + Sync + Clone,
+    E: Send + Sync + Clone,
 {
     type Input = H::Input;
     type Output = H::Output;
@@ -40,8 +40,8 @@ where
 pub trait HandlerExt: Handler {
     fn map_err<M, E>(self, mapping: M) -> impl Handler
     where
-        M: FnMut(Self::Error) -> E + Send + Sync,
-        E: Send + Sync,
+        M: FnMut(Self::Error) -> E + Send + Sync + Clone,
+        E: Send + Sync + Clone,
         Self: Sized,
     {
         MapErr {

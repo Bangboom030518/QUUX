@@ -1,5 +1,5 @@
 use crate::{internal::prelude::*, IntoResponse};
-use http::Uri;
+use http::{request::Parts, Uri};
 use std::{future::Future, sync::Arc};
 use url::Url;
 
@@ -20,6 +20,30 @@ pub struct Context<O> {
     pub(crate) request: crate::Request,
     pub(crate) url: Url,
     pub output: O,
+}
+
+impl<O: Clone> Clone for Context<O> {
+    fn clone(&self) -> Self {
+        let Self {
+            request,
+            url,
+            output,
+        } = &self;
+        let builder = hyper::Request::builder()
+            .method(request.method().clone())
+            .uri(request.uri().clone())
+            .version(request.version().clone())
+            .extension(request.extensions());
+        for (key, value) in request.headers() {
+            builder.header(key, value);
+        }
+        let request = builder.body(*request.body()).unwrap();
+        Self {
+            url: url.clone(),
+            output: output.clone(),
+            request,
+        }
+    }
 }
 
 impl Context<()> {

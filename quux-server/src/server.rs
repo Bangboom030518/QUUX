@@ -1,6 +1,7 @@
 use crate::internal::prelude::*;
 use std::marker::PhantomData;
 
+#[derive(Clone)]
 pub struct Server<R: Routes> {
     // handler: H,
     _phantom: PhantomData<R>,
@@ -42,6 +43,6 @@ impl<R: Routes> Handler for Server<R> {
     }
 }
 
-pub trait Routes: Send + Sync {
+pub trait Routes: Send + Sync + Clone {
     fn handle(input: Context<()>) -> Response;
 }
