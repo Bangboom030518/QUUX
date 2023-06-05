@@ -16,38 +16,39 @@ fn expect_url(uri: &Uri) -> Url {
         .expect("a parsed Uri should always be a valid Url")
 }
 
+#[derive(Debug)]
 pub struct Context<O> {
     pub(crate) request: crate::Request,
     pub(crate) url: Url,
     pub output: O,
 }
 
-impl<O: Clone> Clone for Context<O> {
-    fn clone(&self) -> Self {
-        let Self {
-            request,
-            url,
-            output,
-        } = &self;
-        let builder = hyper::Request::builder()
-            .method(request.method().clone())
-            .uri(request.uri().clone())
-            .version(request.version().clone())
-            .extension(request.extensions());
-        for (key, value) in request.headers() {
-            builder.header(key, value);
-        }
-        let request = builder.body(*request.body()).unwrap();
-        Self {
-            url: url.clone(),
-            output: output.clone(),
-            request,
-        }
-    }
-}
+// impl<O: Clone> Clone for Context<O> {
+//     fn clone(&self) -> Self {
+//         let Self {
+//             request,
+//             url,
+//             output,
+//         } = &self;
+//         let builder = hyper::Request::builder()
+//             .method(request.method().clone())
+//             .uri(request.uri().clone())
+//             .version(request.version().clone())
+//             .extension(request.extensions());
+//         for (key, value) in request.headers() {
+//             builder.header(key, value);
+//         }
+//         let request = builder.body(*request.body()).unwrap();
+//         Self {
+//             url: url.clone(),
+//             output: output.clone(),
+//             request,
+//         }
+//     }
+// }
 
 impl Context<()> {
-    fn new(request: crate::Request) -> Self {
+    pub fn new(request: crate::Request) -> Self {
         Self {
             url: expect_url(request.uri()),
             request,
@@ -67,6 +68,19 @@ impl<O> Context<O> {
             request,
             url,
             output,
+        }
+    }
+
+    pub fn map<T>(self, mut mapping: impl FnOnce(O) -> T) -> Context<T> {
+        let Self {
+            request,
+            url,
+            output,
+        } = self;
+        Context {
+            request,
+            url,
+            output: mapping(output),
         }
     }
 }

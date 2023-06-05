@@ -1,8 +1,6 @@
-use std::sync::Arc;
-
 use crate::internal::prelude::*;
-
 pub use path::{path, Path};
+use std::sync::Arc;
 use tokio::sync::Mutex;
 
 mod path;
@@ -27,34 +25,31 @@ where
     pub fn new(handler: H) -> Self {
         Self { handler }
     }
-    /*
-    expected struct `handler::Context<()>`
-       found struct `handler::Context<O>`
-    */
-    pub fn path<H2, O2>(
-        self,
-        path: Path<H2, O, O2>,
-    ) -> Matching<impl Handler<Input = Context<()>, Output = Context<(O, O2)>>, (O, O2)>
-    where
-        H2: Handler<Input = path::Context<O>, Output = path::Context<O2>>,
-        O2: ThreadSafe,
-        O: Clone,
-    {
-        // TODO: `Arc<Mutex<_>>`?
-        let path = Arc::new(Mutex::new(path));
-        Matching::new(self.handler.and_then(handler({
-            let path = Arc::clone(&path);
-            move |context: Context<O>| {
-                let path = Arc::clone(&path);
-                async move {
-                    let previous = context.output.clone();
-                    let context = path.lock().await.handle(context).await?;
-                    let new = context.output.clone();
-                    Ok::<_, MatchError>(context.with_output((previous, new)))
-                }
-            }
-        })))
-    }
+
+    // pub fn path<H2>(
+    //     self,
+    //     path: Path<H2>,
+    // ) -> Matching<Path<H2>>
+    // where
+    //     H2: Handler<Input = path::Context<O>, Output = path::Context<O2>>,
+    //     O2: ThreadSafe,
+    //     O: Clone,
+    // {
+    //     // TODO: `Arc<Mutex<_>>`?
+    //     let path = Arc::new(Mutex::new(path));
+    //     Matching::new(self.handler.and_then(handler({
+    //         let path = Arc::clone(&path);
+    //         move |context: Context<O>| {
+    //             let path = Arc::clone(&path);
+    //             async move {
+    //                 let previous = context.output.clone();
+    //                 let context = path.lock().await.handle(context).await?;
+    //                 let new = context.output.clone();
+    //                 Ok::<_, MatchError>(context.with_output((previous, new)))
+    //             }
+    //         }
+    //     })))
+    // }
 }
 
 // impl<P> Handler for Matching<P>

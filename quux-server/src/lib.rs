@@ -4,8 +4,8 @@
     return_position_impl_trait_in_trait,
     pattern,
     impl_trait_projections,
-    is_some_and,
-    exact_size_is_empty
+    exact_size_is_empty,
+    type_alias_impl_trait
 )]
 pub use hyper;
 pub use server::{server, Server};
@@ -25,6 +25,15 @@ pub enum Either<A, B> {
     A(A),
     #[error(transparent)]
     B(B),
+}
+
+impl<T> Either<T, T> {
+    pub fn unwrap(self) -> T {
+        match self {
+            Self::A(a) => a,
+            Self::B(b) => b,
+        }
+    }
 }
 
 pub trait IntoResponse {
