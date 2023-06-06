@@ -7,6 +7,8 @@
     exact_size_is_empty,
     type_alias_impl_trait
 )]
+
+use handler::Context;
 pub use hyper;
 pub use server::{server, Server};
 use std::convert::Infallible;
@@ -32,6 +34,15 @@ impl<T> Either<T, T> {
         match self {
             Self::A(a) => a,
             Self::B(b) => b,
+        }
+    }
+}
+
+impl<A, B> From<Either<Context<A>, Context<B>>> for Context<Either<A, B>> {
+    fn from(value: Either<Context<A>, Context<B>>) -> Self {
+        match value {
+            Either::A(context) => context.map(Either::A),
+            Either::B(context) => context.map(Either::B),
         }
     }
 }

@@ -1,6 +1,6 @@
 use crate::internal::prelude::*;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 struct Map<H, M, O>
 where
     H: Handler,
@@ -15,8 +15,8 @@ where
 impl<M, H, O> Handler for Map<H, M, O>
 where
     H: Handler,
-    M: FnMut(H::Output) -> O + Send + Sync + Clone,
-    O: Send + Sync + Clone,
+    M: FnMut(H::Output) -> O + Send + Sync,
+    O: Send + Sync,
 {
     type Input = H::Input;
     type Output = O;
@@ -38,10 +38,13 @@ where
 }
 
 pub trait HandlerExt: Handler {
-    fn map<M, O>(self, mapping: M) -> impl Handler
+    fn map<M, O>(
+        self,
+        mapping: M,
+    ) -> impl Handler<Input = Self::Input, Output = O, Error = Self::Error>
     where
-        M: FnMut(Self::Output) -> O + Send + Sync + Clone,
-        O: Send + Sync + Clone,
+        M: FnMut(Self::Output) -> O + Send + Sync,
+        O: Send + Sync,
         Self: Sized,
     {
         Map {

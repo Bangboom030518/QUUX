@@ -61,19 +61,17 @@ where
         Path {
             handler: self
                 .handler
-                .and_then(handler(
-                    move |mut context: Context<H::InnerOutput>| async move {
-                        let segments = &mut context.output.1;
-                        if segments
-                            .next()
-                            .is_some_and(|current_segment| current_segment == segment)
-                        {
-                            Ok(context)
-                        } else {
-                            Err(context.with_output(PathMatchError::<H::InnerError>::Static))
-                        }
-                    },
-                ))
+                .and_then(handler(move |mut context: H::Output| async move {
+                    let segments = &mut context.output.1;
+                    if segments
+                        .next()
+                        .is_some_and(|current_segment| current_segment == segment)
+                    {
+                        Ok(context)
+                    } else {
+                        Err(context.with_output(PathMatchError::<H::InnerError>::Static))
+                    }
+                }))
                 .map_err(|err| err.unwrap()),
         }
     }
@@ -97,7 +95,7 @@ where
                 PathMatchError::Static => PathMatchError::Static,
                 PathMatchError::Dynamic(err) => PathMatchError::Dynamic(Either::A(err))
             }))
-            .and_then(handler::<_, _, H::Output, _, _>(|mut context| async move {
+            .and_then(handler(|mut context: H::Output| async move {
                 let segments = &mut context.output.1;
                 let Some(segment) = segments.next() else {
                     return Err(context.with_output(PathMatchError::<Either<H::InnerError, T::Err>>::Static))
