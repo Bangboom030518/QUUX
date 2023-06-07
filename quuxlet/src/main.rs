@@ -6,14 +6,12 @@
     impl_trait_in_assoc_type
 )]
 
-use quux::{prelude::*, server::hyper::Body};
+use http::Method;
+use quux::server::prelude::*;
 use std::convert::Infallible;
 
-#[derive(Debug, thiserror::Error)]
-#[error("this is pointless, give up")]
-struct Useless(String);
-
 #[tokio::main]
+
 async fn main() {
     let pool = sqlx::sqlite::SqlitePoolOptions::new()
         .max_connections(5)
@@ -23,28 +21,31 @@ async fn main() {
 
     println!("serving on http://localhost:3000...");
 
-    handler(|request: Context<()>| async move {
-        let path = request.url().path();
-        if path == "/" {
-            Ok(Response::new(Body::from("Hello World!")))
-        } else {
-            Err(request)
-        }
-    })
-    .or(handler(|request: Context<()>| async move {
-        Ok::<_, Infallible>(Response::new(Body::from(format!(
-            "Hello {}!",
-            request.url()
-        ))))
-    }))
-    .serve(([127, 0, 0, 1], 3000))
-    .await;
+    // handler(|request: Context<()>| async move {
+    //     let path = request.url().path();
+    //     if path == "/" {
+    //         Ok(Response::new(Body::from("Hello World!")))
+    //     } else {
+    //         Err(request)
+    //     }
+    // })
+    // .or(handler(|request: Context<()>| async move {
+    //     Ok::<_, Infallible>(Response::new(Body::from(format!(
+    //         "Hello {}!",
+    //         request.url()
+    //     ))))
+    // }))
+    // .serve(([127, 0, 0, 1], 3000))
+    // .await;
 
     // matching().path().method(Method::Get).body::<>;
-    server::<Routes>()
-        .component::<Index>(matching!(path = "hello" / String, method = Get, body = ))
-        .component::<Create>()
-        .fallback::<Error>()
+
+    server()
+        .route(path(Method::GET), |_| html("HELLO WORLD!"))
+        // .route(matcher(Method::POST))
+        // .component::<Index>(matching!(path = "hello" / String, method = Get, body = ))
+        // .component::<Create>()
+        .fallback(|_| html("HELLO!"))
         .serve(([127, 0, 0, 1], 3000))
         .await;
 

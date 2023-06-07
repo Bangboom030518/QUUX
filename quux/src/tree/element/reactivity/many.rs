@@ -1,8 +1,8 @@
-#[client]
+#[cfg_client]
 use super::Reactivity;
 use crate::internal::prelude::*;
 
-#[client]
+#[cfg_client]
 #[derive(Clone)]
 pub struct Many<'a, T, F, I>
 where
@@ -14,7 +14,7 @@ where
     _phantom: PhantomData<&'a I>,
 }
 
-#[client]
+#[cfg_client]
 impl<'a, T, F, I> Debug for Many<'a, T, F, I>
 where
     F: Mapping<'a, T, I>,
@@ -25,7 +25,7 @@ where
     }
 }
 
-#[client]
+#[cfg_client]
 impl<'a, T, F, I> Many<'a, T, F, I>
 where
     F: Mapping<'a, T, I>,
@@ -40,7 +40,7 @@ where
     }
 }
 
-#[client]
+#[cfg_client]
 impl<'a, T, F, I> Reactivity for Many<'a, T, F, I>
 where
     F: Mapping<'a, T, I>,

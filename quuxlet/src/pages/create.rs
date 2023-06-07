@@ -71,7 +71,7 @@ impl Component for Create {
 }
 
 // impl Create {
-//     #[server]
+//     #[cfg_server]
 //     #[must_use]
 //     #[allow(clippy::needless_lifetimes, opaque_hidden_inferred_bound)]
 //     // TODO: remove `allow(..)`

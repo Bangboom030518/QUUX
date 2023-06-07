@@ -2,6 +2,7 @@
 #![warn(clippy::pedantic, clippy::nursery)]
 #![allow(incomplete_features)]
 #![feature(return_position_impl_trait_in_trait)]
+#![cfg(ignore)]
 
 use quux::prelude::*;
 #[cfg(target_arch = "wasm32")]
@@ -32,7 +33,7 @@ impl<R: component::Routes> Handler for RouteHandler<R> {
 /// # Panics
 /// This function will panic if it's unable to retrieve and parse the tree sent by the server
 // #[cfg(target_arch = "wasm32")]
-#[client]
+#[cfg_client]
 #[wasm_bindgen(start)]
 pub fn init_app() {
     Routes::init_app().unwrap();

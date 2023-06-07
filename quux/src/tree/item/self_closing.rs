@@ -16,7 +16,7 @@ impl Item for SelfClosing {
         id
     }
 
-    #[client]
+    #[cfg_client]
     fn dom_representation(&mut self) -> DomRepresentation {
         DomRepresentation::None
     }

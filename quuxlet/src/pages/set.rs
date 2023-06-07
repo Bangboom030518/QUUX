@@ -1,4 +1,4 @@
-#[server]
+#[cfg_server]
 use super::error::{self, Error};
 use super::{nav_bar, Head};
 use crate::Component;
@@ -14,7 +14,7 @@ pub mod stack;
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Set(crate::data::Set);
 
-#[server]
+#[cfg_server]
 impl From<&sqlx::Error> for Error {
     fn from(value: &sqlx::Error) -> Self {
         match value {
@@ -26,7 +26,7 @@ impl From<&sqlx::Error> for Error {
     }
 }
 
-#[server]
+#[cfg_server]
 impl Set {
     /// Fetches the set with `set_id` from the database
     /// # Errors

@@ -24,7 +24,7 @@ impl Item for Text {
         id
     }
 
-    #[client]
+    #[cfg_client]
     fn dom_representation(&mut self) -> DomRepresentation {
         DomRepresentation::One(
             web_sys::Text::new_with_data(&self.0)
@@ -34,7 +34,7 @@ impl Item for Text {
     }
 }
 
-#[client]
+#[cfg_client]
 impl From<Text> for DomRepresentation {
     fn from(mut value: Text) -> Self {
         value.dom_representation()

@@ -23,7 +23,7 @@ impl Item for RawHtml {
         id
     }
 
-    #[client]
+    #[cfg_client]
     fn dom_representation(&mut self) -> DomRepresentation {
         DomRepresentation::One(
             web_sys::Range::new()
@@ -35,7 +35,7 @@ impl Item for RawHtml {
     }
 }
 
-#[client]
+#[cfg_client]
 impl From<RawHtml> for DomRepresentation {
     fn from(mut value: RawHtml) -> Self {
         value.dom_representation()

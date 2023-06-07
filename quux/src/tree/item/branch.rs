@@ -29,14 +29,14 @@ macro_rules! branch_decl {
                 }
             }
 
-            #[client]
+            #[cfg_client]
             fn hydrate(&mut self) {
                 match self {
                     $($name::$types(child) => child.hydrate()),*
                 }
             }
 
-            #[client]
+            #[cfg_client]
             fn dom_representation(&mut self) -> DomRepresentation {
                 match self {
                     $($name::$types(value) => value.dom_representation()),*

@@ -13,7 +13,7 @@ pub trait Routes: Serialize + DeserializeOwned + quux_server::server::Routes {
     /// - If there is no init script in the dom (`QUUXInitialise`)
     /// - If the init script doesn't have a shadow tree attached
     /// - If the shadow tree is unparseable
-    #[client]
+    #[cfg_client]
     fn init_app() -> Result<(), errors::InitApp> {
         std::panic::set_hook(Box::new(console_error_panic_hook::hook));
 
@@ -30,10 +30,10 @@ pub trait Routes: Serialize + DeserializeOwned + quux_server::server::Routes {
         Ok(())
     }
 
-    #[client]
+    #[cfg_client]
     fn hydrate(self);
 
-    #[server]
+    #[cfg_server]
     fn render_to_string<T: Component + Clone + Serialize>(component: T) -> String
     where
         Self: Sized + From<T>,

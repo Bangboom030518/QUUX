@@ -10,7 +10,7 @@
 // }
 
 // impl<T: Component + Clone> Hydrate for ComponentNode<T> {
-//     #[client]
+//     #[cfg_client]
 //     fn hydrate(self) {
 //         self.0.render(Context::new()).hydrate();
 //     }

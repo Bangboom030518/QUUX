@@ -43,7 +43,7 @@ pub trait SerializePostcard: Serialize {
 
 mod internal {
     pub mod prelude {
-        #[client]
+        #[cfg_client]
         pub use super::super::tree::item::DomRepresentation;
         pub use super::super::{
             errors::{self, MapInternal},
@@ -63,7 +63,7 @@ mod internal {
 }
 
 pub mod prelude {
-    #[client]
+    #[cfg_client]
     pub use super::dom::console_log;
     pub use super::{
         component::{self, Component, Routes as _},
@@ -76,8 +76,8 @@ pub mod prelude {
             Item,
         },
     };
-    pub use quux_macros::{client, routes, server, view};
-    #[server]
+    pub use quux_macros::{client as cfg_client, routes, server as cfg_server, view};
+    #[cfg_server]
     pub use quux_server::prelude::*;
     pub use serde::{de::DeserializeOwned, Deserialize, Serialize};
 }

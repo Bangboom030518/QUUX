@@ -1,5 +1,5 @@
 use crate::{internal::prelude::*, IntoResponse};
-use http::{request::Parts, Uri};
+use http::Uri;
 use std::{future::Future, sync::Arc};
 use url::Url;
 
@@ -71,7 +71,7 @@ impl<O> Context<O> {
         }
     }
 
-    pub fn map<T>(self, mut mapping: impl FnOnce(O) -> T) -> Context<T> {
+    pub fn map<T>(self, mapping: impl FnOnce(O) -> T) -> Context<T> {
         let Self {
             request,
             url,
@@ -98,7 +98,7 @@ pub trait Handler: Send + Sync {
         input: Self::Input,
     ) -> impl Future<Output = Result<Self::Output, Self::Error>> + Send + Sync + 'a;
 
-    async fn serve(self, addr: impl Into<SocketAddr>)
+    async fn serve(self, address: impl Into<SocketAddr>)
     where
         Self: Sized + Handler<Input = Context<()>> + 'static,
         Result<Self::Output, Self::Error>: IntoResponse,
@@ -106,7 +106,7 @@ pub trait Handler: Send + Sync {
         // TODO: Mutex means we lose the benfit of async
         let server = Arc::new(tokio::sync::Mutex::new(self));
         let server =
-            hyper::Server::bind(&addr.into()).serve(make_service_fn(move |_: &AddrStream| {
+            hyper::Server::bind(&address.into()).serve(make_service_fn(move |_: &AddrStream| {
                 let server = Arc::clone(&server);
                 async move {
                     let server = Arc::clone(&server);

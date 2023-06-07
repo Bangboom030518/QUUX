@@ -17,14 +17,14 @@ impl<T: Item> Item for Many<T> {
         id
     }
 
-    #[client]
+    #[cfg_client]
     fn hydrate(&mut self) {
         for item in &mut self.0 {
             item.hydrate();
         }
     }
 
-    #[client]
+    #[cfg_client]
     fn dom_representation(&mut self) -> DomRepresentation {
         DomRepresentation::Many(
             self.0

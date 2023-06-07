@@ -34,7 +34,7 @@ pub struct Discover(Vec<SetCard>);
 impl Discover {
     /// # Errors
     /// If the database query fails
-    #[server]
+    #[cfg_server]
     pub async fn new(pool: &sqlx::Pool<sqlx::Sqlite>) -> Result<Self, error::Database> {
         let query: sqlx::query::Map<_, _, _> = sqlx::query!("SELECT * FROM sets");
         let sets = query.fetch_all(pool).await?;
