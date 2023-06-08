@@ -10,16 +10,9 @@ pub mod map;
 pub mod map_err;
 pub mod or;
 
-fn expect_url(uri: &Uri) -> Url {
-    uri.to_string()
-        .parse()
-        .expect("a parsed Uri should always be a valid Url")
-}
-
 #[derive(Debug)]
 pub struct Context<O> {
     pub(crate) request: crate::Request,
-    pub(crate) url: Url,
     pub output: O,
 }
 
@@ -50,7 +43,6 @@ pub struct Context<O> {
 impl Context<()> {
     pub fn new(request: crate::Request) -> Self {
         Self {
-            url: expect_url(request.uri()),
             request,
             output: (),
         }
@@ -58,28 +50,19 @@ impl Context<()> {
 }
 
 impl<O> Context<O> {
-    pub fn url(&self) -> &Url {
-        &self.url
+    pub fn request(&self) -> &Request {
+        &self.request
     }
 
     pub fn with_output<T>(self, output: T) -> Context<T> {
-        let Self { request, url, .. } = self;
-        Context {
-            request,
-            url,
-            output,
-        }
+        let Self { request, .. } = self;
+        Context { request, output }
     }
 
     pub fn map<T>(self, mapping: impl FnOnce(O) -> T) -> Context<T> {
-        let Self {
-            request,
-            url,
-            output,
-        } = self;
+        let Self { request, output } = self;
         Context {
             request,
-            url,
             output: mapping(output),
         }
     }

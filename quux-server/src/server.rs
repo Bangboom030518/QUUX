@@ -51,19 +51,12 @@ where
         let handler = self
             .handler
             .map_err(|context: H::Error| context.with_output(()))
-            .or(matcher.map(
-                move |Context {
-                          request,
-                          url,
-                          output,
-                      }: M::Output| {
-                    Context {
-                        request,
-                        url,
-                        output: mapping(output),
-                    }
-                },
-            ))
+            .or(
+                matcher.map(move |Context { request, output }: M::Output| Context {
+                    request,
+                    output: mapping(output),
+                }),
+            )
             .map(Into::into);
 
         Server::new(handler, self.fallback)
@@ -85,7 +78,7 @@ where
 impl<H, F> Server<H, F>
 where
     H: ContextHandler,
-    // H::InnerOutput: IntoResponse,
+    H::InnerOutput: IntoResponse,
     F: FnMut(H::Error) -> Response + Send + Sync,
 {
     pub async fn serve(self, address: impl Into<SocketAddr>) {

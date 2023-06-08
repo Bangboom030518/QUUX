@@ -41,20 +41,17 @@ async fn main() {
     // matching().path().method(Method::Get).body::<>;
 
     server()
-        .route(path(Method::GET), |_| html("HELLO WORLD!"))
+        .route(
+            path(Method::GET).map(|context| {
+                dbg!(context.request().uri());
+                context
+            }),
+            |context| html("HELLO WORLD!"),
+        )
         // .route(matcher(Method::POST))
         // .component::<Index>(matching!(path = "hello" / String, method = Get, body = ))
         // .component::<Create>()
         .fallback(|_| html("HELLO!"))
         .serve(([127, 0, 0, 1], 3000))
         .await;
-
-    // the trait bound `quux::quux_server::handler::function::Function<[closure@quuxlet\src\main.rs:21:9: 21:21], [async block@quuxlet\src\main.rs:21:22: 21:99], quux::quux_server::hyper::Request<quux::quux_server::hyper::Body>, quux::quux_server::hyper::Response<quux::quux_server::hyper::Body>, std::convert::Infallible>: std::clone::Clone` is not satisfied
-
-    // let hello = || async move { Ok::<_, Infallible>(Response::new(Body::from("Hello World!"))) };
-
-    // (|request| async move { Err(std::io::Error::new(std::io::ErrorKind::NotFound)) }).or(|_| hello);
-
-    // (|request| hello()).serve(([127, 0, 0, 1], 3000)).await;
-    // Ok(())
 }

@@ -132,13 +132,20 @@ where
         input: Self::Input,
     ) -> impl Future<Output = Result<Self::Output, Self::Error>> + 'a {
         async move {
-            let segments = input.url().path_segments();
+            // split the path into segments
+            // https://docs.rs/url/latest/src/url/lib.rs.html#1338-1341
+            let segments = input
+                .request
+                .uri()
+                .path()
+                .strip_prefix('/')
+                .and_then(|remainder| remainder.strip_suffix('/'))
+                .map(|remainder| remainder.split('/'));
 
             // TODO: .collect().into_iter()
             let segments = segments
                 .into_iter()
                 .flatten()
-                .peekable()
                 .map(ToString::to_string)
                 .collect::<Vec<String>>()
                 .into_iter();
@@ -147,7 +154,7 @@ where
 
             self.handler.handle(context).await.and_then(|mut context| {
                 let segments = &mut context.output.1;
-                if !segments.is_empty() && segments.next() != Some(String::new()) {
+                if !segments.is_empty() {
                     return Err(context.with_output(MatchError::Static));
                 }
                 Ok(context.map(|(output, _)| output))
@@ -174,6 +181,8 @@ where
 
 #[tokio::test]
 async fn path_works() {
+    // FIXME: paths improperly handled
+
     let mut handler = path(http::Method::GET)
         .static_segment("hello")
         .dynamic_segment::<u32>();
