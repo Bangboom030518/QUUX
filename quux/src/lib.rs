@@ -63,6 +63,8 @@ mod internal {
 }
 
 pub mod prelude {
+    #[cfg_server]
+    pub use super::component::ServerExt as _;
     #[cfg_client]
     pub use super::dom::console_log;
     pub use super::{
@@ -78,6 +80,6 @@ pub mod prelude {
     };
     pub use quux_macros::{client as cfg_client, routes, server as cfg_server, view};
     #[cfg_server]
-    pub use quux_server::prelude::*;
+    pub use quux_server::{self, prelude::*};
     pub use serde::{de::DeserializeOwned, Deserialize, Serialize};
 }

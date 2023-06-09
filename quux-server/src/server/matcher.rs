@@ -139,16 +139,21 @@ where
                 .uri()
                 .path()
                 .strip_prefix('/')
-                .and_then(|remainder| remainder.strip_suffix('/'))
                 .map(|remainder| remainder.split('/'));
 
             // TODO: .collect().into_iter()
-            let segments = segments
+            let mut segments = segments
                 .into_iter()
                 .flatten()
                 .map(ToString::to_string)
-                .collect::<Vec<String>>()
-                .into_iter();
+                .collect::<Vec<String>>();
+
+            // remove segment after trailing slash
+            if segments.last() == Some(&String::new()) {
+                segments.pop();
+            }
+
+            let segments = segments.into_iter();
 
             let context = input.map(move |output| (output, segments));
 
@@ -181,8 +186,6 @@ where
 
 #[tokio::test]
 async fn path_works() {
-    // FIXME: paths improperly handled
-
     let mut handler = path(http::Method::GET)
         .static_segment("hello")
         .dynamic_segment::<u32>();
@@ -229,7 +232,7 @@ async fn methods_work() {
 
     let request = hyper::Request::builder()
         .method(http::Method::GET)
-        .uri("http://localhost:3000")
+        .uri("http://localhost:3000/")
         .body(Body::empty())
         .unwrap();
 

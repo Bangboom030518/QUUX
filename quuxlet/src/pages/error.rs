@@ -48,7 +48,7 @@ impl Error {
 }
 
 impl Component for Error {
-    fn render(self, _: Context<Self>) -> impl Item {
+    fn render(self) -> impl Item {
         html()
             .attribute("lang", "en")
             .component(Head::new(&self.title()))
@@ -68,7 +68,7 @@ impl Component for Error {
                         Self::SetNotFound => Branch4::D(h1().text("Set not found!")),
                     })),
             )
-            .component(InitialisationScript::init(include_str!(
+            .component(InitialisationScript::new(include_str!(
                 "../../dist/init.js"
             )))
     }

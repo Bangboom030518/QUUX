@@ -44,10 +44,8 @@ impl Selector {
     }
 }
 
-impl component::Init for Selector {
-    type Props = ();
-
-    fn init(_: Self::Props) -> Self {
+impl Selector {
+    pub fn new() -> Self {
         Self {
             is_hidden: Store::new(true),
             rating: Store::new(Rating::Ok),
@@ -72,7 +70,7 @@ fn rating_button(store: Store<Rating>, rating: Rating, svg: &str) -> impl Item {
 }
 
 impl Component for Selector {
-    fn render(self, _: Context<Self>) -> impl Item {
+    fn render(self) -> impl Item {
         div()
             .class("btn-group flashcard-hidden")
             // TODO: remove need for duplication of reactive classes

@@ -1,7 +1,7 @@
 use crate::{internal::prelude::*, IntoResponse};
 pub use matcher::{path, Matcher};
 
-mod matcher;
+pub mod matcher;
 
 pub trait ContextHandler:
     Handler<Input = Context<()>, Output = Context<Self::InnerOutput>, Error = Context<Self::InnerError>>
@@ -20,20 +20,37 @@ where
     type InnerError = E;
 }
 
-pub struct Server<H, F>
+pub struct Server<H, F, R>
 where
     H: Handler,
 {
     handler: H,
     fallback: F,
+    _phantom: PhantomData<R>,
 }
 
-impl<H, F> Server<H, F>
+impl<H, F, R> Server<H, F, R>
 where
     H: ContextHandler,
 {
     pub fn new(handler: H, fallback: F) -> Self {
-        Self { handler, fallback }
+        Self {
+            handler,
+            fallback,
+            _phantom: PhantomData,
+        }
+    }
+
+    pub fn map_handler<M, H2>(self, mapping: M) -> Server<H2, F, R>
+    where
+        M: FnOnce(H) -> H2,
+        H2: ContextHandler,
+    {
+        Server {
+            handler: mapping(self.handler),
+            fallback: self.fallback,
+            _phantom: PhantomData,
+        }
     }
 
     pub fn route<M, O>(
@@ -43,6 +60,7 @@ where
     ) -> Server<
         impl ContextHandler<InnerOutput = Either<H::InnerOutput, O>, InnerError = M::InnerError>,
         F,
+        R,
     >
     where
         M: ContextHandler,
@@ -62,12 +80,12 @@ where
         Server::new(handler, self.fallback)
     }
 
-    pub fn fallback<R>(
+    pub fn fallback<O>(
         self,
-        mut mapping: impl FnMut(H::Error) -> R + Send + Sync,
-    ) -> Server<H, impl FnMut(H::Error) -> Response + Send + Sync>
+        mut mapping: impl FnMut(H::Error) -> O + Send + Sync,
+    ) -> Server<H, impl FnMut(H::Error) -> Response + Send + Sync, R>
     where
-        R: IntoResponse + Send + Sync,
+        O: IntoResponse + Send + Sync,
     {
         Server::new(self.handler, move |context| {
             mapping(context).into_response()
@@ -75,7 +93,7 @@ where
     }
 }
 
-impl<H, F> Server<H, F>
+impl<H, F, R> Server<H, F, R>
 where
     H: ContextHandler,
     H::InnerOutput: IntoResponse,
@@ -90,10 +108,9 @@ where
     }
 }
 
-pub fn server() -> Server<impl ContextHandler<InnerOutput = Infallible, InnerError = ()>, ()> {
+pub fn server<R>() -> Server<impl ContextHandler<InnerOutput = Infallible, InnerError = ()>, (), R>
+{
     Server::new(handler(|context| async move { Err(context) }), ())
 }
 
-pub trait Routes: Send + Sync + Clone {
-    fn handle(input: Context<()>) -> Response;
-}
+// pub trait Routes: Send + Sync {}

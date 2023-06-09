@@ -124,8 +124,10 @@ mod internal {
 pub mod prelude {
     pub use super::{
         handler::prelude::*,
-        html,
-        server::{path, server, Routes},
-        Request, Response, ThreadSafe,
+        // html,
+        server::{path, server},
+        Request,
+        Response,
+        ThreadSafe,
     };
 }

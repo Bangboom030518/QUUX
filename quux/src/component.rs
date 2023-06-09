@@ -1,4 +1,9 @@
 use crate::internal::prelude::*;
+#[cfg_server]
+use quux_server::{
+    server::{matcher::MatcherHandler, ContextHandler, Matcher, Server},
+    Either, Html, IntoResponse,
+};
 
 pub trait Component {
     fn render(self) -> impl Item
@@ -6,7 +11,7 @@ pub trait Component {
         Self: Sized;
 }
 
-pub trait Routes: Serialize + DeserializeOwned + quux_server::server::Routes {
+pub trait Routes: Serialize + DeserializeOwned {
     /// Recursively hydrates the dom, starting at the root app component.
     /// Applies a console panic hook for better debugging.
     /// # Errors
@@ -52,3 +57,43 @@ pub trait Routes: Serialize + DeserializeOwned + quux_server::server::Routes {
 }
 
 impl<T: Routes> SerializePostcard for T {}
+
+#[cfg_server]
+pub trait ServerExt<H, F, M, R>
+where
+    R: Routes,
+    M: ContextHandler,
+    H: ContextHandler,
+{
+    fn component<T>(
+        self,
+        matcher: M,
+    ) -> Server<impl ContextHandler<InnerOutput = Either<H::InnerOutput, Html>>, F, R>
+    where
+        T: Component + Clone + Serialize + Send + Sync,
+        T: From<M::InnerOutput>,
+        R: From<T>;
+}
+
+#[cfg_server]
+impl<H, F, M, R> ServerExt<H, F, M, R> for Server<H, F, R>
+where
+    H: ContextHandler,
+    H::InnerOutput: IntoResponse,
+    R: Routes,
+    M: ContextHandler,
+{
+    fn component<T>(
+        self,
+        matcher: M,
+    ) -> Server<impl ContextHandler<InnerOutput = Either<H::InnerOutput, Html>>, F, R>
+    where
+        T: Component + Clone + Serialize + Send + Sync,
+        T: From<M::InnerOutput>,
+        R: From<T>,
+    {
+        self.route(matcher, |props| {
+            quux_server::html(R::render_to_string(T::from(props)))
+        })
+    }
+}

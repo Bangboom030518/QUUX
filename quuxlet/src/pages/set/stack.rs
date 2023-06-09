@@ -9,10 +9,8 @@ pub struct Stack {
     side: Store<flashcard::Side>,
 }
 
-impl component::Init for Stack {
-    type Props = Vec<Term>;
-
-    fn init(terms: Self::Props) -> Self {
+impl Stack {
+    pub fn new(terms: Vec<Term>) -> Self {
         Self {
             terms: store::List::new(terms),
             side: Store::new(flashcard::Side::Term),
@@ -21,8 +19,8 @@ impl component::Init for Stack {
 }
 
 impl Component for Stack {
-    fn render(self, _: Context<Self>) -> impl Item {
-        let confidence_rating = rating::Selector::init(());
+    fn render(self) -> impl Item {
+        let confidence_rating = rating::Selector::new();
         let rating = confidence_rating.get_rating_store();
 
         div()

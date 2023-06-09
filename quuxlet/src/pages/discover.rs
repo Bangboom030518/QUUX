@@ -9,7 +9,7 @@ pub struct SetCard {
 }
 
 impl Component for SetCard {
-    fn render(self, _: quux::context::Context<Self>) -> impl Item
+    fn render(self) -> impl Item
     where
         Self: Sized,
     {
@@ -51,7 +51,7 @@ impl Discover {
 }
 
 impl Component for Discover {
-    fn render(self, _: quux::context::Context<Self>) -> impl Item
+    fn render(self) -> impl Item
     where
         Self: Sized,
     {
@@ -72,7 +72,7 @@ impl Component for Discover {
                                     .child(
                                         self.0
                                         .into_iter()
-                                        .map(|set| set.render(Context::new()))
+                                        .map(|set| set.render())
                                         .collect::<Many<_>>(),
                                     ),
                             )

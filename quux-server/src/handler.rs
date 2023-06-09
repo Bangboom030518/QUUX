@@ -9,6 +9,7 @@ pub mod function;
 pub mod map;
 pub mod map_err;
 pub mod or;
+pub mod then;
 
 #[derive(Debug)]
 pub struct Context<O> {
@@ -116,6 +117,6 @@ pub trait Handler: Send + Sync {
 pub mod prelude {
     pub use super::{
         and_then::HandlerExt as _, function::handler, map::HandlerExt as _,
-        map_err::HandlerExt as _, or::HandlerExt as _, Context, Handler,
+        map_err::HandlerExt as _, or::HandlerExt as _, then::HandlerExt as _, Context, Handler,
     };
 }

@@ -57,11 +57,11 @@ impl Routes {
             #implementations
 
             impl quux::component::Routes for Routes {
-                #[quux::prelude::client]
+                #[quux::prelude::cfg_client]
                 fn hydrate(self) {
                     match self {
                         #(Self::#variants(component) => {
-                            let mut tree = quux::component::Component::render(component, quux::context::Context::new());
+                            let mut tree = quux::component::Component::render(component);
                             quux::tree::Item::insert_id(&mut tree, 0);
                             // quux::dom::console_log!("{:#?}", tree);
                             quux::tree::Item::hydrate(&mut tree);

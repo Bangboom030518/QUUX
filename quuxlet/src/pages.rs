@@ -26,16 +26,8 @@ impl Head {
     }
 }
 
-impl component::Init for Head {
-    type Props = String;
-
-    fn init(props: Self::Props) -> Self {
-        Self { title: props }
-    }
-}
-
 impl Component for Head {
-    fn render(self, _: Context<Self>) -> impl Item
+    fn render(self) -> impl Item
     where
         Self: Sized,
     {

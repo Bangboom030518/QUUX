@@ -3,7 +3,7 @@ use super::error::{self, Error};
 use super::{nav_bar, Head};
 use crate::Component;
 pub use flashcard::Flashcard;
-use quux::prelude::*;
+use quux::{prelude::*, tree::element::html::html};
 pub use rating::Rating;
 pub use stack::Stack;
 
@@ -35,20 +35,18 @@ impl Set {
         pool: &sqlx::Pool<sqlx::Sqlite>,
         set_id: &str,
     ) -> Result<Self, error::Database> {
-        Ok(Self::init(crate::data::Set::fetch(pool, set_id).await?))
+        Ok(Self(crate::data::Set::fetch(pool, set_id).await?))
     }
 }
 
-impl quux::component::Init for Set {
-    type Props = crate::data::Set;
-
-    fn init(set: Self::Props) -> Self {
-        Self(set)
-    }
-}
+// impl Set {
+//     fn new(set: crate::data::Set) -> Self {
+//         Self(set)
+//     }
+// }
 
 impl Component for Set {
-    fn render(self, _: Context<Self>) -> impl Item {
+    fn render(self) -> impl Item {
         html()
             .attribute("lang", "en")
             .component(Head::new(&format!("{} - QUUXLET", self.0.name)))
@@ -59,9 +57,9 @@ impl Component for Set {
                     .child(
                         main()
                             .child(h1().text(self.0.name))
-                            .component(Stack::init(self.0.terms)),
+                            .component(Stack::new(self.0.terms)),
                     )
-                    .component(InitialisationScript::init(include_str!(
+                    .component(InitialisationScript::new(include_str!(
                         "../../dist/init.js"
                     ))),
             )
