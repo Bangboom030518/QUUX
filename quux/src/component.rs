@@ -1,7 +1,7 @@
 use crate::internal::prelude::*;
 #[cfg_server]
 use quux_server::{
-    server::{matcher::MatcherHandler, ContextHandler, Matcher, Server},
+    server::{matcher::MatcherHandler, ContextHandler, Path, Server},
     Either, Html, IntoResponse,
 };
 

@@ -11,7 +11,6 @@ use quux::prelude::*;
 use quuxlet::pages::Index;
 
 #[tokio::main]
-
 async fn main() {
     let pool = sqlx::sqlite::SqlitePoolOptions::new()
         .max_connections(5)
@@ -22,7 +21,7 @@ async fn main() {
     println!("serving on http://localhost:3000...");
 
     use quux::component::ServerExt;
-
+    let x = path(Method::GET);
     server::<quuxlet::Routes>()
         .component::<Index>(path(Method::GET))
         // .route(path(Method::GET), |context| html("HELLO WORLD!"))

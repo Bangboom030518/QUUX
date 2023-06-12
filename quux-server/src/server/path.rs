@@ -2,52 +2,54 @@ use crate::internal::prelude::*;
 use std::{str::FromStr, vec::IntoIter};
 
 #[derive(Debug, thiserror::Error)]
-pub enum MatchError<E> {
-    Static,
-    Dynamic(E),
-    IncorrectMethod,
+pub enum Error<E> {
+    PathMatch,
+    Fatal(E),
+}
+
+impl<E> Error<E> {
+    pub fn fatal(self) -> Option<E> {
+        if let Self::Fatal(error) = self {
+            Some(error)
+        } else {
+            None
+        }
+    }
 }
 
 pub type Context<I> = crate::handler::Context<(I, IntoIter<String>)>;
 
-pub trait MatcherHandler:
+pub trait PathHandler:
     Handler<
-    Input = Context<Self::InnerInput>,
+    Input = Context<()>,
     Output = Context<Self::InnerOutput>,
-    Error = crate::handler::Context<MatchError<Self::InnerError>>,
+    Error = crate::handler::Context<Error<Self::InnerError>>,
 >
 {
-    type InnerInput: Send + Sync;
     type InnerOutput: Send + Sync;
     type InnerError: Send + Sync;
 }
 
-impl<T, I, O, E> MatcherHandler for T
+impl<T, O, E> PathHandler for T
 where
-    T: Handler<
-        Input = Context<I>,
-        Output = Context<O>,
-        Error = crate::handler::Context<MatchError<E>>,
-    >,
-    I: Send + Sync,
+    T: Handler<Input = Context<()>, Output = Context<O>, Error = crate::handler::Context<Error<E>>>,
     O: Send + Sync,
     E: Send + Sync,
 {
-    type InnerInput = I;
     type InnerOutput = O;
     type InnerError = E;
 }
 
-pub struct Matcher<H>
+pub struct Path<H>
 where
-    H: MatcherHandler,
+    H: PathHandler,
 {
     handler: H,
 }
 
-impl<H> Matcher<H>
+impl<H> Path<H>
 where
-    H: MatcherHandler,
+    H: PathHandler,
 {
     pub fn new(handler: H) -> Self {
         Self { handler }
@@ -57,14 +59,8 @@ where
     pub fn static_segment(
         self,
         segment: &'static str,
-    ) -> Matcher<
-        impl MatcherHandler<
-            InnerInput = H::InnerInput,
-            InnerOutput = H::InnerOutput,
-            InnerError = H::InnerError,
-        >,
-    > {
-        Matcher::new(
+    ) -> Path<impl PathHandler<InnerOutput = H::InnerOutput, InnerError = H::InnerError>> {
+        Path::new(
             self.handler
                 .and_then(handler(move |mut context: H::Output| async move {
                     let segments = &mut context.output.1;
@@ -74,7 +70,7 @@ where
                     {
                         Ok(context)
                     } else {
-                        Err(context.with_output(MatchError::<H::InnerError>::Static))
+                        Err(context.with_output(Error::<H::InnerError>::PathMatch))
                     }
                 }))
                 .map_err(|err| err.unwrap()),
@@ -84,45 +80,44 @@ where
     // Parses a path segment
     pub fn dynamic_segment<T: FromStr>(
         self,
-    ) -> Matcher<
-        impl MatcherHandler<
-            InnerInput = H::InnerInput,
-            InnerOutput = (H::InnerOutput, T),
-            InnerError = Either<H::InnerError, T::Err>,
-        >,
+    ) -> Path<
+        impl PathHandler<InnerOutput = (H::InnerOutput, T), InnerError = Either<H::InnerError, T::Err>>,
     >
     where
         T: Send + Sync,
         T::Err: Send + Sync,
     {
-        Matcher::new(self
-            .handler
-            .map_err(|err| err.map(|err| match err {
-                MatchError::Dynamic(err) => MatchError::Dynamic(Either::A(err)),
-                MatchError::Static => MatchError::Static,
-                MatchError::IncorrectMethod => MatchError::IncorrectMethod,
-            }))
-            .and_then(handler(|mut context: H::Output| async move {
-                let segments = &mut context.output.1;
-                let Some(segment) = segments.next() else {
-                    return Err(context.with_output(MatchError::<Either<H::InnerError, T::Err>>::Static))
-                };
-                let new: T = match segment.parse() {
-                    Ok(new) => new,
-                    Err(err) => return Err(context.with_output(MatchError::Dynamic(Either::B(err))))
-                };
-                Ok(context.map(|(previous, segments)| ((previous, new), segments)))
-            })).map_err(|err| err.unwrap()))
+        Path::new(
+            self.handler
+                .map_err(|err| {
+                    err.map(|err| match err {
+                        Error::Fatal(err) => Error::Fatal(Either::A(err)),
+                        Error::PathMatch => Error::PathMatch,
+                    })
+                })
+                .and_then(handler(|mut context: H::Output| async move {
+                    let segments = &mut context.output.1;
+                    let Some(segment) = segments.next() else {
+                        return Err(context.with_output(Error::<Either<H::InnerError, T::Err>>::PathMatch))
+                    };
+                    let new: T = match segment.parse() {
+                        Ok(new) => new,
+                        Err(err) => return Err(context.with_output(Error::Fatal(Either::B(err)))),
+                    };
+                    Ok(context.map(|(previous, segments)| ((previous, new), segments)))
+                }))
+                .map_err(|err| err.unwrap()),
+        )
     }
 }
 
-impl<H> Handler for Matcher<H>
+impl<H> Handler for Path<H>
 where
-    H: MatcherHandler,
+    H: PathHandler,
 {
-    type Input = crate::handler::Context<H::InnerInput>;
+    type Input = crate::handler::Context<()>;
     type Output = crate::handler::Context<H::InnerOutput>;
-    type Error = crate::handler::Context<MatchError<H::InnerError>>;
+    type Error = crate::handler::Context<Error<H::InnerError>>;
 
     // TODO: path args parse failure?
     // TODO: use slice::Split
@@ -160,7 +155,7 @@ where
             self.handler.handle(context).await.and_then(|mut context| {
                 let segments = &mut context.output.1;
                 if !segments.is_empty() {
-                    return Err(context.with_output(MatchError::Static));
+                    return Err(context.with_output(Error::PathMatch));
                 }
                 Ok(context.map(|(output, _)| output))
             })
@@ -168,17 +163,14 @@ where
     }
 }
 
-pub fn path<I>(
+pub fn path(
     method: http::Method,
-) -> Matcher<impl MatcherHandler<InnerInput = I, InnerOutput = I, InnerError = Infallible>>
-where
-    I: Send + Sync,
-{
-    Matcher::new(handler(move |context: Context<_>| {
+) -> Path<impl PathHandler<InnerOutput = (), InnerError = Infallible>> {
+    Path::new(handler(move |context: Context<_>| {
         let result = if context.request.method() == method {
             Ok(context)
         } else {
-            Err(context.with_output(MatchError::IncorrectMethod))
+            Err(context.with_output(Error::PathMatch))
         };
         std::future::ready(result)
     }))
