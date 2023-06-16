@@ -31,6 +31,27 @@ impl Component for SetCard {
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Discover(Vec<SetCard>);
 
+// #[cfg_server]
+// impl AsyncFrom<sqlx::Pool<sqlx::Sqlite>> for Discover {
+//     fn async_from(
+//         pool: sqlx::Pool<sqlx::Sqlite>,
+//     ) -> impl std::future::Future<Output = Self> + Send + Sync {
+//         async move {
+//             let query: sqlx::query::Map<_, _, _> = sqlx::query!("SELECT * FROM sets");
+//             let sets = query.fetch_all(pool).await?;
+
+//             Ok(Self(
+//                 sets.into_iter()
+//                     .map(|entry| SetCard {
+//                         name: entry.name,
+//                         url: format!("/set/{}", entry.id),
+//                     })
+//                     .collect(),
+//             ))
+//         }
+//     }
+// }
+
 impl Discover {
     /// # Errors
     /// If the database query fails

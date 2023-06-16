@@ -57,20 +57,13 @@ where
         }
     }
 
-    /*
-       Output = Context<Either<<H as ContextHandler>::InnerOutput, O>>
-    */
-    /*
-          expected enum `Either<handler::Context<<H as ContextHandler>::InnerOutput>, handler::Context<O>>`
-           found struct `handler::Context<Either<<H as ContextHandler>::InnerOutput, O>>`
-    */
-    pub fn route<M, O>(
+    pub fn route<M, Fut>(
         self,
-        mut matcher: M,
-        mut mapping: impl FnMut(M::InnerOutput) -> O + Send + Sync,
+        matcher: M,
+        mapping: impl FnMut(M::InnerOutput) -> Fut + Send + Sync + Clone,
     ) -> Server<
         impl ContextHandler<
-            InnerOutput = Either<H::InnerOutput, O>,
+            InnerOutput = Either<H::InnerOutput, Fut::Output>,
             InnerError = Either<H::InnerError, M::InnerError>,
         >,
         F,
@@ -78,44 +71,34 @@ where
     >
     where
         M: ContextHandler,
-        O: Send + Sync + IntoResponse,
+        Fut: Future + Send + Sync,
+        Fut::Output: Send + Sync + IntoResponse,
     {
         // TODO: should mapping take `Context<O>` rather than just `O`
-        // Err(context) => Err(context.map(|err| match err.fatal() {
-        //     Some(err) => path::Error::Fatal(Either::B(err)),
-        //     None => path::Error::PathMatch,
-        // })),
-        // Ok(context) => Ok(context.map(mapping)),
-
         let handler = handler(move |context: H::Error| async move {
-            match context.output.fatal() {
-                Some(err) => Err(Context {
-                    request: context.request,
-                    output: path::Error::Fatal(Either::A(err)),
-                }),
-                None => Ok(context.with_output(())),
+            let Context { request, output } = context;
+            match output.fatal() {
+                Some(output) => Err(Context { request, output }),
+                None => Ok(Context::new(request)),
             }
         })
         .and_then(matcher)
-        .map_err(|context| {
-            match context {
-                Either::A(context) => todo!(),
-                Either::B(context) => context.map(|err| match err.fatal() {
-                    Some(err) => path::Error::Fatal(Either::B(err)),
-                    None => path::Error::PathMatch,
-                }),
-            }
-            // Context::<Either<_, _>>::from(context).map(|err| match err {
-            // Either::A(err) => match err.fatal() {
-            //     Some(err) => path::Error::Fatal(Either::A(err)),
-            //     None => path::Error::PathMatch,
-            // },
-            //     Either::B(fatal) => path::Error::Fatal(Either::B(err)),
-            // })
+        .map_err(|context| match context {
+            Either::A(context) => context.map(|err| path::Error::Fatal(Either::A(err))),
+            Either::B(context) => context.map(|err| match err.fatal() {
+                Some(err) => path::Error::Fatal(Either::B(err)),
+                None => path::Error::PathMatch,
+            }),
         })
-        .map(move |context| context.map(mapping));
+        .map_async(move |context| {
+            let mapping = mapping.clone();
+            async move { context.map_async(mapping).await }
+        });
 
-        Server::new(self.handler.or(handler), self.fallback)
+        Server::new(
+            self.handler.or(handler).map(Context::<Either<_, _>>::from),
+            self.fallback,
+        )
     }
 
     pub fn fallback<O>(

@@ -1,6 +1,6 @@
 #![warn(clippy::pedantic, clippy::nursery)]
 #![allow(incomplete_features)]
-#![feature(return_position_impl_trait_in_trait, drain_filter)]
+#![feature(return_position_impl_trait_in_trait, drain_filter, async_fn_in_trait)]
 
 pub use cfg_if;
 use internal::prelude::*;
@@ -68,7 +68,7 @@ pub mod prelude {
     #[cfg_client]
     pub use super::dom::console_log;
     pub use super::{
-        component::{self, Component, Routes as _},
+        component::{self, AsyncFrom, Component, Routes as _},
         event,
         initialisation_script::InitialisationScript,
         store::{self, Store},

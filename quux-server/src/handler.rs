@@ -60,6 +60,17 @@ impl<O> Context<O> {
         Context { request, output }
     }
 
+    pub async fn map_async<Fut>(self, mapping: impl FnOnce(O) -> Fut) -> Context<Fut::Output>
+    where
+        Fut: Future,
+    {
+        let Self { request, output } = self;
+        Context {
+            request,
+            output: mapping(output).await,
+        }
+    }
+
     pub fn map<T>(self, mapping: impl FnOnce(O) -> T) -> Context<T> {
         let Self { request, output } = self;
         Context {

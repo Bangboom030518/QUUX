@@ -7,8 +7,8 @@
 )]
 
 use http::Method;
-use quux::prelude::*;
-use quuxlet::pages::Index;
+use quux::{prelude::*, server::Either};
+use quuxlet::pages::{Discover, Index};
 
 #[tokio::main]
 async fn main() {
@@ -21,9 +21,26 @@ async fn main() {
     println!("serving on http://localhost:3000...");
 
     use quux::component::ServerExt;
-    let x = path(Method::GET);
+
+    // let discover =
+    //     .and(with_pool(pool.clone()))
+    //     .and_then(|pool| async move { Discover::new(&pool).await.map_err(warp::reject::custom) });
     server::<quuxlet::Routes>()
         .component::<Index>(path(Method::GET))
+        .component::<Discover>(
+            path(Method::GET)
+                .static_segment("discover")
+                .and_then(handler(|context: Context<()>| async move {
+                    let discover = Discover::new(&pool)
+                        .await
+                        .map_err(move |err| context.with_output(path::Error::Fatal(err)))?;
+                    Ok(context.with_output(discover))
+                }))
+                .map_err(|error| match error {
+                    Either::A(error) => todo!(),
+                    Either::B(error) => todo!(),
+                }),
+        )
         // .route(path(Method::GET), |context| html("HELLO WORLD!"))
         // .route(matcher(Method::POST))
         // .component::<Index>(matching!(path = "hello" / String, method = Get, body = ))

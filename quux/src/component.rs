@@ -1,7 +1,10 @@
+use std::future::Future;
+
 use crate::internal::prelude::*;
+
 #[cfg_server]
 use quux_server::{
-    server::{matcher::MatcherHandler, ContextHandler, Path, Server},
+    server::{path::PathHandler, ContextHandler, Path, Server},
     Either, Html, IntoResponse,
 };
 
@@ -9,6 +12,19 @@ pub trait Component {
     fn render(self) -> impl Item
     where
         Self: Sized;
+}
+
+pub trait AsyncFrom<T> {
+    fn async_from(value: T) -> impl Future<Output = Self> + Send + Sync;
+}
+
+impl<T, U> AsyncFrom<U> for T
+where
+    T: From<U> + Send + Sync,
+{
+    fn async_from(value: U) -> impl Future<Output = Self> + Send + Sync {
+        std::future::ready(Self::from(value))
+    }
 }
 
 pub trait Routes: Serialize + DeserializeOwned {
@@ -70,8 +86,7 @@ where
         matcher: M,
     ) -> Server<impl ContextHandler<InnerOutput = Either<H::InnerOutput, Html>>, F, R>
     where
-        T: Component + Clone + Serialize + Send + Sync,
-        T: From<M::InnerOutput>,
+        T: Component + Clone + Serialize + Send + Sync + From<M::InnerOutput>,
         R: From<T>;
 }
 
@@ -88,12 +103,11 @@ where
         matcher: M,
     ) -> Server<impl ContextHandler<InnerOutput = Either<H::InnerOutput, Html>>, F, R>
     where
-        T: Component + Clone + Serialize + Send + Sync,
-        T: From<M::InnerOutput>,
+        T: Component + Clone + Serialize + Send + Sync + AsyncFrom<M::InnerOutput>,
         R: From<T>,
     {
-        self.route(matcher, |props| {
-            quux_server::html(R::render_to_string(T::from(props)))
+        self.route(matcher, |props| async move {
+            quux_server::html(R::render_to_string(T::async_from(props).await))
         })
     }
 }
