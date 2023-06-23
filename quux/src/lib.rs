@@ -56,8 +56,8 @@ mod internal {
             collections::HashMap,
             fmt::{self, Debug, Display},
             marker::PhantomData,
-            rc::Rc,
             str::FromStr,
+            sync::Arc,
         };
     }
 }

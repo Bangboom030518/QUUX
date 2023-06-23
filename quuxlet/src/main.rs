@@ -30,15 +30,18 @@ async fn main() {
         .component::<Discover>(
             path(Method::GET)
                 .static_segment("discover")
-                .and_then(handler(|context: Context<()>| async move {
-                    let discover = Discover::new(&pool)
-                        .await
-                        .map_err(move |err| context.with_output(path::Error::Fatal(err)))?;
-                    Ok(context.with_output(discover))
+                .and_then(handler(|context: Context<()>| {
+                    let pool = pool.clone();
+                    async move {
+                        match Discover::new(&pool).await {
+                            Ok(discover) => Ok(context.with_output(discover)),
+                            Err(err) => Err(context.with_output(path::Error::Fatal(err))),
+                        }
+                    }
                 }))
                 .map_err(|error| match error {
-                    Either::A(error) => todo!(),
-                    Either::B(error) => todo!(),
+                    Either::A(context) => context.with_output(path::Error::PathMatch),
+                    Either::B(context) => context,
                 }),
         )
         // .route(path(Method::GET), |context| html("HELLO WORLD!"))

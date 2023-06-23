@@ -1,4 +1,4 @@
-use super::RcCell;
+use super::ArcCell;
 use crate::{
     internal::prelude::*,
     tree::{self, element::reactivity},
@@ -8,23 +8,23 @@ pub type Callback<T> = Box<dyn FnMut(Event<T>) + 'static>;
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct List<T> {
-    value: RcCell<Vec<(Store<usize>, T)>>,
+    value: ArcCell<Vec<(Store<usize>, T)>>,
     #[serde(skip)]
-    listeners: RcCell<Vec<Callback<T>>>,
+    listeners: ArcCell<Vec<Callback<T>>>,
 }
 
 impl<T> List<T> {
     #[must_use]
     pub fn new(values: Vec<T>) -> Self {
         Self {
-            value: Rc::new(RefCell::new(
+            value: Arc::new(RefCell::new(
                 values
                     .into_iter()
                     .enumerate()
                     .map(|(index, value)| (Store::new(index), value))
                     .collect(),
             )),
-            listeners: Rc::new(RefCell::new(Vec::new())),
+            listeners: Arc::new(RefCell::new(Vec::new())),
         }
     }
 
@@ -127,8 +127,8 @@ impl<T> List<T> {
 impl<T> Clone for List<T> {
     fn clone(&self) -> Self {
         Self {
-            value: Rc::clone(&self.value),
-            listeners: Rc::clone(&self.listeners),
+            value: Arc::clone(&self.value),
+            listeners: Arc::clone(&self.listeners),
         }
     }
 }

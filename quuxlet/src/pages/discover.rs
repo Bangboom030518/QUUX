@@ -1,4 +1,5 @@
 use quux::prelude::*;
+use tokio::sync::oneshot::channel;
 
 use super::{error, nav_bar, Head};
 
@@ -56,18 +57,26 @@ impl Discover {
     /// # Errors
     /// If the database query fails
     #[cfg_server]
-    pub async fn new(pool: &sqlx::Pool<sqlx::Sqlite>) -> Result<Self, error::Database> {
-        let query: sqlx::query::Map<_, _, _> = sqlx::query!("SELECT * FROM sets");
-        let sets = query.fetch_all(pool).await?;
-
-        Ok(Self(
-            sets.into_iter()
-                .map(|entry| SetCard {
-                    name: entry.name,
-                    url: format!("/set/{}", entry.id),
-                })
-                .collect(),
-        ))
+    pub fn new<'a>(
+        pool: &'a sqlx::Pool<sqlx::Sqlite>,
+    ) -> impl std::future::Future<Output = Result<Self, error::Database>> + Send + Sync + 'a {
+        async move {
+            let (tx, rx) = channel();
+            let pool = pool.clone();
+            tokio::spawn(async move {
+                let query: sqlx::query::Map<_, _, _> = sqlx::query!("SELECT * FROM sets");
+                tx.send(query.fetch_all(&pool).await)
+            });
+            let sets = rx.await.unwrap()?;
+            Ok(Self(
+                sets.into_iter()
+                    .map(|entry| SetCard {
+                        name: entry.name,
+                        url: format!("/set/{}", entry.id),
+                    })
+                    .collect(),
+            ))
+        }
     }
 }
 
