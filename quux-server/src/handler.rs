@@ -1,5 +1,5 @@
 use crate::{internal::prelude::*, IntoResponse};
-use http::{request::Parts, Uri};
+use http::{Uri};
 use std::{future::Future, sync::Arc};
 use url::Url;
 

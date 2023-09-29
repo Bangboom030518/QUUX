@@ -5,21 +5,21 @@ pub type Context<I> = crate::handler::Context<(I, IntoIter<String>)>;
 
 pub struct Path<H, I, O>
 where
-    H: Handler<Input = Context<I>, Output = Context<O>>,
+    H: Handler<Input = Context<I>, Output = Context<(I, O)>>,
 {
     handler: H,
 }
 
 impl<H, I, O> Path<H, I, O>
 where
-    H: Handler<Input = Context<I>, Output = Context<O>>,
+    H: Handler<Input = Context<I>, Output = Context<(I, O)>>,
     O: Send + Sync,
     I: Send + Sync,
 {
     pub fn static_segment(
         self,
         segment: &'static str,
-    ) -> Path<impl Handler<Input = Context<I>, Output = Context<O>>, I, O> {
+    ) -> Path<impl Handler<Input = Context<I>, Output = Context<(I, O)>>, I, O> {
         Path {
             handler: self
                 .handler
@@ -43,7 +43,7 @@ where
 
     pub fn dynamic_segment<T: FromStr>(
         self,
-    ) -> Path<impl Handler<Input = Context<I>, Output = Context<(O, T)>>, I, (O, T)>
+    ) -> Path<impl Handler<Input = Context<I>, Output = Context<(I, (O, T))>>, I, (O, T)>
     where
         T: Send + Sync,
     {
@@ -67,12 +67,12 @@ where
 
 impl<H, O, I> Handler for Path<H, I, O>
 where
-    H: Handler<Input = Context<I>, Output = Context<O>>,
+    H: Handler<Input = Context<I>, Output = Context<(I, O)>>,
     O: Send + Sync,
     I: Send + Sync,
 {
     type Input = crate::handler::Context<I>;
-    type Output = crate::handler::Context<O>;
+    type Output = crate::handler::Context<(I, O)>;
     type Error = super::MatchError;
 
     // TODO: path args parse failure?
@@ -114,7 +114,7 @@ where
     }
 }
 
-pub fn path<I>() -> Path<impl Handler<Input = Context<I>, Output = Context<I>>, I, I>
+pub fn path<I>() -> Path<impl Handler<Input = Context<I>, Output = Context<(I, ())>>, I, ()>
 where
     I: Send + Sync,
 {
@@ -123,7 +123,7 @@ where
             Ok::<_, Infallible>(Context {
                 request: context.request,
                 url: context.url,
-                output: context.output,
+                output: (context.output, ()),
             })
         }),
     }

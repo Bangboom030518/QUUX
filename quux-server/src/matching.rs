@@ -11,40 +11,38 @@ mod path;
 #[error("failed to match in handler")]
 pub struct MatchError;
 
-pub struct Matching<H, O>
+pub struct Matching<H, I, O>
 where
-    H: Handler<Input = Context<()>, Output = Context<O>>,
+    H: Handler<Input = Context<I>, Output = Context<(I, O)>>,
+    I: Send + Sync,
     O: Send + Sync,
 {
     handler: H,
 }
 
-impl<H, O> Matching<H, O>
+impl<H, I, O> Matching<H, I, O>
 where
-    H: Handler<Input = Context<()>, Output = Context<O>>,
+    H: Handler<Input = Context<I>, Output = Context<(I, O)>>,
+    I: Send + Sync,
     O: Send + Sync,
 {
     pub fn new(handler: H) -> Self {
         Self { handler }
     }
     /*
-    expected struct `handler::Context<()>`
-       found struct `handler::Context<O>`
-    */
+type mismatch resolving `<handler::and_then::AndThen<H, matching::path::Path<H2, (I, O), O2>> as handler::Handler>::Input == handler::Context<(I, O)>`
+            */
     pub fn path<H2, O2>(
         self,
-        path: Path<H2, O, O2>,
-    ) -> Matching<impl Handler<Input = Context<()>, Output = Context<(O, O2)>>, (O, O2)>
+        path: Path<H2, (I, O), O2>,
+    ) -> Matching<impl Handler<Input = Context<(I, O)>, Output = Context<((I, O), O2)>>, (I, O), O2>
     where
-        H2: Handler<Input = path::Context<O>, Output = path::Context<O2>>,
+        H2: Handler<Input = path::Context<(I, O)>, Output = path::Context<((I, O), O2)>>,
         O2: ThreadSafe,
         O: Clone,
     {
-        // TODO: `Arc<Mutex<_>>`?
-        let path = Arc::new(Mutex::new(path));
-        Matching::new(self.handler.and_then(handler({
-            let path = Arc::clone(&path);
-            move |context: Context<O>| {
+        /*
+                    move |context: Context<O>| {
                 let path = Arc::clone(&path);
                 async move {
                     let previous = context.output.clone();
@@ -53,7 +51,9 @@ where
                     Ok::<_, MatchError>(context.with_output((previous, new)))
                 }
             }
-        })))
+
+        */
+        Matching::new(self.handler.and_then(path))
     }
 }
 
@@ -73,7 +73,10 @@ where
 //     }
 // }
 
-pub fn matching() -> Matching<impl Handler<Input = Context<()>, Output = Context<()>>, ()> {
+pub fn matching<I>() -> Matching<impl Handler<Input = Context<I>, Output = Context<(I, ())>>, I, ()>
+where
+    I: Send + Sync,
+{
     Matching::new(handler(|context: Context<()>| async move {
         Ok::<_, Infallible>(context)
     }))
