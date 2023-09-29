@@ -7,7 +7,7 @@ pub enum Database {
     Internal(Box<dyn std::error::Error + Send + Sync>),
 }
 
-#[server]
+#[cfg_server]
 impl From<sqlx::Error> for Database {
     fn from(value: sqlx::Error) -> Self {
         match value {
@@ -17,13 +17,13 @@ impl From<sqlx::Error> for Database {
     }
 }
 
-// #[server]
+// #[cfg_server]
 // impl warp::reject::Reject for Database {}
 
 #[derive(Debug)]
 pub struct NotFound(pub http::Uri);
 
-// #[server]
+// #[cfg_server]
 // impl warp::reject::Reject for NotFound {}
 
 #[derive(Clone, Debug, Serialize, Deserialize, thiserror::Error)]
@@ -48,7 +48,7 @@ impl Error {
 }
 
 impl Component for Error {
-    fn render(self, _: Context<Self>) -> impl Item {
+    fn render(self) -> impl Item {
         html()
             .attribute("lang", "en")
             .component(Head::new(&self.title()))
@@ -68,7 +68,7 @@ impl Component for Error {
                         Self::SetNotFound => Branch4::D(h1().text("Set not found!")),
                     })),
             )
-            .component(InitialisationScript::init(include_str!(
+            .component(InitialisationScript::new(include_str!(
                 "../../dist/init.js"
             )))
     }
@@ -84,7 +84,7 @@ impl From<Error> for http::StatusCode {
     }
 }
 
-// #[server]
+// #[cfg_server]
 // impl From<warp::Rejection> for Error {
 //     fn from(value: warp::Rejection) -> Self {
 //         // TODO: internal errors + not found?
@@ -109,5 +109,5 @@ impl From<Error> for http::StatusCode {
 //     }
 // }
 
-// #[server]
+// #[cfg_server]
 // impl warp::reject::Reject for Error {}

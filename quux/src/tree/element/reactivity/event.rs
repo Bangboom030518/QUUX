@@ -1,4 +1,4 @@
-#[client]
+#[cfg_client]
 use super::Reactivity;
 use crate::internal::prelude::*;
 use std::fmt::Debug;
@@ -29,7 +29,7 @@ impl<F: FnMut() + 'static> Event<F> {
     }
 }
 
-#[client]
+#[cfg_client]
 impl<F: FnMut() + 'static> Reactivity for Event<F> {
     fn apply(self: Box<Self>, element: Rc<web_sys::Element>) {
         use wasm_bindgen::prelude::*;

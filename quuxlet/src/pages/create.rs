@@ -28,7 +28,7 @@ fn text_input(value: &str, placeholder: &str, multiple: bool) -> impl Item {
 pub struct Create;
 
 impl Component for Create {
-    fn render(self, _: Context<Self>) -> impl Item {
+    fn render(self) -> impl Item {
         let terms = store::List::<Term>::new(vec![Term::new("", ""), Term::new("", "")]);
         html()
             .attribute("lang", "en")
@@ -64,14 +64,14 @@ impl Component for Create {
                         .child(button().class("btn btn-primary w-full").text("Create")),
                 )),
             )
-            .component(InitialisationScript::init(include_str!(
+            .component(InitialisationScript::new(include_str!(
                 "../../dist/init.js"
             )))
     }
 }
 
 // impl Create {
-//     #[server]
+//     #[cfg_server]
 //     #[must_use]
 //     #[allow(clippy::needless_lifetimes, opaque_hidden_inferred_bound)]
 //     // TODO: remove `allow(..)`

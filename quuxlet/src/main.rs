@@ -6,12 +6,9 @@
     impl_trait_in_assoc_type
 )]
 
-use quux::{prelude::*, server::hyper::Body};
-use std::convert::Infallible;
-
-#[derive(Debug, thiserror::Error)]
-#[error("this is pointless, give up")]
-struct Useless(String);
+use http::Method;
+use quux::{prelude::*, server::Either};
+use quuxlet::pages::{Discover, Index};
 
 #[tokio::main]
 async fn main() {
@@ -23,37 +20,35 @@ async fn main() {
 
     println!("serving on http://localhost:3000...");
 
-    handler(|request: Context<()>| async move {
-        let path = request.url().path();
-        if path == "/" {
-            Ok(Response::new(Body::from("Hello World!")))
-        } else {
-            Err(request)
-        }
-    })
-    .or(handler(|request: Context<()>| async move {
-        Ok::<_, Infallible>(Response::new(Body::from(format!(
-            "Hello {}!",
-            request.url()
-        ))))
-    }))
-    .serve(([127, 0, 0, 1], 3000))
-    .await;
+    use quux::component::ServerExt;
 
-    // matching().path().method(Method::Get).body::<>;
-    server::<Routes>()
-        .component::<Index>(matching!(path = "hello" / String, method = Get, body = ))
-        .component::<Create>()
-        .fallback::<Error>()
+    // let discover =
+    //     .and(with_pool(pool.clone()))
+    //     .and_then(|pool| async move { Discover::new(&pool).await.map_err(warp::reject::custom) });
+    server::<quuxlet::Routes>()
+        .component::<Index>(path(Method::GET))
+        .component::<Discover>(
+            path(Method::GET)
+                .static_segment("discover")
+                .and_then(handler(|context: Context<()>| {
+                    let pool = pool.clone();
+                    async move {
+                        match Discover::new(&pool).await {
+                            Ok(discover) => Ok(context.with_output(discover)),
+                            Err(err) => Err(context.with_output(path::Error::Fatal(err))),
+                        }
+                    }
+                }))
+                .map_err(|error| match error {
+                    Either::A(context) => context.with_output(path::Error::PathMatch),
+                    Either::B(context) => context,
+                }),
+        )
+        // .route(path(Method::GET), |context| html("HELLO WORLD!"))
+        // .route(matcher(Method::POST))
+        // .component::<Index>(matching!(path = "hello" / String, method = Get, body = ))
+        // .component::<Create>()
+        .fallback(|_| quux_server::html("Hello World"))
         .serve(([127, 0, 0, 1], 3000))
         .await;
-
-    // the trait bound `quux::quux_server::handler::function::Function<[closure@quuxlet\src\main.rs:21:9: 21:21], [async block@quuxlet\src\main.rs:21:22: 21:99], quux::quux_server::hyper::Request<quux::quux_server::hyper::Body>, quux::quux_server::hyper::Response<quux::quux_server::hyper::Body>, std::convert::Infallible>: std::clone::Clone` is not satisfied
-
-    // let hello = || async move { Ok::<_, Infallible>(Response::new(Body::from("Hello World!"))) };
-
-    // (|request| async move { Err(std::io::Error::new(std::io::ErrorKind::NotFound)) }).or(|_| hello);
-
-    // (|request| hello()).serve(([127, 0, 0, 1], 3000)).await;
-    // Ok(())
 }

@@ -1,25 +1,27 @@
 use crate::internal::prelude::*;
 
-#[derive(Debug, Clone)]
-struct Map<H, M, O>
+#[derive(Debug)]
+struct Map<H, M, Fut>
 where
     H: Handler,
-    M: FnMut(H::Output) -> O + Send + Sync,
-    O: Send + Sync,
+    M: FnMut(H::Output) -> Fut + Send + Sync,
+    Fut: Future + Send + Sync,
+    Fut::Output: Send + Sync,
 {
     handler: H,
     mapping: M,
-    _phantom: PhantomData<O>,
+    // _phantom: PhantomData<Fut>,
 }
 
-impl<M, H, O> Handler for Map<H, M, O>
+impl<M, H, Fut> Handler for Map<H, M, Fut>
 where
     H: Handler,
-    M: FnMut(H::Output) -> O + Send + Sync + Clone,
-    O: Send + Sync + Clone,
+    M: FnMut(H::Output) -> Fut + Send + Sync,
+    Fut: Future + Send + Sync,
+    Fut::Output: Send + Sync,
 {
     type Input = H::Input;
-    type Output = O;
+    type Output = Fut::Output;
     type Error = H::Error;
 
     #[allow(clippy::needless_lifetimes)]
@@ -32,22 +34,45 @@ where
             let Self {
                 handler, mapping, ..
             } = self;
-            handler.handle(input).await.map(mapping)
+            match handler.handle(input).await.map(mapping) {
+                Ok(output) => Ok(output.await),
+                Err(err) => Err(err),
+            }
         }
     }
 }
 
+// TODO: combine
+
 pub trait HandlerExt: Handler {
-    fn map<M, O>(self, mapping: M) -> impl Handler
+    fn map_async<M, Fut>(
+        self,
+        mapping: M,
+    ) -> impl Handler<Input = Self::Input, Output = Fut::Output, Error = Self::Error>
     where
-        M: FnMut(Self::Output) -> O + Send + Sync + Clone,
-        O: Send + Sync + Clone,
+        M: FnMut(Self::Output) -> Fut + Send + Sync,
+        Fut: Future + Send + Sync,
+        Fut::Output: Send + Sync,
         Self: Sized,
     {
         Map {
             handler: self,
             mapping,
-            _phantom: PhantomData,
+        }
+    }
+
+    fn map<M, O>(
+        self,
+        mut mapping: M,
+    ) -> impl Handler<Input = Self::Input, Output = O, Error = Self::Error>
+    where
+        M: FnMut(Self::Output) -> O + Send + Sync,
+        O: Send + Sync,
+        Self: Sized,
+    {
+        Map {
+            handler: self,
+            mapping: move |output| std::future::ready(mapping(output)),
         }
     }
 }

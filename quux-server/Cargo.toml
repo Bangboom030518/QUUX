@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 http = "0.2"
 hyper = { version = "0.14", features = ["full"] }
+itertools = "0.10"
 thiserror = "1.0"
 tokio = { workspace = true, features = ["full"] }
 url = "2.3"

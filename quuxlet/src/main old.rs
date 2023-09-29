@@ -22,8 +22,6 @@ async fn main() {
         .await
         .unwrap();
 
-    let index = warp::path::end().and(warp::get()).map(|| Index);
-
     let discover = warp::path!("discover")
         .and(warp::get())
         .and(with_pool(pool.clone()))

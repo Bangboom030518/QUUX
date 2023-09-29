@@ -27,7 +27,6 @@ pub fn term_card<'a>(
     Term { term, definition }: &Term,
     terms: store::List<Term>,
 ) -> Element<'a, impl Item> {
-
     fieldset()
         .class("card card-bordered bg-base-200 shadow")
         .child(legend().class("badge").text("Card"))

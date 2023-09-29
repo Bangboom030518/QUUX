@@ -912,6 +912,7 @@ version = "0.1.0"
 dependencies = [
  "http",
  "hyper",
+ "itertools",
  "thiserror",
  "tokio",
  "url",

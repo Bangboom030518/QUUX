@@ -1,4 +1,12 @@
+use std::future::Future;
+
 use crate::internal::prelude::*;
+
+#[cfg_server]
+use quux_server::{
+    server::{path::PathHandler, ContextHandler, Path, Server},
+    Either, Html, IntoResponse,
+};
 
 pub trait Component {
     fn render(self) -> impl Item
@@ -6,14 +14,27 @@ pub trait Component {
         Self: Sized;
 }
 
-pub trait Routes: Serialize + DeserializeOwned + quux_server::server::Routes {
+pub trait AsyncFrom<T> {
+    fn async_from(value: T) -> impl Future<Output = Self> + Send + Sync;
+}
+
+impl<T, U> AsyncFrom<U> for T
+where
+    T: From<U> + Send + Sync,
+{
+    fn async_from(value: U) -> impl Future<Output = Self> + Send + Sync {
+        std::future::ready(Self::from(value))
+    }
+}
+
+pub trait Routes: Serialize + DeserializeOwned {
     /// Recursively hydrates the dom, starting at the root app component.
     /// Applies a console panic hook for better debugging.
     /// # Errors
     /// - If there is no init script in the dom (`QUUXInitialise`)
     /// - If the init script doesn't have a shadow tree attached
     /// - If the shadow tree is unparseable
-    #[client]
+    #[cfg_client]
     fn init_app() -> Result<(), errors::InitApp> {
         std::panic::set_hook(Box::new(console_error_panic_hook::hook));
 
@@ -30,10 +51,10 @@ pub trait Routes: Serialize + DeserializeOwned + quux_server::server::Routes {
         Ok(())
     }
 
-    #[client]
+    #[cfg_client]
     fn hydrate(self);
 
-    #[server]
+    #[cfg_server]
     fn render_to_string<T: Component + Clone + Serialize>(component: T) -> String
     where
         Self: Sized + From<T>,
@@ -52,3 +73,41 @@ pub trait Routes: Serialize + DeserializeOwned + quux_server::server::Routes {
 }
 
 impl<T: Routes> SerializePostcard for T {}
+
+#[cfg_server]
+pub trait ServerExt<H, F, M, R>
+where
+    R: Routes,
+    M: ContextHandler,
+    H: ContextHandler,
+{
+    fn component<T>(
+        self,
+        matcher: M,
+    ) -> Server<impl ContextHandler<InnerOutput = Either<H::InnerOutput, Html>>, F, R>
+    where
+        T: Component + Clone + Serialize + Send + Sync + From<M::InnerOutput>,
+        R: From<T>;
+}
+
+#[cfg_server]
+impl<H, F, M, R> ServerExt<H, F, M, R> for Server<H, F, R>
+where
+    H: ContextHandler,
+    H::InnerOutput: IntoResponse,
+    R: Routes,
+    M: ContextHandler,
+{
+    fn component<T>(
+        self,
+        matcher: M,
+    ) -> Server<impl ContextHandler<InnerOutput = Either<H::InnerOutput, Html>>, F, R>
+    where
+        T: Component + Clone + Serialize + Send + Sync + AsyncFrom<M::InnerOutput>,
+        R: From<T>,
+    {
+        self.route(matcher, |props| async move {
+            quux_server::html(R::render_to_string(T::async_from(props).await))
+        })
+    }
+}

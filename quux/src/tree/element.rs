@@ -63,7 +63,7 @@ impl<'a, T: Item> Item for Element<'a, T> {
         self.children.insert_id(id + 1)
     }
 
-    #[client]
+    #[cfg_client]
     fn hydrate(&mut self) {
         let dom_element = self.dom_element();
 
@@ -74,14 +74,14 @@ impl<'a, T: Item> Item for Element<'a, T> {
         self.children.hydrate();
     }
 
-    #[client]
+    #[cfg_client]
     fn dom_representation(&mut self) -> DomRepresentation {
         DomRepresentation::One(self.create_element(false).into())
     }
 }
 
 impl<'a, T: Item> Element<'a, T> {
-    #[client]
+    #[cfg_client]
     fn create_element(&mut self, hydrate: bool) -> web_sys::Element {
         let dom_element = crate::dom::document()
             .create_element(&self.tag_name)
@@ -168,17 +168,17 @@ impl<'a, T: Item> Element<'a, T> {
     where
         C: Component + Clone,
     {
-        self.child(component.render(Context::new()))
+        self.child(component.render())
     }
 
-    #[server]
+    #[cfg_server]
     #[must_use]
     pub const fn on(self, _: &str, _: ()) -> Self {
         self
     }
 
     #[must_use]
-    #[client]
+    #[cfg_client]
     pub fn on<F>(mut self, event: &str, callback: F) -> Self
     where
         F: FnMut() + 'static + Clone,
@@ -189,13 +189,13 @@ impl<'a, T: Item> Element<'a, T> {
     }
 
     #[must_use]
-    #[server]
+    #[cfg_server]
     #[allow(clippy::missing_const_for_fn)]
     pub fn reactive_class(self, _: &str, _: Store<bool>) -> Self {
         self
     }
 
-    #[client]
+    #[cfg_client]
     #[must_use]
     /// # Panics
     /// if it fails to toggle the class in the dom
@@ -224,7 +224,7 @@ impl<'a, T: Item> Element<'a, T> {
         self.child(items)
     }
 
-    #[client]
+    #[cfg_client]
     pub fn dom_element(&mut self) -> Rc<web_sys::Element> {
         Rc::clone(self.dom_element.get_or_insert_with(|| {
             let selector = &format!(

@@ -17,13 +17,13 @@ impl<A: Item, B: Item> Item for Pair<A, B> {
         self.1.insert_id(id + 1)
     }
 
-    #[client]
+    #[cfg_client]
     fn hydrate(&mut self) {
         self.0.hydrate();
         self.1.hydrate();
     }
 
-    #[client]
+    #[cfg_client]
     fn dom_representation(&mut self) -> DomRepresentation {
         DomRepresentation::Many(
             self.0

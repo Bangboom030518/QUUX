@@ -1,5 +1,9 @@
 use crate::{internal::prelude::*, IntoResponse};
+<<<<<<< HEAD
 use http::{Uri};
+=======
+use http::Uri;
+>>>>>>> d728a96abe5db95d6e922de5cef08a1e2f863f3b
 use std::{future::Future, sync::Arc};
 use url::Url;
 
@@ -9,47 +13,41 @@ pub mod function;
 pub mod map;
 pub mod map_err;
 pub mod or;
+pub mod then;
 
-fn expect_url(uri: &Uri) -> Url {
-    uri.to_string()
-        .parse()
-        .expect("a parsed Uri should always be a valid Url")
-}
-
+#[derive(Debug)]
 pub struct Context<O> {
     pub(crate) request: crate::Request,
-    pub(crate) url: Url,
     pub output: O,
 }
 
-impl<O: Clone> Clone for Context<O> {
-    fn clone(&self) -> Self {
-        let Self {
-            request,
-            url,
-            output,
-        } = &self;
-        let builder = hyper::Request::builder()
-            .method(request.method().clone())
-            .uri(request.uri().clone())
-            .version(request.version().clone())
-            .extension(request.extensions());
-        for (key, value) in request.headers() {
-            builder.header(key, value);
-        }
-        let request = builder.body(*request.body()).unwrap();
-        Self {
-            url: url.clone(),
-            output: output.clone(),
-            request,
-        }
-    }
-}
+// impl<O: Clone> Clone for Context<O> {
+//     fn clone(&self) -> Self {
+//         let Self {
+//             request,
+//             url,
+//             output,
+//         } = &self;
+//         let builder = hyper::Request::builder()
+//             .method(request.method().clone())
+//             .uri(request.uri().clone())
+//             .version(request.version().clone())
+//             .extension(request.extensions());
+//         for (key, value) in request.headers() {
+//             builder.header(key, value);
+//         }
+//         let request = builder.body(*request.body()).unwrap();
+//         Self {
+//             url: url.clone(),
+//             output: output.clone(),
+//             request,
+//         }
+//     }
+// }
 
 impl Context<()> {
-    fn new(request: crate::Request) -> Self {
+    pub fn new(request: crate::Request) -> Self {
         Self {
-            url: expect_url(request.uri()),
             request,
             output: (),
         }
@@ -57,16 +55,31 @@ impl Context<()> {
 }
 
 impl<O> Context<O> {
-    pub fn url(&self) -> &Url {
-        &self.url
+    pub fn request(&self) -> &Request {
+        &self.request
     }
 
     pub fn with_output<T>(self, output: T) -> Context<T> {
-        let Self { request, url, .. } = self;
+        let Self { request, .. } = self;
+        Context { request, output }
+    }
+
+    pub async fn map_async<Fut>(self, mapping: impl FnOnce(O) -> Fut) -> Context<Fut::Output>
+    where
+        Fut: Future,
+    {
+        let Self { request, output } = self;
         Context {
             request,
-            url,
-            output,
+            output: mapping(output).await,
+        }
+    }
+
+    pub fn map<T>(self, mapping: impl FnOnce(O) -> T) -> Context<T> {
+        let Self { request, output } = self;
+        Context {
+            request,
+            output: mapping(output),
         }
     }
 }
@@ -84,7 +97,7 @@ pub trait Handler: Send + Sync {
         input: Self::Input,
     ) -> impl Future<Output = Result<Self::Output, Self::Error>> + Send + Sync + 'a;
 
-    async fn serve(self, addr: impl Into<SocketAddr>)
+    async fn serve(self, address: impl Into<SocketAddr>)
     where
         Self: Sized + Handler<Input = Context<()>> + 'static,
         Result<Self::Output, Self::Error>: IntoResponse,
@@ -92,7 +105,7 @@ pub trait Handler: Send + Sync {
         // TODO: Mutex means we lose the benfit of async
         let server = Arc::new(tokio::sync::Mutex::new(self));
         let server =
-            hyper::Server::bind(&addr.into()).serve(make_service_fn(move |_: &AddrStream| {
+            hyper::Server::bind(&address.into()).serve(make_service_fn(move |_: &AddrStream| {
                 let server = Arc::clone(&server);
                 async move {
                     let server = Arc::clone(&server);
@@ -119,6 +132,6 @@ pub trait Handler: Send + Sync {
 pub mod prelude {
     pub use super::{
         and_then::HandlerExt as _, function::handler, map::HandlerExt as _,
-        map_err::HandlerExt as _, or::HandlerExt as _, Context, Handler,
+        map_err::HandlerExt as _, or::HandlerExt as _, then::HandlerExt as _, Context, Handler,
     };
 }

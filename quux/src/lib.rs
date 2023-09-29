@@ -1,6 +1,6 @@
 #![warn(clippy::pedantic, clippy::nursery)]
 #![allow(incomplete_features)]
-#![feature(return_position_impl_trait_in_trait, drain_filter)]
+#![feature(return_position_impl_trait_in_trait, drain_filter, async_fn_in_trait)]
 
 pub use cfg_if;
 use internal::prelude::*;
@@ -43,7 +43,7 @@ pub trait SerializePostcard: Serialize {
 
 mod internal {
     pub mod prelude {
-        #[client]
+        #[cfg_client]
         pub use super::super::tree::item::DomRepresentation;
         pub use super::super::{
             errors::{self, MapInternal},
@@ -56,17 +56,19 @@ mod internal {
             collections::HashMap,
             fmt::{self, Debug, Display},
             marker::PhantomData,
-            rc::Rc,
             str::FromStr,
+            sync::Arc,
         };
     }
 }
 
 pub mod prelude {
-    #[client]
+    #[cfg_server]
+    pub use super::component::ServerExt as _;
+    #[cfg_client]
     pub use super::dom::console_log;
     pub use super::{
-        component::{self, Component, Routes as _},
+        component::{self, AsyncFrom, Component, Routes as _},
         event,
         initialisation_script::InitialisationScript,
         store::{self, Store},
@@ -76,8 +78,8 @@ pub mod prelude {
             Item,
         },
     };
-    pub use quux_macros::{client, routes, server, view};
-    #[server]
-    pub use quux_server::prelude::*;
+    pub use quux_macros::{client as cfg_client, routes, server as cfg_server, view};
+    #[cfg_server]
+    pub use quux_server::{self, prelude::*};
     pub use serde::{de::DeserializeOwned, Deserialize, Serialize};
 }

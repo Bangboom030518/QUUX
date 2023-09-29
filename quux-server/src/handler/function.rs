@@ -46,7 +46,7 @@ where
     F: FnMut(I) -> Fut + Send + Sync,
     Fut: Future<Output = Result<O, E>> + Send + Sync,
     E: Send + Sync,
-    O: Send + Sync ,
+    O: Send + Sync,
     I: Send + Sync,
 {
     type Input = I;

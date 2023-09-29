@@ -1,4 +1,5 @@
 use quux::prelude::*;
+use tokio::sync::oneshot::channel;
 
 use super::{error, nav_bar, Head};
 
@@ -9,7 +10,7 @@ pub struct SetCard {
 }
 
 impl Component for SetCard {
-    fn render(self, _: quux::context::Context<Self>) -> impl Item
+    fn render(self) -> impl Item
     where
         Self: Sized,
     {
@@ -31,27 +32,56 @@ impl Component for SetCard {
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Discover(Vec<SetCard>);
 
+// #[cfg_server]
+// impl AsyncFrom<sqlx::Pool<sqlx::Sqlite>> for Discover {
+//     fn async_from(
+//         pool: sqlx::Pool<sqlx::Sqlite>,
+//     ) -> impl std::future::Future<Output = Self> + Send + Sync {
+//         async move {
+//             let query: sqlx::query::Map<_, _, _> = sqlx::query!("SELECT * FROM sets");
+//             let sets = query.fetch_all(pool).await?;
+
+//             Ok(Self(
+//                 sets.into_iter()
+//                     .map(|entry| SetCard {
+//                         name: entry.name,
+//                         url: format!("/set/{}", entry.id),
+//                     })
+//                     .collect(),
+//             ))
+//         }
+//     }
+// }
+
 impl Discover {
     /// # Errors
     /// If the database query fails
-    #[server]
-    pub async fn new(pool: &sqlx::Pool<sqlx::Sqlite>) -> Result<Self, error::Database> {
-        let query: sqlx::query::Map<_, _, _> = sqlx::query!("SELECT * FROM sets");
-        let sets = query.fetch_all(pool).await?;
-
-        Ok(Self(
-            sets.into_iter()
-                .map(|entry| SetCard {
-                    name: entry.name,
-                    url: format!("/set/{}", entry.id),
-                })
-                .collect(),
-        ))
+    #[cfg_server]
+    pub fn new<'a>(
+        pool: &'a sqlx::Pool<sqlx::Sqlite>,
+    ) -> impl std::future::Future<Output = Result<Self, error::Database>> + Send + Sync + 'a {
+        async move {
+            let (tx, rx) = channel();
+            let pool = pool.clone();
+            tokio::spawn(async move {
+                let query: sqlx::query::Map<_, _, _> = sqlx::query!("SELECT * FROM sets");
+                tx.send(query.fetch_all(&pool).await)
+            });
+            let sets = rx.await.unwrap()?;
+            Ok(Self(
+                sets.into_iter()
+                    .map(|entry| SetCard {
+                        name: entry.name,
+                        url: format!("/set/{}", entry.id),
+                    })
+                    .collect(),
+            ))
+        }
     }
 }
 
 impl Component for Discover {
-    fn render(self, _: quux::context::Context<Self>) -> impl Item
+    fn render(self) -> impl Item
     where
         Self: Sized,
     {
@@ -72,7 +102,7 @@ impl Component for Discover {
                                     .child(
                                         self.0
                                         .into_iter()
-                                        .map(|set| set.render(Context::new()))
+                                        .map(|set| set.render())
                                         .collect::<Many<_>>(),
                                     ),
                             )

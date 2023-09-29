@@ -1,4 +1,4 @@
-#[client]
+#[cfg_client]
 use super::Reactivity;
 use crate::internal::prelude::*;
 
@@ -18,7 +18,7 @@ impl Class {
     }
 }
 
-#[client]
+#[cfg_client]
 impl Reactivity for Class {
     fn apply(self: Box<Self>, element: Rc<web_sys::Element>) {
         let class = self.class.to_string();

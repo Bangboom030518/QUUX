@@ -4,13 +4,13 @@ pub use list::List;
 pub mod list;
 
 pub type Callback<T> = Box<dyn FnMut(&T, &T) + 'static>;
-type RcCell<T> = Rc<RefCell<T>>;
+type ArcCell<T> = Arc<RefCell<T>>;
 
 #[derive(Serialize, Deserialize)]
 pub struct Store<T> {
-    value: RcCell<T>,
+    value: ArcCell<T>,
     #[serde(skip)]
-    listeners: RcCell<Vec<Callback<T>>>,
+    listeners: ArcCell<Vec<Callback<T>>>,
 }
 
 // TODO: derived stores with map
@@ -19,8 +19,8 @@ impl<T> Store<T> {
     /// Creates a new store.
     pub fn new(value: T) -> Self {
         Self {
-            value: Rc::new(RefCell::new(value)),
-            listeners: Rc::new(RefCell::new(Vec::new())),
+            value: Arc::new(RefCell::new(value)),
+            listeners: Arc::new(RefCell::new(Vec::new())),
         }
     }
 
@@ -57,8 +57,8 @@ impl<T> Store<T> {
 impl<T> Clone for Store<T> {
     fn clone(&self) -> Self {
         Self {
-            value: Rc::clone(&self.value),
-            listeners: Rc::clone(&self.listeners),
+            value: Arc::clone(&self.value),
+            listeners: Arc::clone(&self.listeners),
         }
     }
 }

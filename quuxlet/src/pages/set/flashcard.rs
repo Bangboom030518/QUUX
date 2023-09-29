@@ -43,7 +43,7 @@ impl Flashcard {
 }
 
 impl Component for Flashcard {
-    fn render(self, _: Context<Self>) -> impl Item {
+    fn render(self) -> impl Item {
         let term_hidden = Store::new(true);
         // let side = self.side.clone();
         let definition_hidden = Store::new(false);

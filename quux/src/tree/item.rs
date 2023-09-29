@@ -1,5 +1,5 @@
 use crate::internal::prelude::*;
-#[client]
+#[cfg_client]
 pub use dom_representation::DomRepresentation;
 pub use empty::Empty;
 pub use many::Many;
@@ -22,10 +22,10 @@ pub trait Item: Display + Debug + Sized {
     const IS_SELF_CLOSING: bool = false;
     const IS_EMPTY: bool = false;
 
-    #[client]
+    #[cfg_client]
     fn hydrate(&mut self) {}
 
-    #[client]
+    #[cfg_client]
     fn dom_representation(&mut self) -> DomRepresentation;
 
     // TODO: why does it skip ids?
